@@ -2,6 +2,15 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-10-18 — Pillar 1 tidy-up: Profile sections, design tokens, consistent headers and exercise screens (P1-03, P1-04, P1-06 personal part), awaiting owner phone check
+
+- Implemented approved `docs/pillars/plans/P1-tidy/PLAN.md` with supervisor audit decisions in `index.html` on branch `codex/p1-tidy` (no remote, never pushed; no build step, no dependency). Look and layout only; no behavior, data or calculation changes; nothing wider than 412 px.
+- **Three Profile sections (P1-03, P1-06):** Sticky segmented control `#profileSectionControl` (Progress, Records, Settings) below Profile heading. Panel visibility toggled via `hidden` attribute without re-rendering panels; section remembered via UI-only localStorage key `plz_fitzone_profile_section` (fallback to Progress on missing/invalid/throwing storage; memory selection survives failed writes). Routing links switch section first: `goToTrainingCalendar()` opens Progress before scrolling to calendar; record row links switch to Records before opening progress modal.
+- **Settings panel consolidation:** Profile summary (My profile card with rerun setup), read-only unit status line (per supervisor decision: `#unitToggleBtn` stays in global header), rest timer, previous performance scope, week start, plate calculator settings, drop step percentage, superset advance toggle, JSON backup, restore and both restore undo surfaces. Typing never rebuilds screen or parent containers; hydration separated from `renderProfileStats()`.
+- **Design tokens & accessible primitives (P1-03):** Spacing tokens `--space-4/8/12/16/24`, radius tokens `--radius-8/12/16`, font tokens `--font-12/14/16/20/24`, `--control-min-height: 44px`, `--brand-lime: #a3e635`. Visible 2px brand lime `:focus-visible` outline; `@media (prefers-reduced-motion: reduce)` disabling animations/transitions. Shared section headers (`.section-header`, `.section-title`, `.section-group`) across tabs; shared empty states (`.empty-state`, `.empty-state-title`, `.empty-state-help`). All interactive buttons ≥ 44px (calendar day cells kept at 40px, live workout logger rows kept as-is per supervisor decisions).
+- **Exercises tab & exercise detail layout (P1-04):** Search typing isolated so `#exSearchInput` and chip scroll are never destroyed. Exercise detail modal reordered with 20px title, 14px badges/metadata, full-width Progress button, best set / est 1RM and recent sessions, then management actions.
+- Checks: new `tests/p1_tidy.test.mjs` (10 named tests); all 247 tests pass with `node --test "tests/*.test.mjs"`. No browser run, no screenshots. Owner to verify on phone at 412 px.
+
 ## 2026-10-17 — One-tap drop sets and supersets with smart advance (P2-12 Part 2 personal part), awaiting owner phone check
 
 - Implemented approved `docs/pillars/plans/P2-12-drop-superset/PLAN.md` in `index.html` on branch `codex/p2-12-drop-superset` (no remote, never pushed; no build step, no dependency).

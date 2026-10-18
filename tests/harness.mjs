@@ -68,6 +68,7 @@ export function makeElement(tag = 'div', onHtml = null) {
     textContent: '',
     value: '',
     checked: false,
+    hidden: false,
     style: {},
     dataset: {},
     children: [],
@@ -76,9 +77,17 @@ export function makeElement(tag = 'div', onHtml = null) {
     addEventListener() {},
     removeEventListener() {},
     click() {},
-    setAttribute(k, v) { this._attrs = this._attrs || {}; this._attrs[String(k)] = String(v); },
+    setAttribute(k, v) {
+      this._attrs = this._attrs || {};
+      this._attrs[String(k)] = String(v);
+      if (String(k) === 'hidden') this.hidden = true;
+    },
     getAttribute(k) { return (this._attrs && String(k) in this._attrs) ? this._attrs[String(k)] : null; },
-    removeAttribute(k) { if (this._attrs) delete this._attrs[String(k)]; },
+    hasAttribute(k) { return this._attrs ? (String(k) in this._attrs) : false; },
+    removeAttribute(k) {
+      if (this._attrs) delete this._attrs[String(k)];
+      if (String(k) === 'hidden') this.hidden = false;
+    },
     querySelector() { return null; },
     querySelectorAll() { return []; },
   };
@@ -399,6 +408,9 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   get calYear(){ return calYear; }, get calMonth(){ return calMonth; },
   get calWorkloadRange(){ return calWorkloadRange; },
   get obWelcomeIdx(){ return obWelcomeIdx; }, get obIsFirstRun(){ return obIsFirstRun; },
+  PROFILE_SECTION_KEY, getProfileSection, setProfileSection, saveRestPreference, hydrateSettingsControls,
+  get activeProfileSection(){ return activeProfileSection; },
+  emptyStateHtml, renderExercisesList, onExSearchInput,
 };`;
 
 // Creates one app instance: runs init() (the script self-initializes) in a

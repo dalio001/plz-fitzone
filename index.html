@@ -28,6 +28,26 @@
       --lime-bg: rgba(132, 204, 22, 0.18);
       --text: #f8fafc;
       --text-sub: #94a3b8;
+
+      /* Design Tokens (P1-03) */
+      --space-4: 4px;
+      --space-8: 8px;
+      --space-12: 12px;
+      --space-16: 16px;
+      --space-24: 24px;
+
+      --radius-8: 8px;
+      --radius-12: 12px;
+      --radius-16: 16px;
+
+      --font-12: 12px;
+      --font-14: 14px;
+      --font-16: 16px;
+      --font-20: 20px;
+      --font-24: 24px;
+
+      --control-min-height: 44px;
+      --brand-lime: #a3e635;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -67,30 +87,130 @@
     .logo-plz { color: #a3e635; font-weight: 900; }
     .logo-mascot { width: 40px; height: 40px; border-radius: 12px; display: block; }
 
+    /* FOCUS & ACCESSIBILITY (P1-03) */
+    :focus-visible {
+      outline: 2px solid var(--brand-lime);
+      outline-offset: 2px;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [role="button"]:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 2px solid var(--brand-lime);
+      outline-offset: 2px;
+    }
+
+    /* REDUCED MOTION (P1-03) */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .btn:active {
+        transform: none !important;
+      }
+    }
+
     /* MAIN SCROLL VIEW */
     main {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 16px;
+      padding: var(--space-16);
       padding-bottom: 110px;
+      max-width: 412px;
+      margin: 0 auto;
+      width: 100%;
     }
 
     .tab-view { display: none; }
     .tab-view.active { display: block; }
 
-    h2 { margin: 0 0 12px 0; font-size: 18px; font-weight: 700; }
-    h3 { margin: 16px 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-sub); }
+    /* SHARED SECTION HEADERS (P1-03) */
+    .section-header, .section-title {
+      font-size: var(--font-20);
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 var(--space-12);
+    }
+    .section-group {
+      margin-bottom: var(--space-24);
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      flex-wrap: wrap;
+    }
+
+    /* SHARED EMPTY STATE (P1-03) */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-16);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-8);
+    }
+    .empty-state-title {
+      font-size: var(--font-16);
+      font-weight: 700;
+      color: var(--text);
+    }
+    .empty-state-help, .empty-state-sub {
+      font-size: var(--font-14);
+      color: var(--text-sub);
+    }
+
+    /* PROFILE SECTIONS (P1-03) */
+    .profile-section-control {
+      position: sticky;
+      top: 0;
+      background: var(--bg-main);
+      z-index: 10;
+      display: flex;
+      gap: var(--space-8);
+      padding: var(--space-4) 0 var(--space-12);
+      margin-bottom: var(--space-8);
+    }
+    .profile-section-btn {
+      flex: 1;
+      min-height: var(--control-min-height);
+      font-weight: 700;
+    }
+    .profile-section-btn.active,
+    .profile-section-btn[aria-pressed="true"] {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .profile-section-panel[hidden] {
+      display: none !important;
+    }
+    #calendarCard {
+      scroll-margin-top: 60px;
+    }
+
+    h2 { margin: 0 0 var(--space-12) 0; font-size: var(--font-20); font-weight: 700; }
+    h3 { margin: var(--space-16) 0 10px 0; font-size: var(--font-14); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-sub); }
 
     /* BUTTONS & CARDS */
     .btn {
       background: var(--bg-elevated);
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 10px 14px;
-      border-radius: 10px;
+      padding: var(--space-8) var(--space-12);
+      border-radius: var(--radius-12);
       font-weight: 600;
-      font-size: 14px;
+      font-size: var(--font-14);
+      min-height: var(--control-min-height);
+      box-sizing: border-box;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -107,9 +227,9 @@
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 15px;
-      margin-bottom: 12px;
+      border-radius: var(--radius-16);
+      padding: var(--space-16);
+      margin-bottom: var(--space-12);
     }
 
     .routine-card-header {
@@ -386,24 +506,25 @@
     .modal-content {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: var(--radius-16);
       width: 100%;
-      max-width: 460px;
+      max-width: 412px;
       max-height: 82vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
     .modal-header {
-      padding: 14px 16px;
+      padding: var(--space-12) var(--space-16);
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: 700;
+      gap: var(--space-8);
     }
     .modal-body {
-      padding: 14px 16px;
+      padding: var(--space-16);
       overflow-y: auto;
       flex: 1;
     }
@@ -428,36 +549,41 @@
       padding: 11px 12px;
       background: var(--bg-elevated);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-12);
       color: var(--text);
       font-size: 15px;
-      margin-bottom: 10px;
+      margin-bottom: var(--space-12);
       outline: none;
+      box-sizing: border-box;
     }
 
     /* P2-06 catalogue chips: thumb-sized, scroll sideways inside their own
        row so the page never gets wider (no horizontal page scroll at 412px). */
     .chips {
       display: flex;
-      gap: 8px;
+      gap: var(--space-8);
       overflow-x: auto;
       max-width: 100%;
-      padding: 2px 2px 10px 2px;
+      padding: 2px 2px var(--space-8) 2px;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: thin;
     }
     .chip {
       flex: 0 0 auto;
-      min-height: 44px;
-      padding: 10px 16px;
-      border-radius: 22px;
+      min-height: var(--control-min-height);
+      padding: var(--space-8) var(--space-16);
+      border-radius: var(--radius-16);
       border: 1px solid var(--border);
       background: var(--bg-elevated);
       color: var(--text);
-      font-size: 14px;
+      font-size: var(--font-14);
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
     }
     .chip.on {
       background: var(--primary);
@@ -615,31 +741,34 @@
   <main>
     <!-- 1. WORKOUT TAB -->
     <section id="tab-workout" class="tab-view active">
-      <h2>Quick Start</h2>
+      <div class="section-header">
+        <h2 class="section-title" style="margin:0;">Quick Start</h2>
+      </div>
       <button class="btn btn-primary btn-block" onclick="startEmptyWorkout()">➕ Start Empty Workout</button>
       <!-- P2-10: today's plan, straight from the training calendar -->
-      <div id="todayPlanCard" style="margin-top:12px;"></div>
+      <div id="todayPlanCard" style="margin-top:var(--space-12);"></div>
 
       <div class="card" id="gettingStartedCard" style="display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-8); margin-bottom:var(--space-8);">
           <div style="font-weight:800;">How to get started</div>
-          <button class="btn" style="padding:6px 12px; font-size:13px;" onclick="dismissGettingStarted()">✕ Dismiss</button>
+          <button class="btn" style="padding:6px 12px; font-size:13px; min-height:44px;" onclick="dismissGettingStarted()">✕ Dismiss</button>
         </div>
         <div style="font-size:14px; line-height:1.7; color:var(--text-sub);">1. Tap a routine below, then Start Routine — your previous weights show under each set.<br>2. Tap Finish to save the workout on this phone.<br>3. Back up anytime from Profile → Backup JSON.</div>
       </div>
 
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:22px;">
-        <h3 style="margin:0;">My Routines (Unlimited)</h3>
-        <button class="btn" onclick="openRoutineBuilder()">+ New Routine</button>
+      <div class="section-group" style="margin-top:var(--space-24);">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
+          <h3 class="section-title" style="margin:0; font-size:var(--font-20); color:var(--text); text-transform:none; letter-spacing:normal;">My Routines (Unlimited)</h3>
+          <button class="btn" onclick="openRoutineBuilder()">+ New Routine</button>
+        </div>
+        <div id="routinesList" style="margin-top:var(--space-12);"></div>
       </div>
-      <div id="routinesList" style="margin-top:12px;"></div>
     </section>
 
     <!-- 2. HISTORY TAB -->
     <section id="tab-history" class="tab-view">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h2 style="margin:0;">Workout History</h2>
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
+        <h2 class="section-title" style="margin:0;">Workout History</h2>
         <button class="btn btn-primary" onclick="goToTrainingCalendar()">📅 Calendar</button>
       </div>
       <div id="historyList"></div>
@@ -647,14 +776,14 @@
 
     <!-- 3. EXERCISES TAB -->
     <section id="tab-exercises" class="tab-view">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <h2 style="margin:0;">Exercises</h2>
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
+        <h2 class="section-title" style="margin:0;">Exercises</h2>
         <button class="btn btn-primary" onclick="openCustomExModal()">+ Create</button>
       </div>
-      <input type="text" id="exSearchInput" class="input-field" placeholder="🔍 Search exercise or muscle..." oninput="renderExercisesTab()">
-      <div class="chips" id="exMuscleChips"></div>
-      <div class="chips" id="exEquipChips"></div>
-      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-sub); margin-bottom:10px; min-height:44px;">
+      <input type="text" id="exSearchInput" class="input-field" placeholder="🔍 Search exercise or muscle..." oninput="onExSearchInput()" style="margin-bottom:var(--space-12);">
+      <div class="chips" id="exMuscleChips" style="margin-bottom:var(--space-8);"></div>
+      <div class="chips" id="exEquipChips" style="margin-bottom:var(--space-12);"></div>
+      <label style="display:flex; align-items:center; gap:var(--space-8); font-size:var(--font-14); color:var(--text-sub); margin-bottom:var(--space-16); min-height:var(--control-min-height); cursor:pointer;">
         <input type="checkbox" id="showHiddenChk" style="width:22px; height:22px;" onchange="toggleShowHidden()"> Show hidden
       </label>
       <div id="exercisesDirectory"></div>
@@ -662,121 +791,143 @@
 
     <!-- 4. PROFILE / ANALYTICS TAB -->
     <section id="tab-profile" class="tab-view">
-      <h2>Athlete Profile & Stats</h2>
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;">
-        <div class="card" style="text-align:center; margin:0;">
-          <div style="font-size:22px; font-weight:800; color:var(--primary);" id="statWorkouts">0</div>
-          <div style="font-size:11px; color:var(--text-sub);">Workouts</div>
-        </div>
-        <div class="card" style="text-align:center; margin:0;">
-          <div style="font-size:22px; font-weight:800; color:var(--success);" id="statVolume">0</div>
-          <div style="font-size:11px; color:var(--text-sub);">Volume</div>
-        </div>
-        <div class="card" style="text-align:center; margin:0;">
-          <div style="font-size:22px; font-weight:800; color:var(--warning);" id="statSets">0</div>
-          <div style="font-size:11px; color:var(--text-sub);">Total Sets</div>
-        </div>
+      <h2 class="section-title" style="margin:0 0 12px 0;">Athlete Profile & Stats</h2>
+
+      <!-- Profile Section Control (P1-03) -->
+      <div id="profileSectionControl" role="group" aria-label="Profile sections" class="profile-section-control">
+        <button type="button" id="profSecBtn-progress" class="btn profile-section-btn active" role="button" aria-pressed="true" aria-controls="profileProgress" onclick="setProfileSection('progress')">Progress</button>
+        <button type="button" id="profSecBtn-records" class="btn profile-section-btn" role="button" aria-pressed="false" aria-controls="profileRecordsSection" onclick="setProfileSection('records')">Records</button>
+        <button type="button" id="profSecBtn-settings" class="btn profile-section-btn" role="button" aria-pressed="false" aria-controls="profileSettings" onclick="setProfileSection('settings')">Settings</button>
       </div>
 
-      <div class="card" id="myProfileCard">
-        <div style="font-weight:700; margin-bottom:10px;">My profile</div>
-        <div id="myProfileBody"></div>
-      </div>
-
-      <!-- P5-03: training calendar, consistency and muscle workload (month/all-time) -->
-      <div class="card" id="calendarCard" style="max-width:412px; margin-left:auto; margin-right:auto;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
-          <button class="btn" style="padding:6px 12px;" onclick="calPrevMonth()" aria-label="Previous month">‹</button>
-          <div style="font-weight:700; font-size:15px;" id="calendarTitle">Month</div>
-          <button class="btn" style="padding:6px 12px;" onclick="calNextMonth()" aria-label="Next month">›</button>
-        </div>
-        <div id="calendarGrid"></div>
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px;">
-          <div id="calendarConsistency" style="font-size:13px;"></div>
-          <button class="btn" style="padding:5px 10px; font-size:12px;" onclick="calThisMonth()">Today</button>
-        </div>
-        <!-- P2-10: plans live on the same calendar; a plan is never a workout. -->
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; flex-wrap:wrap;">
-          <div id="planCopyMsg" style="font-size:12px; color:var(--text-sub);"></div>
-          <button class="btn" style="padding:5px 10px; font-size:12px; min-height:32px;" onclick="copyWeekToNextWeek()">Copy week → next week</button>
-        </div>
-        <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-            <div style="font-weight:700; font-size:14px;">Muscle workload (sets)</div>
-            <div style="display:flex; gap:6px;">
-              <button class="chip" id="calWorkloadMonth" style="min-height:32px; padding:5px 10px; font-size:12px;" onclick="setCalWorkloadRange('month')">This month</button>
-              <button class="chip" id="calWorkloadAll" style="min-height:32px; padding:5px 10px; font-size:12px;" onclick="setCalWorkloadRange('all')">All time</button>
-            </div>
+      <!-- Section 1: Progress -->
+      <div id="profileProgress" class="profile-section-panel">
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;">
+          <div class="card" style="text-align:center; margin:0;">
+            <div style="font-size:22px; font-weight:800; color:var(--primary);" id="statWorkouts">0</div>
+            <div style="font-size:11px; color:var(--text-sub);">Workouts</div>
           </div>
-          <div style="font-size:11px; color:var(--text-sub); margin:4px 0 8px;">Primary muscle, warm-ups not counted</div>
-          <div id="calendarWorkload"></div>
+          <div class="card" style="text-align:center; margin:0;">
+            <div style="font-size:22px; font-weight:800; color:var(--success);" id="statVolume">0</div>
+            <div style="font-size:11px; color:var(--text-sub);">Volume</div>
+          </div>
+          <div class="card" style="text-align:center; margin:0;">
+            <div style="font-size:22px; font-weight:800; color:var(--warning);" id="statSets">0</div>
+            <div style="font-size:11px; color:var(--text-sub);">Total Sets</div>
+          </div>
+        </div>
+
+        <!-- P5-03: training calendar, consistency and muscle workload (month/all-time) -->
+        <div class="card" id="calendarCard" style="max-width:412px; margin-left:auto; margin-right:auto;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+            <button class="btn" style="padding:6px 12px; min-height:44px; min-width:44px;" onclick="calPrevMonth()" aria-label="Previous month">‹</button>
+            <div style="font-weight:700; font-size:15px;" id="calendarTitle">Month</div>
+            <button class="btn" style="padding:6px 12px; min-height:44px; min-width:44px;" onclick="calNextMonth()" aria-label="Next month">›</button>
+          </div>
+          <div id="calendarGrid"></div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px;">
+            <div id="calendarConsistency" style="font-size:13px;"></div>
+            <button class="btn" style="padding:5px 10px; font-size:12px; min-height:44px;" onclick="calThisMonth()">Today</button>
+          </div>
+          <!-- P2-10: plans live on the same calendar; a plan is never a workout. -->
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <div id="planCopyMsg" style="font-size:12px; color:var(--text-sub);"></div>
+            <button class="btn" style="padding:5px 10px; font-size:12px; min-height:44px;" onclick="copyWeekToNextWeek()">Copy week → next week</button>
+          </div>
+          <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+              <div style="font-weight:700; font-size:14px;">Muscle workload (sets)</div>
+              <div style="display:flex; gap:6px;">
+                <button class="chip" id="calWorkloadMonth" style="min-height:44px; padding:5px 10px; font-size:12px;" onclick="setCalWorkloadRange('month')">This month</button>
+                <button class="chip" id="calWorkloadAll" style="min-height:44px; padding:5px 10px; font-size:12px;" onclick="setCalWorkloadRange('all')">All time</button>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-sub); margin:4px 0 8px;">Primary muscle, warm-ups not counted</div>
+            <div id="calendarWorkload"></div>
+          </div>
         </div>
       </div>
 
-      <div class="card" id="profileRecordsCard">
-        <div style="font-weight:700;">My records</div><div style="font-size:12px; color:var(--text-sub); margin:2px 0 8px;">Tap an exercise to see its progress</div>
-        <div id="profileRecords"></div>
+      <!-- Section 2: Records -->
+      <div id="profileRecordsSection" class="profile-section-panel" hidden>
+        <div class="card" id="profileRecordsCard">
+          <div class="section-title" style="margin-bottom:2px; font-size:16px;">My records</div>
+          <div style="font-size:12px; color:var(--text-sub); margin:2px 0 8px;">Tap an exercise to see its progress</div>
+          <div id="profileRecords"></div>
+        </div>
       </div>
 
-      <div class="card">
-        <div style="font-weight:700; margin-bottom:10px;">Settings & Data Backup</div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Default Rest Timer (sec)</span>
-          <input type="number" id="defaultRestInput" class="set-input" style="width:80px;" value="90" onchange="saveRestPreference()">
+      <!-- Section 3: Settings -->
+      <div id="profileSettings" class="profile-section-panel" hidden>
+        <div class="card" id="myProfileCard">
+          <div class="section-title" style="margin-bottom:10px; font-size:16px;">My profile</div>
+          <div id="myProfileBody"></div>
         </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Previous values from</span>
-          <select id="prevScopeSelect" class="set-input" style="width:170px;" onchange="setPrevScope(this.value)">
-            <option value="any">Any workout</option>
-            <option value="same">Same routine only</option>
-          </select>
+
+        <div class="card">
+          <div class="section-title" style="margin-bottom:10px; font-size:16px;">Settings & Data Backup</div>
+          <div id="settingsUnitRow" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:14px;">
+            <span style="font-size:14px;">Units</span>
+            <span id="settingsUnitDisplay" style="color:var(--text-sub); font-size:14px;">KG (change with the KG button at the top)</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Default Rest Timer (sec)</span>
+            <input type="number" id="defaultRestInput" class="set-input" style="width:80px;" value="90" onchange="saveRestPreference()">
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Previous values from</span>
+            <select id="prevScopeSelect" class="set-input" style="width:170px;" onchange="setPrevScope(this.value)">
+              <option value="any">Any workout</option>
+              <option value="same">Same routine only</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Week starts on</span>
+            <select id="weekStartSelect" class="set-input" style="width:170px;" onchange="setWeekStart(this.value)">
+              <option value="mon">Monday</option>
+              <option value="sun">Sunday</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Drop set percentage</span>
+            <select id="dropStepPctSelect" class="set-input" style="width:170px;" onchange="setDropStepPct(this.value)">
+              <option value="10">−10%</option>
+              <option value="20" selected>−20%</option>
+              <option value="30">−30%</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Superset smart advance</span>
+            <input type="checkbox" id="supersetAdvanceCheck" checked onchange="setSupersetAdvance(this.checked)">
+          </div>
+          <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Barbell plates</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Bar weight (KG)</span>
+            <input type="number" id="plateBarKgInput" class="set-input" style="width:80px;" value="20" onchange="savePlateSettings()">
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Bar weight (LB)</span>
+            <input type="number" id="plateBarLbInput" class="set-input" style="width:80px;" value="45" onchange="savePlateSettings()">
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:14px; margin-bottom:4px;">Plates available (KG, comma-separated)</div>
+            <input type="text" id="platePlatesKgInput" class="input-field" value="25, 20, 15, 10, 5, 2.5, 1.25" onchange="savePlateSettings()">
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:14px; margin-bottom:4px;">Plates available (LB, comma-separated)</div>
+            <input type="text" id="platePlatesLbInput" class="input-field" value="45, 35, 25, 10, 5, 2.5" onchange="savePlateSettings()">
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn" style="flex:1; min-height:44px;" onclick="exportData()">📤 Backup JSON</button>
+            <button class="btn" style="flex:1; min-height:44px;" onclick="document.getElementById('importInput').click()">📥 Restore JSON</button>
+            <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+          <div id="restoreDoneBanner" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--success-bg); border:1px solid rgba(16,185,129,0.4); font-size:14px; font-weight:700; align-items:center; justify-content:space-between; gap:8px;">
+            <span>✅ Restored.</span>
+            <button class="btn" style="padding:6px 12px; font-size:13px; min-height:44px;" onclick="undoLastRestore()">Undo</button>
+          </div>
+          <button class="btn btn-block" id="undoRestoreBtn" style="display:none; margin-top:10px; min-height:44px;" onclick="undoLastRestore()">↩️ Undo last restore</button>
         </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Week starts on</span>
-          <select id="weekStartSelect" class="set-input" style="width:170px;" onchange="setWeekStart(this.value)">
-            <option value="mon">Monday</option>
-            <option value="sun">Sunday</option>
-          </select>
-        </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Drop set percentage</span>
-          <select id="dropStepPctSelect" class="set-input" style="width:170px;" onchange="setDropStepPct(this.value)">
-            <option value="10">−10%</option>
-            <option value="20" selected>−20%</option>
-            <option value="30">−30%</option>
-          </select>
-        </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Superset smart advance</span>
-          <input type="checkbox" id="supersetAdvanceCheck" checked onchange="setSupersetAdvance(this.checked)">
-        </div>
-        <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Barbell plates</div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Bar weight (KG)</span>
-          <input type="number" id="plateBarKgInput" class="set-input" style="width:80px;" value="20" onchange="savePlateSettings()">
-        </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <span style="font-size:14px;">Bar weight (LB)</span>
-          <input type="number" id="plateBarLbInput" class="set-input" style="width:80px;" value="45" onchange="savePlateSettings()">
-        </div>
-        <div style="margin-bottom:12px;">
-          <div style="font-size:14px; margin-bottom:4px;">Plates available (KG, comma-separated)</div>
-          <input type="text" id="platePlatesKgInput" class="input-field" value="25, 20, 15, 10, 5, 2.5, 1.25" onchange="savePlateSettings()">
-        </div>
-        <div style="margin-bottom:12px;">
-          <div style="font-size:14px; margin-bottom:4px;">Plates available (LB, comma-separated)</div>
-          <input type="text" id="platePlatesLbInput" class="input-field" value="45, 35, 25, 10, 5, 2.5" onchange="savePlateSettings()">
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn" style="flex:1;" onclick="exportData()">📤 Backup JSON</button>
-          <button class="btn" style="flex:1;" onclick="document.getElementById('importInput').click()">📥 Restore JSON</button>
-          <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
-        </div>
-        <div id="restoreDoneBanner" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--success-bg); border:1px solid rgba(16,185,129,0.4); font-size:14px; font-weight:700; align-items:center; justify-content:space-between; gap:8px;">
-          <span>✅ Restored.</span>
-          <button class="btn" style="padding:6px 12px; font-size:13px;" onclick="undoLastRestore()">Undo</button>
-        </div>
-        <button class="btn btn-block" id="undoRestoreBtn" style="display:none; margin-top:10px;" onclick="undoLastRestore()">↩️ Undo last restore</button>
       </div>
     </section>
   </main>
@@ -2019,17 +2170,13 @@
       if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
 
-      document.getElementById('unitToggleBtn').innerText = state.unit || 'KG';
-      document.getElementById('defaultRestInput').value = state.defaultRest || 90;
-      const dropSelect = document.getElementById('dropStepPctSelect');
-      if (dropSelect) dropSelect.value = state.dropStepPct || 20;
-      const advCheck = document.getElementById('supersetAdvanceCheck');
-      if (advCheck) advCheck.checked = state.supersetAdvance !== false;
-
+      hydrateSettingsControls();
       renderRoutines();
       renderHistory();
       renderExercisesTab();
       renderProfileStats();
+      activeProfileSection = getProfileSection();
+      setProfileSection(activeProfileSection, false);
       refreshUndoRestoreUI();
       renderGettingStarted();
       // P1-05: show the flow only for unfinished profiles (true first run
@@ -2444,14 +2591,18 @@
     /* NAVIGATION */
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
-      document.getElementById('tab-' + tabId).classList.add('active');
+      const tabEl = document.getElementById('tab-' + tabId);
+      if (tabEl) tabEl.classList.add('active');
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      btn.classList.add('active');
+      if (btn && btn.classList) btn.classList.add('active');
 
       if (tabId === 'workout') renderRoutines();
       if (tabId === 'history') renderHistory();
       if (tabId === 'exercises') renderExercisesTab();
-      if (tabId === 'profile') renderProfileStats();
+      if (tabId === 'profile') {
+        setProfileSection(getProfileSection());
+        renderProfileStats();
+      }
     }
 
     function toggleUnit() {
@@ -2459,6 +2610,8 @@
       // only the display unit changes, and every view re-renders via toDisplay.
       state.unit = state.unit === 'KG' ? 'LBS' : 'KG';
       document.getElementById('unitToggleBtn').innerText = state.unit;
+      const unitDisp = document.getElementById('settingsUnitDisplay');
+      if (unitDisp) unitDisp.innerHTML = state.unit + ' (change with the KG button at the top)';
       saveState();
       if (activeWorkout) renderActiveWorkout();
       renderHistory();
@@ -4751,15 +4904,17 @@
       closeModal('exPickerModal');
     }
 
-    function renderExercisesTab() {
-      renderExChips();
-      const chk = document.getElementById('showHiddenChk');
-      if (chk) chk.checked = showHiddenExercises;
+    function onExSearchInput() {
+      renderExercisesList();
+    }
+
+    function renderExercisesList() {
       const q = (document.getElementById('exSearchInput')?.value || '').toLowerCase();
       const container = document.getElementById('exercisesDirectory');
+      if (!container) return;
       const list = getFilteredExercises(q, exFilterMuscle, exFilterEquip, showHiddenExercises);
       if (list.length === 0) {
-        container.innerHTML = '<div class="card" style="text-align:center; color:var(--text-sub);">No exercises match. Adjust search or filters.</div>';
+        container.innerHTML = '<div class="card">' + emptyStateHtml('No exercises match', 'Adjust your search or filters.') + '</div>';
         return;
       }
       container.innerHTML = list
@@ -4768,18 +4923,25 @@
           const bestStr = bestKg > 0 ? formatDisplayWeight(bestKg) + ' ' + state.unit : '—';
           const flags = (e.custom ? ' <span class="badge">custom</span>' : '') + (e.hidden ? ' <span class="badge">hidden</span>' : '') + (e.fav ? ' <span class="badge">★</span>' : '');
           return `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer; padding:10px 12px;" onclick="openExerciseDetail('${e.id}')">
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-12); cursor:pointer; padding:var(--space-16);" onclick="openExerciseDetail('${e.id}')">
               <div style="flex:1; min-width:0;">
-                <div style="font-weight:700;">${esc(e.name)}${flags}</div>
-                <div style="margin-top:4px;">${exerciseBadgesHtml(e)}</div>
+                <div style="font-weight:700; font-size:var(--font-16); word-break:break-word;">${esc(e.name)}${flags}</div>
+                <div style="margin-top:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-4);">${exerciseBadgesHtml(e)}</div>
               </div>
-              <div style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
-                <div style="font-weight:800; color:var(--primary); white-space:nowrap;">${bestStr}</div>
+              <div style="display:flex; align-items:center; gap:var(--space-8); flex:0 0 auto;">
+                <div style="font-weight:800; font-size:var(--font-14); color:var(--primary); white-space:nowrap;">${bestStr}</div>
                 ${favStarHtml(e)}
               </div>
             </div>
           `;
         }).join('');
+    }
+
+    function renderExercisesTab(skipChips = false) {
+      if (!skipChips) renderExChips();
+      const chk = document.getElementById('showHiddenChk');
+      if (chk) chk.checked = showHiddenExercises;
+      renderExercisesList();
     }
 
     function fillCustomExSelects() {
@@ -4941,6 +5103,9 @@
     var progressRange = 'All';
 
     function openExerciseProgress(exId, origin) {
+      if (origin === 'profile') {
+        setProfileSection('records');
+      }
       progressExId = exId;
       progressOrigin = origin || null;
       const ex = (state && state.exercises) ? state.exercises.find(e => e.id === exId) : null;
@@ -5129,7 +5294,7 @@
       let metricBtnHtml = '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">';
       metricButtons.forEach(m => {
         const active = progressMetric === m.key ? 'background:#3b82f6;color:#fff;border-color:#3b82f6;' : '';
-        metricBtnHtml += '<button class="btn" style="flex:1; min-height:36px; font-size:12px; padding:6px 8px; ' + active + '" onclick="setProgressMetric(\'' + m.key + '\')">' + esc(m.label) + '</button>';
+        metricBtnHtml += '<button class="btn" style="flex:1; min-height:44px; font-size:12px; padding:6px 8px; ' + active + '" onclick="setProgressMetric(\'' + m.key + '\')">' + esc(m.label) + '</button>';
       });
       metricBtnHtml += '</div>';
 
@@ -5137,7 +5302,7 @@
       let rangeBtnHtml = '<div style="display:flex; gap:6px; margin-bottom:14px;">';
       ['1M', '3M', '1Y', 'All'].forEach(r => {
         const active = progressRange === r ? 'background:var(--bg-elevated);border-color:var(--primary);color:var(--primary);' : '';
-        rangeBtnHtml += '<button class="btn" style="flex:1; min-height:36px; font-size:11px; padding:4px 6px; ' + active + '" onclick="setProgressRange(\'' + r + '\')">' + esc(rangeLabels[r]) + '</button>';
+        rangeBtnHtml += '<button class="btn" style="flex:1; min-height:44px; font-size:11px; padding:4px 6px; ' + active + '" onclick="setProgressRange(\'' + r + '\')">' + esc(rangeLabels[r]) + '</button>';
       });
       rangeBtnHtml += '</div>';
 
@@ -5266,20 +5431,20 @@
         : hist.map(h => '<div style="display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px solid var(--border);"><span>' + esc(new Date(h.date).toLocaleDateString()) + '</span><span style="color:var(--text-sub);">Best: ' + esc(formatDisplayWeight(h.bestWeight)) + ' ' + state.unit + ' × ' + h.bestReps + ' (' + h.sets + ' sets)</span></div>').join('');
       const canEdit = !!ex.custom;
       body.innerHTML = `
-        <div style="font-weight:800; font-size:18px; margin-bottom:6px;">${esc(ex.name)}</div>
-        <div style="margin-bottom:10px;">${exerciseBadgesHtml(ex)}${ex.custom ? ' <span class="badge">custom</span>' : ''}${ex.hidden ? ' <span class="badge">hidden</span>' : ''}</div>
-        <div style="font-size:14px; margin-bottom:4px;">Primary: <b>${esc(exPrimary(ex))}</b></div>
-        <div style="font-size:14px; margin-bottom:10px;">Secondary: <b>${secs}</b></div>
-        <div style="font-size:14px; margin-bottom:4px;">Best set: <b>${esc(bestStr)}</b></div>
-        <div style="font-size:14px; margin-bottom:10px;">Est. 1RM: <b>${esc(estStr)}</b></div>
-        <h3>Recent sessions</h3>
+        <div style="font-weight:800; font-size:var(--font-20); margin-bottom:var(--space-8); word-break:break-word;">${esc(ex.name)}</div>
+        <div style="margin-bottom:var(--space-8); display:flex; flex-wrap:wrap; gap:var(--space-4); align-items:center;">${exerciseBadgesHtml(ex)}${ex.custom ? ' <span class="badge">custom</span>' : ''}${ex.hidden ? ' <span class="badge">hidden</span>' : ''}</div>
+        <div style="font-size:var(--font-14); margin-bottom:var(--space-4);">Primary: <b>${esc(exPrimary(ex))}</b></div>
+        <div style="font-size:var(--font-14); margin-bottom:var(--space-16);">Secondary: <b>${secs}</b></div>
+        <button class="btn btn-primary btn-block" style="min-height:var(--control-min-height); margin-bottom:var(--space-16);" onclick="openExerciseProgress('${ex.id}','catalogue')">📊 Progress</button>
+        <div style="font-size:var(--font-14); margin-bottom:var(--space-4);">Best set: <b>${esc(bestStr)}</b></div>
+        <div style="font-size:var(--font-14); margin-bottom:var(--space-12);">Est. 1RM: <b>${esc(estStr)}</b></div>
+        <div class="section-title" style="margin:var(--space-16) 0 var(--space-8); font-size:var(--font-16); font-weight:700;">Recent sessions</div>
         ${histHtml}
-        <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
-          <button class="btn" style="flex:1; min-height:48px;" onclick="openExerciseProgress('${ex.id}','catalogue')">📈 Progress</button>
-          <button class="btn" style="flex:1; min-height:48px;" onclick="toggleFav('${ex.id}')">${ex.fav ? '★ Unfavourite' : '☆ Favourite'}</button>
-          ${canEdit ? `<button class="btn" style="flex:1; min-height:48px;" onclick="openCustomExModal('${ex.id}')">✏️ Edit</button>` : ''}
-          ${canEdit && !ex.hidden ? `<button class="btn btn-danger" style="flex:1; min-height:48px;" onclick="deleteExercise('${ex.id}')">🗑️ Delete</button>` : ''}
-          ${ex.hidden ? `<button class="btn" style="flex:1; min-height:48px;" onclick="unhideExercise('${ex.id}')">Unhide</button>` : ''}
+        <div style="display:flex; gap:var(--space-8); margin-top:var(--space-16); flex-wrap:wrap;">
+          <button class="btn" style="flex:1; min-height:var(--control-min-height);" onclick="toggleFav('${ex.id}')">${ex.fav ? '★ Unfavourite' : '☆ Favourite'}</button>
+          ${canEdit ? `<button class="btn" style="flex:1; min-height:var(--control-min-height);" onclick="openCustomExModal('${ex.id}')">✏️ Edit</button>` : ''}
+          ${canEdit && !ex.hidden ? `<button class="btn btn-danger" style="flex:1; min-height:var(--control-min-height);" onclick="deleteExercise('${ex.id}')">🗑️ Delete</button>` : ''}
+          ${ex.hidden ? `<button class="btn" style="flex:1; min-height:var(--control-min-height);" onclick="unhideExercise('${ex.id}')">Unhide</button>` : ''}
         </div>
       `;
     }
@@ -5294,15 +5459,15 @@
       if (deletedHistBackup) {
         bannerHtml = `
           <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-8);">
               <span style="font-size:14px;">Workout deleted.</span>
-              <button class="btn" style="padding:6px 12px; font-size:13px;" onclick="undoDeleteHist()">↩️ Undo (10s)</button>
+              <button class="btn" style="padding:6px 12px; font-size:13px; min-height:44px;" onclick="undoDeleteHist()">↩️ Undo (10s)</button>
             </div>
           </div>
         `;
       }
       if (state.history.length === 0) {
-        container.innerHTML = bannerHtml + `<div class="card" style="text-align:center; color:var(--text-sub);">No completed workouts yet. Start lifting!</div>`;
+        container.innerHTML = bannerHtml + `<div class="card">${emptyStateHtml('No workouts yet', 'Finish a workout to see it here.')}</div>`;
         return;
       }
 
@@ -6384,6 +6549,7 @@
     function goToTrainingCalendar() {
       const navs = document.querySelectorAll('.nav-item');
       calMonth = null; /* the History button always opens on this month */
+      setProfileSection('progress');
       switchTab('profile', (navs && navs[3]) ? navs[3] : document.getElementById('tab-profile'));
       try {
         const card = document.getElementById('calendarCard');
@@ -6793,16 +6959,71 @@
       return copied;
     }
 
-    /* PROFILE & ANALYTICS */
-    function renderProfileStats() {
-      const totalWorkouts = state.history.length;
-      const totalVolumeKg = state.history.reduce((sum, w) => sum + (Number(w.totalVolume) || 0), 0);
-      const totalVolume = toDisplayVolume(totalVolumeKg);
-      const totalSets = state.history.reduce((sum, w) => sum + (w.totalSets || 0), 0);
+    /* SHARED EMPTY STATE (P1-03) */
+    function emptyStateHtml(title, help) {
+      return '<div class="empty-state">'
+        + '<div class="empty-state-title">' + esc(title) + '</div>'
+        + '<div class="empty-state-help">' + esc(help) + '</div>'
+        + '</div>';
+    }
 
-      document.getElementById('statWorkouts').innerText = totalWorkouts;
-      document.getElementById('statVolume').innerText = totalVolume > 9999 ? (totalVolume / 1000).toFixed(1) + 'k' : totalVolume;
-      document.getElementById('statSets').innerText = totalSets;
+    /* PROFILE SECTIONS (P1-03) */
+    const PROFILE_SECTION_KEY = 'plz_fitzone_profile_section';
+    let activeProfileSection = 'progress';
+
+    function getProfileSection() {
+      try {
+        const val = localStorage.getItem(PROFILE_SECTION_KEY);
+        if (val === 'progress' || val === 'records' || val === 'settings') {
+          return val;
+        }
+      } catch (e) {}
+      return 'progress';
+    }
+
+    function setProfileSection(section, persist = true) {
+      if (section !== 'progress' && section !== 'records' && section !== 'settings') {
+        section = 'progress';
+      }
+      activeProfileSection = section;
+      if (persist) {
+        try {
+          localStorage.setItem(PROFILE_SECTION_KEY, section);
+        } catch (e) {}
+      }
+
+      const sections = ['progress', 'records', 'settings'];
+      sections.forEach(s => {
+        const btn = document.getElementById('profSecBtn-' + s);
+        if (btn) {
+          const isActive = (s === section);
+          if (isActive) btn.classList.add('active');
+          else btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        }
+      });
+
+      const panels = {
+        progress: document.getElementById('profileProgress'),
+        records: document.getElementById('profileRecordsSection'),
+        settings: document.getElementById('profileSettings'),
+      };
+
+      Object.keys(panels).forEach(k => {
+        const el = panels[k];
+        if (el) {
+          if (k === section) {
+            el.removeAttribute('hidden');
+            el.hidden = false;
+          } else {
+            el.setAttribute('hidden', '');
+            el.hidden = true;
+          }
+        }
+      });
+    }
+
+    function hydrateSettingsControls() {
       const scopeSel = document.getElementById('prevScopeSelect');
       if (scopeSel) scopeSel.value = getPrevScope();
       const ps = getPlateSettings();
@@ -6814,10 +7035,39 @@
       if (pkEl) pkEl.value = ps.platesKg.join(', ');
       const plEl = document.getElementById('platePlatesLbInput');
       if (plEl) plEl.value = ps.platesLb.join(', ');
-      renderMyProfile();
-      renderProfileRecords();
       const wsSel = document.getElementById('weekStartSelect');
       if (wsSel) wsSel.value = getWeekStart();
+      const rEl = document.getElementById('defaultRestInput');
+      if (rEl) rEl.value = state.defaultRest || 90;
+      const dropSelect = document.getElementById('dropStepPctSelect');
+      if (dropSelect) dropSelect.value = state.dropStepPct || 20;
+      const advCheck = document.getElementById('supersetAdvanceCheck');
+      if (advCheck) advCheck.checked = state.supersetAdvance !== false;
+      const unitDisp = document.getElementById('settingsUnitDisplay');
+      if (unitDisp) unitDisp.innerHTML = (state.unit || 'KG') + ' (change with the KG button at the top)';
+      const unitBtn = document.getElementById('unitToggleBtn');
+      if (unitBtn) unitBtn.innerText = state.unit || 'KG';
+    }
+
+    /* PROFILE & ANALYTICS */
+    function renderProfileStats() {
+      const totalWorkouts = state.history.length;
+      const totalVolumeKg = state.history.reduce((sum, w) => sum + (Number(w.totalVolume) || 0), 0);
+      const totalVolume = toDisplayVolume(totalVolumeKg);
+      const totalSets = state.history.reduce((sum, w) => sum + (w.totalSets || 0), 0);
+
+      const woEl = document.getElementById('statWorkouts');
+      if (woEl) woEl.innerText = totalWorkouts;
+      const volEl = document.getElementById('statVolume');
+      if (volEl) volEl.innerText = totalVolume > 9999 ? (totalVolume / 1000).toFixed(1) + 'k' : totalVolume;
+      const setEl = document.getElementById('statSets');
+      if (setEl) setEl.innerText = totalSets;
+
+      const unitDisp = document.getElementById('settingsUnitDisplay');
+      if (unitDisp) unitDisp.innerHTML = (state.unit || 'KG') + ' (change with the KG button at the top)';
+
+      renderMyProfile();
+      renderProfileRecords();
 
       /* P5-03: one card holds the calendar, the consistency line and the
          muscle workload. Both workload ranges recompute from history with
@@ -6944,7 +7194,6 @@
       if (lb.length) ps.platesLb = lb;
       state.plateSettings = normalizePlateSettings(ps);
       saveState();
-      renderProfileStats();
     }
 
     /* P1-05 FIRST-RUN ONBOARDING (personal part): welcome + setup questions,
@@ -7738,13 +7987,7 @@
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       saveState();
       closeModal('restoreModal');
-      restoreDoneThisSession = true;
-      document.getElementById('unitToggleBtn').innerText = state.unit || 'KG';
-      document.getElementById('defaultRestInput').value = state.defaultRest || 90;
-      const dropSelect = document.getElementById('dropStepPctSelect');
-      if (dropSelect) dropSelect.value = state.dropStepPct;
-      const advCheck = document.getElementById('supersetAdvanceCheck');
-      if (advCheck) advCheck.checked = state.supersetAdvance !== false;
+      hydrateSettingsControls();
       renderRoutines();
       renderHistory();
       renderExercisesTab();
@@ -7796,8 +8039,7 @@
       // the undone state instead of the copy it replaced.
       queueMainStateMirror(raw, Date.now());
       restoreDoneThisSession = false;
-      document.getElementById('unitToggleBtn').innerText = state.unit || 'KG';
-      document.getElementById('defaultRestInput').value = state.defaultRest || 90;
+      hydrateSettingsControls();
       renderRoutines();
       renderHistory();
       renderExercisesTab();
