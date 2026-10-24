@@ -1029,6 +1029,55 @@
             </div>
             <input type="checkbox" id="showTargetsCheck" checked onchange="setShowTargets(this.checked)">
           </div>
+          <div style="font-weight:700; font-size:14px; margin:16px 0 4px;">Sounds</div>
+          <div id="soundsHelpNote" style="font-size:var(--font-12); color:var(--text-sub); margin-bottom:12px;">Sounds may not play when the phone is on silent or the screen is locked.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; margin-bottom:12px; flex-wrap:wrap;">
+            <div style="font-size:14px; min-width:110px;">Rest timer end</div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <select id="soundRestChoiceSelect" class="set-input" style="width:80px;" onchange="setSoundRestChoice(this.value)">
+                <option value="beep">Beep</option>
+                <option value="bell">Bell</option>
+                <option value="alarm">Alarm</option>
+                <option value="off">Off</option>
+              </select>
+              <select id="soundRestVolumeSelect" class="set-input" style="width:84px;" onchange="setSoundRestVolume(this.value)">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+              <button type="button" id="testSoundRestBtn" class="btn" style="min-height:44px; padding:6px 12px; font-size:13px;" onclick="testRestSound()">Test</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; margin-bottom:12px; flex-wrap:wrap;">
+            <div style="min-width:110px;">
+              <div style="font-size:14px;">Set completed</div>
+              <div style="font-size:var(--font-12); color:var(--text-sub);">Short click</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <select id="soundSetVolumeSelect" class="set-input" style="width:100px;" onchange="setSoundSetVolume(this.value)">
+                <option value="off" selected>Off</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+              <button type="button" id="testSoundSetBtn" class="btn" style="min-height:44px; padding:6px 12px; font-size:13px;" onclick="testSetSound()">Test</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; margin-bottom:12px; flex-wrap:wrap;">
+            <div style="min-width:110px;">
+              <div style="font-size:14px;">New record</div>
+              <div style="font-size:var(--font-12); color:var(--text-sub);">Happy chime</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <select id="soundPrVolumeSelect" class="set-input" style="width:100px;" onchange="setSoundPrVolume(this.value)">
+                <option value="off">Off</option>
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+              <button type="button" id="testSoundPrBtn" class="btn" style="min-height:44px; padding:6px 12px; font-size:13px;" onclick="testPrSound()">Test</button>
+            </div>
+          </div>
           <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Barbell plates</div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <span style="font-size:14px;">Bar weight (KG)</span>
@@ -2073,11 +2122,25 @@
       supersetAdvance: true,
       keepAwake: false,
       showTargets: true,
+      sounds: { restSound: 'beep', restVolume: 'medium', setVolume: 'off', prVolume: 'medium' },
       exercises: [],
       routines: [],
       history: [],
       body: []
     };
+
+    function normalizeSounds(raw) {
+      const s = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+      const validRestSounds = ['beep', 'bell', 'alarm', 'off'];
+      const validVolumes = ['low', 'medium', 'high'];
+      const validToggleVolumes = ['off', 'low', 'medium', 'high'];
+      return {
+        restSound: validRestSounds.indexOf(s.restSound) >= 0 ? s.restSound : 'beep',
+        restVolume: validVolumes.indexOf(s.restVolume) >= 0 ? s.restVolume : 'medium',
+        setVolume: validToggleVolumes.indexOf(s.setVolume) >= 0 ? s.setVolume : 'off',
+        prVolume: validToggleVolumes.indexOf(s.prVolume) >= 0 ? s.prVolume : 'medium'
+      };
+    }
 
     /* UNITS: canonical storage is kilograms. The KG/LBS toggle only changes
        presentation (toDisplay) and input interpretation (fromInput).
@@ -2439,6 +2502,7 @@
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false;
       // P5-05: next-target hints are on unless the owner turned them off.
       if (typeof state.showTargets !== 'boolean') state.showTargets = true;
+      state.sounds = normalizeSounds(state.sounds);
 
       hydrateSettingsControls();
       paintKeepAwakeUi(); // P4-10: note/checkbox reflect this browser
@@ -4830,6 +4894,19 @@
         }
         s.done = true;
         clearSetError(exIdx, sIdx);
+
+        // P6-08 sound feedback:
+        // Never two sounds at once for the same event; PR chime plays once per new record per set.
+        const isPr = isNewLiveRecord(exIdx, sIdx);
+        if (isPr) {
+          if (!s.prChimed) {
+            s.prChimed = true;
+            playPrChimeSound();
+          }
+        } else {
+          playSetCompleteSound();
+        }
+
         renderActiveWorkout();
         saveActiveSession();
 
@@ -4886,6 +4963,7 @@
         return true;
       }
       s.done = false;
+      delete s.prChimed;
       renderActiveWorkout();
       saveActiveSession();
       return true;
@@ -5162,7 +5240,7 @@
       if (restDeadline == null) { stopRestTimer(); return; }
       restRemaining = Math.max(0, Math.ceil((restDeadline - Date.now()) / 1000));
       if (restRemaining <= 0) {
-        playBeep();
+        playRestEndSound();
         stopRestTimer();
         saveActiveSession();
       } else {
@@ -5193,18 +5271,310 @@
       document.getElementById('restCountdown').innerText = `${m}:${s}`;
     }
 
-    function playBeep() {
+    /* P6-08 WEB AUDIO SYSTEM & SOUNDS */
+    let sharedAudioCtx = null;
+
+    function getAudioContext() {
+      if (!sharedAudioCtx && typeof window !== 'undefined') {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (typeof Ctx === 'function') {
+          try {
+            sharedAudioCtx = new Ctx();
+          } catch (e) {}
+        }
+      }
+      return sharedAudioCtx;
+    }
+
+    function unlockAudioContext() {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+        try { ctx.resume().catch(function() {}); } catch (e) {}
+      }
+    }
+
+    try {
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        ['click', 'touchstart', 'keydown'].forEach(function(evt) {
+          window.addEventListener(evt, function unlockOnce() {
+            unlockAudioContext();
+            try { window.removeEventListener(evt, unlockOnce, true); } catch (e) {}
+          }, { capture: true, passive: true });
+        });
+      }
+    } catch (e) {}
+
+    function soundVolumeGain(vol) {
+      if (vol === 'low') return 0.25;
+      if (vol === 'medium') return 0.5;
+      if (vol === 'high') return 1.0;
+      return 0; // 'off' or unknown
+    }
+
+    function playTone(kind, gainVal) {
+      if (gainVal <= 0) return false;
+      const ctx = getAudioContext();
+      if (!ctx) return false;
+      unlockAudioContext();
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.35);
-      } catch(e) {}
+        const t0 = ctx.currentTime;
+        if (kind === 'beep') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, t0);
+          gain.gain.setValueAtTime(0, t0);
+          gain.gain.linearRampToValueAtTime(gainVal, t0 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 0.3);
+          return true;
+        } else if (kind === 'bell') {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          const gain2 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(600, t0);
+          gain1.gain.setValueAtTime(gainVal, t0);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t0 + 0.8);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          osc1.start(t0);
+          osc1.stop(t0 + 0.8);
+
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(1200, t0);
+          gain2.gain.setValueAtTime(gainVal * 0.5, t0);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t0 + 0.4);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(t0);
+          osc2.stop(t0 + 0.4);
+          return true;
+        } else if (kind === 'alarm') {
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(880, t0);
+          gain1.gain.setValueAtTime(0, t0);
+          gain1.gain.linearRampToValueAtTime(gainVal, t0 + 0.02);
+          gain1.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          osc1.start(t0);
+          osc1.stop(t0 + 0.12);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(1174, t0 + 0.16);
+          gain2.gain.setValueAtTime(0, t0 + 0.16);
+          gain2.gain.linearRampToValueAtTime(gainVal, t0 + 0.18);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(t0 + 0.16);
+          osc2.stop(t0 + 0.32);
+          return true;
+        } else if (kind === 'click') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1400, t0);
+          osc.frequency.exponentialRampToValueAtTime(300, t0 + 0.035);
+          gain.gain.setValueAtTime(gainVal, t0);
+          gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.035);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 0.035);
+          return true;
+        } else if (kind === 'chime') {
+          const notes = [
+            { freq: 1046.5, delay: 0 },
+            { freq: 1318.5, delay: 0.09 },
+            { freq: 1568.0, delay: 0.18 }
+          ];
+          notes.forEach(function(n) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const noteStart = t0 + n.delay;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(n.freq, noteStart);
+            gain.gain.setValueAtTime(0, noteStart);
+            gain.gain.linearRampToValueAtTime(gainVal, noteStart + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.28);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(noteStart);
+            osc.stop(noteStart + 0.28);
+          });
+          return true;
+        }
+      } catch (e) {
+        return false;
+      }
+      return false;
+    }
+
+    function playRestEndSound() {
+      const snd = (typeof state !== 'undefined' && state.sounds) ? normalizeSounds(state.sounds) : normalizeSounds();
+      if (snd.restSound === 'off') return false;
+      const gain = soundVolumeGain(snd.restVolume);
+      if (gain <= 0) return false;
+      return playTone(snd.restSound, gain);
+    }
+
+    function playSetCompleteSound() {
+      const snd = (typeof state !== 'undefined' && state.sounds) ? normalizeSounds(state.sounds) : normalizeSounds();
+      if (snd.setVolume === 'off') return false;
+      const gain = soundVolumeGain(snd.setVolume);
+      if (gain <= 0) return false;
+      return playTone('click', gain);
+    }
+
+    function playPrChimeSound() {
+      const snd = (typeof state !== 'undefined' && state.sounds) ? normalizeSounds(state.sounds) : normalizeSounds();
+      if (snd.prVolume === 'off') return false;
+      const gain = soundVolumeGain(snd.prVolume);
+      if (gain <= 0) return false;
+      return playTone('chime', gain);
+    }
+
+    function playBeep() {
+      playRestEndSound();
+    }
+
+    function testRestSound() {
+      const snd = (typeof state !== 'undefined' && state.sounds) ? normalizeSounds(state.sounds) : normalizeSounds();
+      const choiceEl = document.getElementById('soundRestChoiceSelect');
+      const volEl = document.getElementById('soundRestVolumeSelect');
+      const choice = choiceEl ? choiceEl.value : snd.restSound;
+      const vol = volEl ? volEl.value : snd.restVolume;
+      if (choice === 'off') return false;
+      const gain = soundVolumeGain(vol);
+      if (gain <= 0) return false;
+      return playTone(choice, gain);
+    }
+
+    function testSetSound() {
+      const snd = (typeof state !== 'undefined' && state.sounds) ? normalizeSounds(state.sounds) : normalizeSounds();
+      const volEl = document.getElementById('soundSetVolumeSelect');
+      const vol = volEl ? volEl.value : snd.setVolume;
+      if (vol === 'off') return false;
+      const gain = soundVolumeGain(vol);
+      if (gain <= 0) return false;
+      return playTone('click', gain);
+    }
+
+    function testPrSound() {
+      const snd = (typeof state !== 'undefined' && state.sounds) ? normalizeSounds(state.sounds) : normalizeSounds();
+      const volEl = document.getElementById('soundPrVolumeSelect');
+      const vol = volEl ? volEl.value : snd.prVolume;
+      if (vol === 'off') return false;
+      const gain = soundVolumeGain(vol);
+      if (gain <= 0) return false;
+      return playTone('chime', gain);
+    }
+
+    function setSoundRestChoice(val) {
+      if (!state.sounds) state.sounds = normalizeSounds();
+      state.sounds.restSound = ['beep', 'bell', 'alarm', 'off'].indexOf(val) >= 0 ? val : 'beep';
+      const el = document.getElementById('soundRestChoiceSelect');
+      if (el) el.value = state.sounds.restSound;
+      saveState();
+    }
+
+    function setSoundRestVolume(val) {
+      if (!state.sounds) state.sounds = normalizeSounds();
+      state.sounds.restVolume = ['low', 'medium', 'high'].indexOf(val) >= 0 ? val : 'medium';
+      const el = document.getElementById('soundRestVolumeSelect');
+      if (el) el.value = state.sounds.restVolume;
+      saveState();
+    }
+
+    function setSoundSetVolume(val) {
+      if (!state.sounds) state.sounds = normalizeSounds();
+      state.sounds.setVolume = ['off', 'low', 'medium', 'high'].indexOf(val) >= 0 ? val : 'off';
+      const el = document.getElementById('soundSetVolumeSelect');
+      if (el) el.value = state.sounds.setVolume;
+      saveState();
+    }
+
+    function setSoundPrVolume(val) {
+      if (!state.sounds) state.sounds = normalizeSounds();
+      state.sounds.prVolume = ['off', 'low', 'medium', 'high'].indexOf(val) >= 0 ? val : 'medium';
+      const el = document.getElementById('soundPrVolumeSelect');
+      if (el) el.value = state.sounds.prVolume;
+      saveState();
+    }
+
+    function isNewLiveRecord(exIdx, sIdx) {
+      if (!activeWorkout || !activeWorkout.exercises[exIdx] || !activeWorkout.exercises[exIdx].sets[sIdx]) return false;
+      const exItem = activeWorkout.exercises[exIdx];
+      const s = exItem.sets[sIdx];
+      if (!s || s.type === 'W') return false;
+      const ex = (state.exercises || []).find(e => e.id === exItem.exId);
+      const durEx = isDurationEx(ex);
+      const loadEx = usesLoadMetrics(ex);
+      const records = exerciseRecords(exItem.exId);
+      if (!records) return false;
+
+      if (durEx) {
+        if (!records.longestHold || typeof records.longestHold.durationSec !== 'number') return false;
+        let runHold = records.longestHold.durationSec;
+        for (let i = 0; i < (exItem.sets || []).length; i++) {
+          if (i === sIdx) break;
+          const prevSet = exItem.sets[i];
+          if (prevSet && prevSet.done && prevSet.type !== 'W' && Number(prevSet.durationSec) >= 1) {
+            if (Number(prevSet.durationSec) > runHold) runHold = Number(prevSet.durationSec);
+          }
+        }
+        const currentDur = Number(s.durationSec) || 0;
+        return currentDur > runHold;
+      }
+
+      const w = Number(s.weight) || 0;
+      const r = Number(s.reps) || 0;
+      if (r <= 0) return false;
+
+      if (loadEx) {
+        const prevW = records.heaviestWeight ? records.heaviestWeight.valueKg : 0;
+        const prevRM = records.bestE1RM ? records.bestE1RM.valueKg : 0;
+        if (prevW <= 0 && prevRM <= 0) return false;
+        let runW = prevW;
+        let runRM = prevRM;
+        for (let i = 0; i < (exItem.sets || []).length; i++) {
+          if (i === sIdx) break;
+          const prevSet = exItem.sets[i];
+          if (prevSet && prevSet.done && prevSet.type !== 'W') {
+            const pw = Number(prevSet.weight) || 0;
+            const pr = Number(prevSet.reps) || 0;
+            if (pw > runW) runW = pw;
+            const prm = epley1RMKg(pw, pr);
+            if (prm !== null && prm > runRM) runRM = prm;
+          }
+        }
+        const rm = epley1RMKg(w, r);
+        const beatsWeight = (w > 0 && w > runW);
+        const beatsRM = (rm !== null && rm > runRM);
+        return beatsWeight || beatsRM;
+      } else {
+        if (!records.mostRepsInSet || typeof records.mostRepsInSet.reps !== 'number') return false;
+        let runReps = records.mostRepsInSet.reps;
+        for (let i = 0; i < (exItem.sets || []).length; i++) {
+          if (i === sIdx) break;
+          const prevSet = exItem.sets[i];
+          if (prevSet && prevSet.done && prevSet.type !== 'W') {
+            const pr = Number(prevSet.reps) || 0;
+            if (pr > runReps) runReps = pr;
+          }
+        }
+        return r > runReps;
+      }
     }
 
     /* FINISH OR DISCARD WORKOUT — all weights below are canonical kg; volume and
@@ -5280,7 +5650,12 @@
           exId: ex.exId,
           supersetId: ex.supersetId || null,
           note: String(ex.note || '').slice(0, 140),
-          sets: doneSets.map(s => setUsesDuration(s, exType) ? pickDurationHistorySet(s) : s)
+          sets: doneSets.map(s => {
+            if (setUsesDuration(s, exType)) return pickDurationHistorySet(s);
+            const copy = Object.assign({}, s);
+            delete copy.prChimed;
+            return copy;
+          })
         };
       }).filter(ex => ex.sets.length > 0);
 
@@ -8225,6 +8600,16 @@
       const advCheck = document.getElementById('supersetAdvanceCheck');
       if (advCheck) advCheck.checked = state.supersetAdvance !== false;
       paintKeepAwakeUi(); // P4-10: checkbox + unsupported note
+      const snd = normalizeSounds(state.sounds);
+      state.sounds = snd;
+      const sRestChoice = document.getElementById('soundRestChoiceSelect');
+      if (sRestChoice) sRestChoice.value = snd.restSound;
+      const sRestVol = document.getElementById('soundRestVolumeSelect');
+      if (sRestVol) sRestVol.value = snd.restVolume;
+      const sSetVol = document.getElementById('soundSetVolumeSelect');
+      if (sSetVol) sSetVol.value = snd.setVolume;
+      const sPrVol = document.getElementById('soundPrVolumeSelect');
+      if (sPrVol) sPrVol.value = snd.prVolume;
       const tgCheck = document.getElementById('showTargetsCheck');
       if (tgCheck) tgCheck.checked = showTargetsEnabled(); // P5-05
       const unitDisp = document.getElementById('settingsUnitDisplay');
@@ -9886,6 +10271,7 @@
       if (typeof data.supersetAdvance !== 'boolean') data.supersetAdvance = true;
       if (typeof data.keepAwake !== 'boolean') data.keepAwake = false; // P4-10
       if (typeof data.showTargets !== 'boolean') data.showTargets = true; // P5-05
+      data.sounds = normalizeSounds(data.sounds);
       // P1-05: keep a valid profile from the backup (missing stays missing,
       // which never forces onboarding); no getting-started surprise on
       // restore unless the backup explicitly left the card up.
@@ -10092,6 +10478,7 @@
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
       if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
+      state.sounds = normalizeSounds(state.sounds);
       saveState();
       closeModal('restoreModal');
       hydrateSettingsControls();
@@ -10136,6 +10523,7 @@
       state.body = normalizeBodyEntries(state.body);
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
       if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
+      state.sounds = normalizeSounds(state.sounds);
       try {
         // Write back the exact snapshot string so undo restores data byte-for-byte.
         localStorage.setItem('hevy_clone_state', raw);

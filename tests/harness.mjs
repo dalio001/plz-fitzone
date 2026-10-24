@@ -440,6 +440,11 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   get weekSummaryViewWeekStartMs(){ return weekSummaryViewWeekStartMs; }, set weekSummaryViewWeekStartMs(v){ weekSummaryViewWeekStartMs = v; },
   weekSummaryEndMs, formatWeekRangeLabel, formatTimeDisplay, diffLabel, computeWeekSummary,
   renderWeekSummaryCard, showWeekSummaryPrev, showWeekSummaryNext,
+  normalizeSounds, getAudioContext, unlockAudioContext, soundVolumeGain, playTone,
+  playRestEndSound, playSetCompleteSound, playPrChimeSound, playBeep,
+  testRestSound, testSetSound, testPrSound,
+  setSoundRestChoice, setSoundRestVolume, setSoundSetVolume, setSoundPrVolume,
+  isNewLiveRecord,
 };`;
 
 // Creates one app instance: runs init() (the script self-initializes) in a
@@ -498,6 +503,12 @@ export function createApp(options = {}) {
   if (options.location) sandbox.location = options.location;
   if (typeof options.fetch === 'function') sandbox.fetch = options.fetch;
   if (options.indexedDB) sandbox.indexedDB = options.indexedDB;
+  if (options.AudioContext) {
+    sandbox.AudioContext = options.AudioContext;
+    sandbox.webkitAudioContext = options.AudioContext;
+    sandbox.window.AudioContext = options.AudioContext;
+    sandbox.window.webkitAudioContext = options.AudioContext;
+  }
   vm.createContext(sandbox);
   const src = options.scriptSrc || loadAppScript();
   vm.runInContext(src + EXPORT_SNIPPET, sandbox, { filename: 'index.html<script>' });
