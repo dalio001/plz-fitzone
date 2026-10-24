@@ -414,7 +414,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   PROFILE_SECTION_KEY, getProfileSection, setProfileSection, saveRestPreference, hydrateSettingsControls,
   get activeProfileSection(){ return activeProfileSection; },
   emptyStateHtml, renderExercisesList, onExSearchInput,
-  EXERCISE_PICTURES, exercisePictureHtml, muscleChartHtml, muscleChartLevels,
+  EXERCISE_PICTURES, exercisePictureHtml, exerciseHowtoHtml, EXERCISE_HOWTO, muscleChartHtml, muscleChartLevels,
   MUSCLE_CHART_REGIONS, BODY_MAP_POLYGONS,
   normalizeBodyEntries, bodyEntries, upsertBodyWeight, upsertBodyMeasures,
   bodySeries, bodyTrend, bodyBmi, toDisplayLength, fromInputLength,

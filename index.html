@@ -251,6 +251,14 @@
     .ex-pic img { width:100%; height:100%; object-fit:cover; display:block; }
     .ex-pic-cap { font-size:var(--font-12); color:var(--text-sub); margin-top:var(--space-4); }
 
+    /* P2-13: how-to text under the start/end picture (Setup / Move / Avoid) */
+    .ex-howto { width:100%; box-sizing:border-box; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); padding:var(--space-12); margin-bottom:var(--space-8); font-size:var(--font-14); line-height:1.45; }
+    .ex-howto-title { font-size:var(--font-12); color:var(--text-sub); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; margin-bottom:var(--space-4); }
+    .ex-howto-row { display:flex; gap:var(--space-8); align-items:baseline; }
+    .ex-howto-row + .ex-howto-row { margin-top:var(--space-4); }
+    .ex-howto-k { flex:0 0 52px; font-size:var(--font-12); color:var(--text-sub); text-transform:uppercase; letter-spacing:0.04em; font-weight:700; }
+    .ex-howto-t { flex:1; min-width:0; overflow-wrap:anywhere; }
+
     .routine-card-header {
       display: flex;
       justify-content: space-between;
@@ -5067,6 +5075,115 @@
       'ex100'
     ];
 
+    /* P2-13 personal part: three plain lines per built-in exercise, written by
+       us (own words, no copied text). Setup = the START panel of the picture,
+       Move = the START -> END motion, Avoid = the usual mistake. Strings only,
+       no HTML: every field goes through esc() at render. A missing id, a
+       custom exercise or an empty field renders no block at all. Read-only:
+       nothing here is stored, migrated or updated. */
+    const EXERCISE_HOWTO = {
+      ex1: { setup: 'Lie on a flat bench, feet flat, shoulder blades back, bar held overhead.', move: 'Lower the bar under control to the middle of the chest, elbows under the bar, then press back up.', avoid: 'Bouncing the bar off the chest or letting the elbows flare wide.' },
+      ex2: { setup: 'Sit on an incline bench, feet flat, dumbbells over the upper chest, palms forward.', move: 'Lower both dumbbells to the sides of the upper chest, forearms upright, then press them back over the chest.', avoid: 'Letting the elbows drop far below the bench or pressing unevenly.' },
+      ex3: { setup: 'Stand between two high pulleys, one foot forward, arms wide at shoulder height.', move: 'Bring both handles together in a hugging arc in front of the lower chest, keeping the elbows still.', avoid: 'Pressing with the arms straight or letting the shoulders shrug up.' },
+      ex4: { setup: 'Sit facing the machine, thighs under the pads, arms straight overhead, wide overhand grip.', move: 'Pull the bar down in front of the face to the upper chest, elbows driven down and back.', avoid: 'Leaning far back or pulling the bar behind the neck.' },
+      ex5: { setup: 'Hinge forward, back flat, knees soft, bar hanging under the shoulders, overhand grip.', move: 'Pull the bar to the lower chest, elbows back past the torso, then lower it to straight arms.', avoid: 'Standing up as you pull or rounding the lower back.' },
+      ex6: { setup: 'Sit on the bench, feet on the plate, knees soft, upright, arms straight forward.', move: 'Pull the handle to the belly, elbows close and back past the torso, chest up, torso still.', avoid: 'Rocking the torso or letting the shoulders round forward.' },
+      ex7: { setup: 'Stand with the bar on the upper back, feet shoulder-width, chest up, heels down.', move: 'Push the hips back and bend the knees until the thighs are near parallel, then stand tall.', avoid: 'Letting the knees cave in or the heels lift off the floor.' },
+      ex8: { setup: 'Stand tall, bar in front of the thighs, overhand grip shoulder-width, knees soft.', move: 'Push the hips far back and slide the bar down the front of the legs to mid-shin, back flat.', avoid: 'Bending the knees into a squat or rounding the back.' },
+      ex9: { setup: 'Back and head on the pad, hands on the handles, feet flat, shoulder-width.', move: 'Press the platform away until the legs are straight but not locked, then lower it under control.', avoid: 'Letting the lower back lift off the pad or locking the knees hard.' },
+      ex10: { setup: 'Lie face down, legs straight, knees off the pad, ankles under the roller.', move: 'Curl the heels up toward the buttocks, keeping the hips down on the pad, then lower slowly.', avoid: 'Lifting the hips or swinging the legs up.' },
+      ex11: { setup: 'Stand tall, bar at the collarbones, overhand grip just outside the shoulders.', move: 'Press the bar straight up until the arms are straight, bar over the middle of the feet.', avoid: 'Leaning back or pressing the bar out in front.' },
+      ex12: { setup: 'Stand tall, feet hip-width, dumbbells at the sides of the thighs, palms facing in.', move: 'Raise both arms out to the sides to shoulder height, elbows softly bent, then lower them.', avoid: 'Shrugging the shoulders or swinging the dumbbells up.' },
+      ex13: { setup: 'Stand tall, dumbbells at the sides, palms facing the body, elbows at the ribs.', move: 'Curl the dumbbells up toward the shoulders, elbows staying at the sides, then lower slowly.', avoid: 'Swinging the body or letting the elbows drift forward.' },
+      ex14: { setup: 'Stand facing the machine, elbows at the sides, rope ends at chest height.', move: 'Straighten the arms down and pull the rope ends apart beside the thighs, elbows still at the sides.', avoid: 'Letting the elbows travel forward or leaning over the rope.' },
+      ex15: { setup: 'Hang from the bar, arms straight, overhand grip, body straight, legs together.', move: 'Raise both straight legs forward until they are parallel to the floor, then lower them slowly.', avoid: 'Swinging the body or bending the knees to cheat the lift.' },
+      ex16: { setup: 'Lie on a flat bench, feet flat, dumbbells above the chest, palms forward.', move: 'Lower the dumbbells to the sides of the chest, forearms upright, then press them back up.', avoid: 'Letting the dumbbells drift apart or the elbows flare flat.' },
+      ex17: { setup: 'Hands on the floor wider than the shoulders, body straight from head to heels.', move: 'Lower the chest to just above the floor, elbows slightly out, body straight, then press up.', avoid: 'Letting the hips sag or the head drop first.' },
+      ex18: { setup: 'Lie on an incline bench, feet flat, bar above the upper chest, overhand grip.', move: 'Lower the bar to the upper chest just below the collarbones, elbows under the bar, then press up.', avoid: 'Bouncing the bar or pressing it toward the belly.' },
+      ex19: { setup: 'Lie on a decline bench, legs under the pads, dumbbells above the lower chest.', move: 'Lower the dumbbells to the sides of the lower chest, forearms upright, then press them up.', avoid: 'Letting the elbows flare wide or the head lift off the pad.' },
+      ex20: { setup: 'Back against the pad, handles at chest height, elbows bent and back.', move: 'Push the handles forward until the arms are straight, back still on the pad, then return slowly.', avoid: 'Lifting the back off the pad or snapping the elbows straight.' },
+      ex21: { setup: 'Stand between the towers, one foot forward, arms wide and high, elbows soft.', move: 'Pull both handles down and together in front of the hips, hands crossing slightly, elbows still.', avoid: 'Bending the elbows into a press or leaning too far forward.' },
+      ex22: { setup: 'Lie on an incline bench, feet flat, dumbbells together above the chest, palms in.', move: 'Open the arms wide in an arc until the dumbbells are level with the chest, elbows softly bent.', avoid: 'Turning the fly into a press or dropping the arms too low.' },
+      ex23: { setup: 'Stand side-on with a staggered stance, handle beside the chest, elbow bent back.', move: 'Press the handle straight forward at chest height, torso upright, then bring it back slowly.', avoid: 'Twisting the torso or letting the shoulder roll forward.' },
+      ex24: { setup: 'Knees on the floor, feet raised, hands wider than the shoulders, body straight.', move: 'Lower the chest to just above the floor, elbows slightly out, then press back up.', avoid: 'Bending at the hips or letting the chest drop fast.' },
+      ex25: { setup: 'Hang from the bar, arms straight, overhand grip wider than the shoulders.', move: 'Pull the body up until the chin is above the bar, elbows down to the sides.', avoid: 'Kicking the legs or stopping short of the top.' },
+      ex26: { setup: 'Hang from the bar, arms straight, underhand grip at shoulder width, palms toward you.', move: 'Pull the body up until the chin clears the bar, elbows pointing down, body still.', avoid: 'Swinging or letting the shoulders rise at the start.' },
+      ex27: { setup: 'Knee and hand on the bench, back flat, other foot planted, arm hanging straight.', move: 'Pull the dumbbell up to the side of the waist, elbow past the torso, back still flat.', avoid: 'Twisting the torso or shrugging the dumbbell up.' },
+      ex28: { setup: 'Straddle the bar, knees bent, hips back, flat back, arms straight.', move: 'Pull the handle to the chest, elbows back past the torso, torso angle unchanged.', avoid: 'Standing up with the pull or jerking the weight.' },
+      ex29: { setup: 'Stand a step from the machine, hips slightly bent, arms straight at head height.', move: 'Keep the arms straight and push the bar down in an arc until it touches the thighs.', avoid: 'Bending the elbows or leaning the body over the bar.' },
+      ex30: { setup: 'Stand tall, arms forward at chest height, rope ends in each hand, palms down.', move: 'Pull the rope toward the face, hands apart beside the ears, elbows high and out.', avoid: 'Letting the elbows drop or pulling with the hands low.' },
+      ex31: { setup: 'Thighs on the pad, heels under the rollers, upper body bent forward, back straight.', move: 'Raise the upper body until it forms one straight line from head to heels, then lower it again.', avoid: 'Arching far past straight or pulling with the arms.' },
+      ex32: { setup: 'Sit with the chest against the pad, arms straight forward on the handles.', move: 'Pull the handles back past the torso, elbows bent, shoulder blades squeezed, chest on the pad.', avoid: 'Pulling the chest off the pad or lifting the shoulders.' },
+      ex33: { setup: 'Hang under the bar at hip height, heels on the floor, body straight.', move: 'Pull the chest up to touch the bar, elbows back, body still straight from head to heels.', avoid: 'Letting the hips sag or pulling with the neck.' },
+      ex34: { setup: 'Stand tall, arms straight at the sides, a dumbbell in each hand.', move: 'Lift the shoulders straight up toward the ears, arms straight, then lower them slowly.', avoid: 'Rolling the shoulders or bending the elbows.' },
+      ex35: { setup: 'Kneel on the assistance pad, hands on the high handles, arms straight up.', move: 'Pull the body up until the chin is above the handles, elbows down to the sides.', avoid: 'Pushing with the legs or bouncing on the pad.' },
+      ex36: { setup: 'Back on the upright pad, feet flat, dumbbells beside the ears, palms forward.', move: 'Press the dumbbells straight up overhead until the arms are straight, then lower them slowly.', avoid: 'Arching the back or pressing the dumbbells out in front.' },
+      ex37: { setup: 'Sit back, dumbbells in front of the shoulders at chin height, palms facing in.', move: 'Press up while turning the palms forward until the arms are straight overhead.', avoid: 'Twisting too early or letting the elbows drift back.' },
+      ex38: { setup: 'Stand side-on to the machine, cable crossing in front, handle at the opposite hip.', move: 'Raise the arm out to the side to shoulder height, elbow softly bent, then lower it.', avoid: 'Leaning away or lifting the shoulder as the arm rises.' },
+      ex39: { setup: 'Stand tall, feet hip-width, dumbbells in front of the thighs, palms toward the legs.', move: 'Raise both straight arms forward to shoulder height, palms down, torso still, then lower.', avoid: 'Swinging the body or raising the arms above the shoulders.' },
+      ex40: { setup: 'Hips hinged, torso near parallel, back flat, dumbbells below the chest, palms in.', move: 'Raise the arms out to the sides to shoulder level, elbows softly bent, then lower them.', avoid: 'Standing up during the raise or shrugging the shoulders.' },
+      ex41: { setup: 'Sit with the back against the pad, handles at shoulder height, elbows bent.', move: 'Press the handles straight up until the arms are straight, back still on the pad.', avoid: 'Letting the back arch or lowering the handles too fast.' },
+      ex42: { setup: 'Stand tall, overhand grip about shoulder-width, bar hanging in front of the thighs.', move: 'Pull the bar straight up close to the body to lower-chest height, elbows leading up.', avoid: 'Pulling above the chest or letting the bar drift away.' },
+      ex43: { setup: 'Stand tall, kettlebell at the shoulder, bell on the back of the forearm.', move: 'Press the kettlebell straight up overhead, wrist straight, body upright, then lower it.', avoid: 'Leaning away from the bell or bending the wrist back.' },
+      ex44: { setup: 'Stand tall, arms straight in front at shoulder height, band held shoulder-width.', move: 'Pull the band apart until the arms are straight out in a T, band toward the chest.', avoid: 'Shrugging or bending the elbows to get more stretch.' },
+      ex45: { setup: 'Stand tall, underhand grip shoulder-width, elbows at the sides, bar in front.', move: 'Curl the bar up to shoulder height, elbows staying at the sides, then lower it slowly.', avoid: 'Swinging the hips or letting the elbows travel forward.' },
+      ex46: { setup: 'Stand tall, dumbbells at the sides, palms facing the body, elbows at the ribs.', move: 'Curl the dumbbells up to shoulder height, palms still facing each other, elbows at the sides.', avoid: 'Rotating the wrists or swinging the arms up.' },
+      ex47: { setup: 'Sit with the upper arms flat on the angled pad, bar held low.', move: 'Curl the bar up toward the shoulders, upper arms still on the pad, then lower slowly.', avoid: 'Lifting the elbows off the pad or dropping the bar fast.' },
+      ex48: { setup: 'Stand facing the low pulley, elbows at the sides, arms straight down.', move: 'Curl the bar up to shoulder height, elbows still at the sides, then lower it slowly.', avoid: 'Leaning back or letting the cable pull the arms apart.' },
+      ex49: { setup: 'Sit leaning forward, upper arm against the inner thigh, dumbbell hanging down.', move: 'Curl the dumbbell up toward the shoulder, upper arm still on the thigh, then lower it.', avoid: 'Swinging the arm free or lifting the elbow off the thigh.' },
+      ex50: { setup: 'Lie face down on the incline bench, chest on the pad, arms hanging down.', move: 'Curl the dumbbells up toward the shoulders, upper arms still vertical, then lower them.', avoid: 'Lifting the chest off the pad or swinging the arms.' },
+      ex51: { setup: 'Stand tall, one dumbbell behind the head, elbows bent and pointing up.', move: 'Straighten the arms overhead until the dumbbell is above the head, elbows close in.', avoid: 'Letting the elbows spread wide or arching the back.' },
+      ex52: { setup: 'Lie on a flat bench, upper arms vertical, bar held above the chest.', move: 'Bend the elbows and lower the bar to just above the forehead, then straighten the arms.', avoid: 'Letting the upper arms move or lowering the bar to the face.' },
+      ex53: { setup: 'Face away from the machine, staggered stance, rope behind the head, elbows up.', move: 'Straighten the arms forward and up overhead, elbows still beside the head.', avoid: 'Leaning over the rope or letting the elbows drop.' },
+      ex54: { setup: 'Hands on the bench behind you, arms straight, legs forward, heels down.', move: 'Bend the elbows back and lower the hips close to the bench, then press back up.', avoid: 'Letting the elbows flare out or the hips drift forward.' },
+      ex55: { setup: 'Support the body on the bars, arms straight, knees bent, ankles crossed.', move: 'Lower the body until the elbows are bent, elbows pointing back, torso upright, then press up.', avoid: 'Leaning far forward or letting the shoulders shrug up.' },
+      ex56: { setup: 'Sit upright, hands on the handles beside the body, elbows bent.', move: 'Push the handles down until the arms are straight beside the hips, then return slowly.', avoid: 'Leaning forward off the pad or locking the elbows hard.' },
+      ex57: { setup: 'Kneel on the assistance pad, hands on the dip handles, arms straight.', move: 'Lower the body until the elbows are bent, torso upright, then press back up.', avoid: 'Pushing down on the pad or lifting the shoulders.' },
+      ex58: { setup: 'Seated, forearms on the thighs, palms up, wrists bent down past the knees.', move: 'Curl the wrists up, lifting the dumbbells, forearms still on the thighs, then lower them.', avoid: 'Letting the forearms lift off the thighs.' },
+      ex59: { setup: 'Stand tall, overhand grip shoulder-width, elbows at the sides, bar in front.', move: 'Curl the bar up with the palms still facing down, elbows at the sides, then lower it.', avoid: 'Turning the palms up or swinging the bar.' },
+      ex60: { setup: 'Kneel on the mat, forearms on the floor, elbows under the shoulders.', move: 'Step the feet back onto the toes and hold the body in one straight line from head to heels.', avoid: 'Letting the hips sag or the head hang down.' },
+      ex61: { setup: 'Lie on your back, knees bent, feet flat, fingertips beside the head.', move: 'Curl the shoulders and upper back off the mat, keep the lower back down, lower slowly.', avoid: 'Pulling on the head or lifting the whole back.' },
+      ex62: { setup: 'Sit with the knees bent, heels down, torso leaning back, dumbbell at the chest.', move: 'Turn the torso to one side and bring the dumbbell beside the hip, then turn to the other side.', avoid: 'Moving only the arms or letting the back round.' },
+      ex63: { setup: 'Stand side-on, feet wide, arms straight, handle high above the near shoulder.', move: 'Pull the handle down across the body to the outside of the far knee, turning the torso.', avoid: 'Bending the arms or twisting only the shoulders.' },
+      ex64: { setup: 'High plank, hands under the shoulders, body straight, legs back.', move: 'Drive one knee forward under the chest, other leg straight, hips level, then switch legs.', avoid: 'Letting the hips bounce up or the shoulders drift back.' },
+      ex65: { setup: 'Lie on your back, lower back pressed down, arms up, knees over hips.', move: 'Lower one arm overhead and the opposite leg forward just above the floor, then switch.', avoid: 'Letting the lower back arch off the mat.' },
+      ex66: { setup: 'Lie on one side, propped on the forearm, elbow under the shoulder, feet stacked.', move: 'Lift the hips so the body is one straight line from head to feet, hold it steady.', avoid: 'Letting the hips drop or the top shoulder roll forward.' },
+      ex67: { setup: 'Kneel on the mat, arms straight down, wheel under the shoulders.', move: 'Roll the wheel forward until the arms are overhead and the body is long and low, then pull back.', avoid: 'Letting the hips sag or rolling out farther than you control.' },
+      ex68: { setup: 'Hang from the bar with straight arms, legs straight down.', move: 'Bend the knees and raise them to hip height or higher, body still, then lower slowly.', avoid: 'Swinging the body or dropping the legs fast.' },
+      ex69: { setup: 'Bar on the front of the shoulders, elbows high, upper arms level.', move: 'Squat down until the thighs are parallel to the floor, torso upright, heels flat.', avoid: 'Letting the elbows drop or the heels lift.' },
+      ex70: { setup: 'Hold one dumbbell upright against the chest, feet shoulder-width, elbows in.', move: 'Squat down with the torso upright, elbows inside the knees, heels flat, then stand.', avoid: 'Letting the chest fall forward or the heels lift.' },
+      ex71: { setup: 'Back against the pad, roller on the front of the lower shins, knees bent.', move: 'Straighten the legs forward until the knees are extended, thighs on the seat, then lower.', avoid: 'Kicking up fast or lifting the hips off the seat.' },
+      ex72: { setup: 'Stand tall with dumbbells at the sides, feet together, torso upright.', move: 'Step forward and bend both knees until the back knee is just above the floor, then stand.', avoid: 'Letting the front knee pass the toes or the torso lean.' },
+      ex73: { setup: 'Rear foot on a bench, front foot forward, standing tall, dumbbells at the sides.', move: 'Lower until the front thigh is parallel to the floor, front knee over the foot, then stand.', avoid: 'Letting the front knee drift inward or the torso fold.' },
+      ex74: { setup: 'Back on the angled pad, shoulders under the pads, feet shoulder-width on the platform.', move: 'Bend the knees until the thighs are parallel to the platform, back on the pad, then stand.', avoid: 'Letting the heels lift or the back leave the pad.' },
+      ex75: { setup: 'Stand facing the box, one foot flat on it, dumbbells at the sides.', move: 'Push through the top foot and stand tall on the box, other foot beside it.', avoid: 'Pushing off the bottom foot or letting the knee cave.' },
+      ex76: { setup: 'Stand with the feet shoulder-width, arms extended forward, chest up.', move: 'Squat down until the thighs are parallel to the floor, heels flat, then stand tall.', avoid: 'Letting the heels lift or the chest drop.' },
+      ex77: { setup: 'Stand with the bar on the upper back, feet shoulder-width, box behind you.', move: 'Sit back until the buttocks touch the box, shins vertical, back straight, then stand.', avoid: 'Dropping onto the box or rocking to get up.' },
+      ex78: { setup: 'Thigh pad down, legs straight out, roller behind the lower legs.', move: 'Bend the knees and pull the heels down and back under the seat, then return slowly.', avoid: 'Lifting the hips or letting the thighs leave the pad.' },
+      ex79: { setup: 'Bar on the upper back, feet hip-width, knees slightly bent.', move: 'Push the hips far back and bend forward until the torso is almost parallel to the floor.', avoid: 'Rounding the back or bending the knees into a squat.' },
+      ex80: { setup: 'Stand tall, feet hip-width, a dumbbell in each hand in front of the thighs.', move: 'Push the hips back and lower the dumbbells close to the legs to mid-shin, back flat.', avoid: 'Letting the dumbbells drift from the legs or the back round.' },
+      ex81: { setup: 'Kneel upright on the pad, heels anchored under the bar, body straight.', move: 'Lower the body forward slowly as one straight line from knees to head, hands ready.', avoid: 'Bending at the hips or dropping fast without control.' },
+      ex82: { setup: 'Upper back on the bench edge, bar across the hips, knees bent, feet flat.', move: 'Drive the hips up until the body is straight from shoulders to knees, shins vertical.', avoid: 'Overarching the lower back or pushing with the toes.' },
+      ex83: { setup: 'Lie on your back, knees bent, feet flat, arms by the sides.', move: 'Lift the hips until the body is straight from shoulders to knees, then lower slowly.', avoid: 'Pushing the hips so high that the back arches.' },
+      ex84: { setup: 'Face the machine, hands on the frame, slight forward lean, legs together.', move: 'Kick the working leg straight back and up behind you, hips square, then return.', avoid: 'Arching the lower back or turning the hip out.' },
+      ex85: { setup: 'Hips hinged back, back flat, kettlebell swung back between the legs.', move: 'Snap the hips forward to standing tall, arms straight, kettlebell up to chest height.', avoid: 'Lifting with the arms or squatting instead of hinging.' },
+      ex86: { setup: 'Wide stance, toes turned out, hands inside the knees, bar against the shins.', move: 'Push the floor away and stand tall with the bar at the hips, shoulders back.', avoid: 'Letting the knees cave in or the hips shoot up first.' },
+      ex87: { setup: 'Bar over the middle of the feet, hips above the knees, back flat.', move: 'Push the floor away and stand tall with the bar at the hips, knees and hips locked.', avoid: 'Rounding the back or letting the bar swing away.' },
+      ex88: { setup: 'Stand inside the trap bar, hold the handles, hips back, back flat.', move: 'Push through the floor and stand tall holding the bar, knees and hips locked.', avoid: 'Rounding the back or jerking the bar off the floor.' },
+      ex89: { setup: 'Shoulders under the pads, balls of the feet on the step, heels lowered.', move: 'Lower the heels below the step, then rise up high onto the toes, knees still straight.', avoid: 'Bouncing the heels or bending the knees to push.' },
+      ex90: { setup: 'Sit with the balls of the feet on a step, dumbbells on the knees.', move: 'Lower the heels, then raise them high with the balls of the feet still on the step.', avoid: 'Pushing with the hands or lifting the heels off the step.' },
+      ex91: { setup: 'Stand on one foot at the step edge, hand on the wall, heel free.', move: 'Lower the heel below the step, then rise high onto the toes of that foot.', avoid: 'Pushing off the other foot or leaning on the wall.' },
+      ex92: { setup: 'Hands on the floor in a high plank, body straight, feet together.', move: 'Jump the feet in, stand up and jump straight with the arms overhead, then drop back to the plank.', avoid: 'Letting the hips sag or landing with straight locked legs.' },
+      ex93: { setup: 'Bar on the front of the shoulders, elbows up, front squat bottom, thighs parallel.', move: 'Drive up to standing and press the bar straight overhead in one motion, arms locked.', avoid: 'Pressing before the legs are straight or leaning back.' },
+      ex94: { setup: 'Stand tall, a heavy dumbbell at each side, shoulders back, torso upright.', move: 'Walk forward with short steady steps, dumbbells at the sides, torso still upright.', avoid: 'Leaning to one side or letting the shoulders round.' },
+      ex95: { setup: 'Athletic half-squat, one arm up, one arm down, rope end in each hand.', move: 'Raise one arm and lower the other again and again so waves travel along the ropes.', avoid: 'Standing up tall or swinging the arms from the shoulders only.' },
+      ex96: { setup: 'Sit on the floor, legs straight, band looped around the feet, arms forward.', move: 'Pull the band to the belly, elbows back past the torso, chest up, then return.', avoid: 'Rounding the back or letting the band snap back.' },
+      ex97: { setup: 'Lie on the floor, knees bent, feet flat, dumbbells above the chest.', move: 'Lower the dumbbells until the upper arms touch the floor, elbows slightly out, then press up.', avoid: 'Bouncing the elbows off the floor or arching the back.' },
+      ex98: { setup: 'Hands on a flat bench, body straight from head to heels, feet back.', move: 'Lower the chest to the edge of the bench, elbows slightly out, then press back up.', avoid: 'Letting the hips sag or stepping too close to the bench.' },
+      ex99: { setup: 'Feet on a flat bench, hands on the floor, body straight, shoulders over them.', move: 'Lower the chest to just above the floor, elbows slightly out, then press back up.', avoid: 'Letting the hips pike up or the chest drop too fast.' },
+      ex100: { setup: 'Bar on the floor, hips back, back flat, shoulders over the bar.', move: 'Pull the bar to the shoulders, stand, then press it straight overhead until the arms lock.', avoid: 'Pulling with bent arms or catching the bar away from the body.' }
+    };
+
     /* Picture box for the detail sheet. Empty string when the exercise has no
        picture (or no exercise): nothing is rendered, no empty box. The URL is
        built in a variable on purpose: index.html must not contain a literal
@@ -5081,6 +5198,26 @@
       return '<div class="ex-pic-wrap">'
         + '<div class="ex-pic"><img src="' + esc(src) + '" alt="' + esc(ex.name) + ' start and end position" loading="lazy" decoding="async" onerror="' + onerr + '"></div>'
         + '<div class="ex-pic-cap">Start → End</div>'
+        + '</div>';
+    }
+
+    /* P2-13 how-to block: Setup / Move / Avoid for a built-in exercise. Same
+       guard shape as the picture: a custom exercise, an unknown id or a record
+       with an empty field renders nothing at all (no empty shell). Plain
+       string build, no inputs and no handlers. */
+    function exerciseHowtoHtml(ex) {
+      if (!ex || typeof ex.id !== 'string') return '';
+      if (!Object.prototype.hasOwnProperty.call(EXERCISE_HOWTO, ex.id)) return '';
+      const h = EXERCISE_HOWTO[ex.id];
+      if (!h || typeof h.setup !== 'string' || typeof h.move !== 'string' || typeof h.avoid !== 'string') return '';
+      if (!h.setup.trim() || !h.move.trim() || !h.avoid.trim()) return '';
+      const rows = [['Setup', h.setup], ['Move', h.move], ['Avoid', h.avoid]];
+      return '<div class="ex-howto">'
+        + '<div class="ex-howto-title">How to do it</div>'
+        + rows.map(r => '<div class="ex-howto-row">'
+          + '<span class="ex-howto-k">' + esc(r[0]) + '</span>'
+          + '<span class="ex-howto-t">' + esc(r[1]) + '</span>'
+          + '</div>').join('')
         + '</div>';
     }
 
@@ -5904,6 +6041,7 @@
       /* P2-13: start/end picture (only for ids with a committed webp) and the
          front/back muscle chart (every exercise with muscle data). */
       const picHtml = exercisePictureHtml(ex);
+      const howtoHtml = exerciseHowtoHtml(ex);
       const chartHtml = muscleChartHtml(ex);
       const hist = getExerciseHistory(ex.id);
       const histHtml = hist.length === 0
@@ -5914,6 +6052,7 @@
         <div style="font-weight:800; font-size:var(--font-20); margin-bottom:var(--space-8); word-break:break-word;">${esc(ex.name)}</div>
         <div style="margin-bottom:var(--space-8); display:flex; flex-wrap:wrap; gap:var(--space-4); align-items:center;">${exerciseBadgesHtml(ex)}${ex.custom ? ' <span class="badge">custom</span>' : ''}${ex.hidden ? ' <span class="badge">hidden</span>' : ''}</div>
         ${picHtml}
+        ${howtoHtml}
         ${chartHtml}
         <div style="font-size:var(--font-14); margin-bottom:var(--space-4);">Primary: <b>${esc(exPrimary(ex))}</b></div>
         <div style="font-size:var(--font-14); margin-bottom:var(--space-16);">Secondary: <b>${secs}</b></div>
