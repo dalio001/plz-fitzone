@@ -1018,6 +1018,13 @@
             </div>
             <input type="checkbox" id="keepAwakeCheck" onchange="setKeepAwake(this.checked)">
           </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; margin-bottom:12px;">
+            <div style="min-width:0;">
+              <div style="font-size:14px;">Show next targets</div>
+              <div id="showTargetsHelp" style="font-size:var(--font-12); color:var(--text-sub);">Suggests the next weight or reps from your last session.</div>
+            </div>
+            <input type="checkbox" id="showTargetsCheck" checked onchange="setShowTargets(this.checked)">
+          </div>
           <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Barbell plates</div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <span style="font-size:14px;">Bar weight (KG)</span>
@@ -2061,6 +2068,7 @@
       dropStepPct: 20,
       supersetAdvance: true,
       keepAwake: false,
+      showTargets: true,
       exercises: [],
       routines: [],
       history: [],
@@ -2278,6 +2286,8 @@
       if (!parsed.unit) parsed.unit = 'KG';
       if (parsed.prevScope !== 'same' && parsed.prevScope !== 'any') parsed.prevScope = 'any';
       parsed.plateSettings = normalizePlateSettings(parsed.plateSettings);
+      // P5-05: a pre-P5-05 save has no showTargets; land on true (idempotent).
+      if (typeof parsed.showTargets !== 'boolean') parsed.showTargets = true;
       // P1-05: a profile in old data is preserved as-is (never dropped).
       if (parsed.profile && typeof parsed.profile === 'object' && !Array.isArray(parsed.profile)) {
         try { parsed.profile = normalizeProfile(parsed.profile); } catch (e) {}
@@ -2350,6 +2360,9 @@
     let replaceTargetIdx = null;
     let deletedSetBackup = null;
     let deletedSetTimer = null;
+    /* P5-05 next-target fill undo (in-memory only): the rows Use touched. */
+    let targetFillBackup = null;
+    let targetFillTimer = null;
     /* P2-05 plate calculator (personal part): editable bar/plates per unit. */
     const DEFAULT_PLATE_SETTINGS = {
       barKg: 20, barLb: 45,
@@ -2420,6 +2433,8 @@
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       // P4-10: optional keep-awake preference; old saves/backups land on false.
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false;
+      // P5-05: next-target hints are on unless the owner turned them off.
+      if (typeof state.showTargets !== 'boolean') state.showTargets = true;
 
       hydrateSettingsControls();
       paintKeepAwakeUi(); // P4-10: note/checkbox reflect this browser
@@ -2666,6 +2681,7 @@
         exercises: activeWorkout.exercises,
         restDeadline: restDeadline,
         routineId: activeWorkout.routineId || null,
+        targetsHidden: activeWorkout.targetsHidden === true, // P5-05: per-workout only
         savedAt: Date.now()
       };
       try {
@@ -2734,7 +2750,8 @@
         startTime: draft.startTime,
         exercises: draft.exercises,
         finishing: false,
-        routineId: draft.routineId || null
+        routineId: draft.routineId || null,
+        targetsHidden: draft.targetsHidden === true // P5-05: the draft never hides future workouts
       };
       setInputErrors = {};
       finishReviewPending = false;
@@ -2744,6 +2761,9 @@
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
       deletedSetTimer = null;
+      targetFillBackup = null;
+      try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
+      targetFillTimer = null;
       restDeadline = (typeof draft.restDeadline === 'number' && draft.restDeadline > Date.now()) ? draft.restDeadline : null;
       restRemaining = restDeadline ? Math.max(0, Math.ceil((restDeadline - Date.now()) / 1000)) : 0;
       document.getElementById('activeWorkoutTitle').value = activeWorkout.title;
@@ -2814,6 +2834,9 @@
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
       deletedSetTimer = null;
+      targetFillBackup = null;
+      try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
+      targetFillTimer = null;
       clearInterval(workoutInterval);
       clearInterval(restInterval);
       stopSetClockTicker(); // P2-12
@@ -3458,7 +3481,11 @@
       return n;
     }
 
-    function findPreviousExercise(exId, instanceIdx, routineId) {
+    /* P5-05: the same newest-first walk as findPreviousExercise, but the
+       workout entry is returned too so the date (and therefore the age) of
+       the source session is known. findPreviousExercise() delegates here, so
+       the previous-value column keeps exactly its old behaviour. */
+    function previousExerciseEntry(exId, instanceIdx, routineId) {
       const scope = getPrevScope();
       const wantInstance = Math.max(0, instanceIdx || 0);
       for (let i = 0; i < state.history.length; i++) {
@@ -3470,11 +3497,16 @@
           const item = w.exercises[k];
           if (item && item.exId === exId) {
             seen++;
-            if (seen === wantInstance && Array.isArray(item.sets)) return item;
+            if (seen === wantInstance && Array.isArray(item.sets)) return { w: w, item: item };
           }
         }
       }
       return null;
+    }
+
+    function findPreviousExercise(exId, instanceIdx, routineId) {
+      const entry = previousExerciseEntry(exId, instanceIdx, routineId);
+      return entry ? entry.item : null;
     }
 
     /* PREVIOUS PERFORMANCE LOOKUP — returns canonical kg; callers display via toDisplay. */
@@ -3509,6 +3541,332 @@
       renderActiveWorkout();
       saveActiveSession();
       return true;
+    }
+
+    /* ================= P5-05 NEXT-SESSION TARGET (personal part) =================
+       One pure rule, computed live from the same previous-performance lookup the
+       PREVIOUS column uses: nothing is stored, nothing is auto-ticked, history
+       is never rewritten. The suggested weight/reps/time is the last session's
+       bar plus one house step (2.5 kg / 5 lb / 5 s) only when every working set
+       reached it; otherwise the target is "same as last, beat it". Warm-ups (W)
+       and drops (D) never count, failures (F) do. A missing or >21-day-old
+       source session means no target at all, with the reason on the line. */
+    const TARGET_STALE_DAYS = 21;
+
+    /* Round the step in the DISPLAY unit (kg +2.5, lb +5), store canonical kg. */
+    function addTargetStep(baseKg, unit) {
+      const base = Number(baseKg);
+      if (!isFinite(base) || base <= 0) return 0;
+      const u = unit || state.unit || 'KG';
+      if (u === 'LBS') {
+        const display = Number(toDisplayWeight(base, 'LBS'));
+        if (!isFinite(display)) return base;
+        return fromInputWeight(display + 5, 'LBS');
+      }
+      return Math.round((base + 2.5) * 100) / 100;
+    }
+
+    /* Working sets of one stored exercise item: N or F only (W and D dropped). */
+    function previousWorkingSets(item, exInfo) {
+      if (!item || !Array.isArray(item.sets)) return [];
+      const raw = isDurationEx(exInfo) ? durationCountingSets(item.sets) : metricCountingSets(item.sets);
+      return raw.filter(s => s.type === 'N' || s.type === 'F');
+    }
+
+    function emptyTarget(reason, lastSets, ageDays) {
+      return {
+        kind: 'none', weightKg: null, reps: null, durationSec: null,
+        lastSets: lastSets || [], allHit: false,
+        ageDays: (ageDays === undefined) ? null : ageDays,
+        reason: reason || 'first'
+      };
+    }
+
+    function computeNextTarget(exIdx) {
+      if (!activeWorkout || !Array.isArray(activeWorkout.exercises) || !activeWorkout.exercises[exIdx]) return null;
+      const exItem = activeWorkout.exercises[exIdx];
+      const exInfo = state.exercises.find(e => e.id === exItem.exId) || null;
+      const instanceIdx = getExInstanceIdx(activeWorkout.exercises, exIdx);
+      const entry = previousExerciseEntry(exItem.exId, instanceIdx, activeWorkout.routineId || null);
+      if (!entry) return emptyTarget('first', []);
+      const lastSets = previousWorkingSets(entry.item, exInfo);
+      if (lastSets.length === 0) return emptyTarget('first', []);
+      const dateMs = Number(entry.w && entry.w.date);
+      const ageDays = (isFinite(dateMs) && dateMs > 0) ? Math.floor((Date.now() - dateMs) / 86400000) : null;
+      if (ageDays === null || ageDays > TARGET_STALE_DAYS) return emptyTarget('stale', lastSets, ageDays);
+
+      if (isDurationEx(exInfo)) {
+        /* Routine hold target wins; otherwise the longest hold of that session. */
+        const routineTop = (exItem.sets || []).map(s => Number(s && s.targetSec)).find(n => isFinite(n) && n >= 1);
+        let top = (isFinite(routineTop) && routineTop >= 1) ? Math.round(routineTop) : 0;
+        if (!(top >= 1)) top = lastSets.reduce((m, s) => Math.max(m, s.durationSec), 0);
+        if (!(top >= 1)) return emptyTarget('first', lastSets);
+        const allHit = lastSets.every(s => s.durationSec >= top);
+        const carried = lastSets.reduce((m, s) => Math.max(m, Number(s.weight) || 0), 0);
+        return {
+          kind: 'duration',
+          weightKg: carried > 0 ? carried : null,
+          reps: null,
+          durationSec: allHit ? top + 5 : top,
+          lastSets: lastSets, allHit: allHit, ageDays: ageDays,
+          reason: allHit ? 'progress' : 'same'
+        };
+      }
+
+      /* Rep bar: the routine's rep target when there is one, else last max. */
+      const rt = parseRepsTarget(exItem.targetRepsLabel);
+      let top = (rt.max !== null && rt.max !== undefined) ? Number(rt.max) : 0;
+      if (!(top >= 1)) top = lastSets.reduce((m, s) => Math.max(m, s.reps), 0);
+      if (!(top >= 1)) return emptyTarget('first', lastSets);
+      const allHit = lastSets.every(s => s.reps >= top);
+      const baseWeight = lastSets.reduce((m, s) => Math.max(m, Number(s.weight) || 0), 0);
+
+      if (usesLoadMetrics(exInfo) && baseWeight > 0) {
+        return {
+          kind: 'load',
+          weightKg: allHit ? addTargetStep(baseWeight, state.unit) : baseWeight,
+          reps: top,
+          durationSec: null,
+          lastSets: lastSets, allHit: allHit, ageDays: ageDays,
+          reason: allHit ? 'progress' : 'same'
+        };
+      }
+      /* Bodyweight / assisted / unloaded: reps only, never a heavier load. */
+      return {
+        kind: 'reps',
+        weightKg: null,
+        reps: allHit ? top + 1 : top,
+        durationSec: null,
+        lastSets: lastSets, allHit: allHit, ageDays: ageDays,
+        reason: allHit ? 'progress' : 'same'
+      };
+    }
+
+    /* "kg" / "lbs", matching the PREVIOUS column's unit wording. */
+    function targetUnitLabel() {
+      return String(state.unit || 'KG').toLowerCase();
+    }
+
+    function targetRepList(target) {
+      if (!target || !target.lastSets || target.lastSets.length === 0) return '';
+      return target.lastSets.map(s => String(s.reps)).join(', ');
+    }
+
+    function targetHoldList(target) {
+      if (!target || !target.lastSets || target.lastSets.length === 0) return '';
+      return target.lastSets.map(s => formatDurationClock(s.durationSec)).join(', ');
+    }
+
+    /* How many working sets fell short of the target bar. */
+    function targetMissCount(target) {
+      if (!target || !target.lastSets) return 0;
+      if (target.kind === 'duration') {
+        return target.lastSets.filter(s => s.durationSec < target.durationSec).length;
+      }
+      return target.lastSets.filter(s => s.reps < target.reps).length;
+    }
+
+    /* The reason is always on the line: a suggested number never stands alone. */
+    function nextTargetText(target) {
+      if (!target) return '';
+      if (target.kind === 'none') {
+        if (target.reason === 'stale') {
+          if (target.ageDays === null || target.ageDays === undefined) return 'No target: last session date unknown';
+          return 'No target: last session was ' + target.ageDays + ' days ago';
+        }
+        if (getPrevScope() === 'same') return 'No history for this routine yet: pick a comfortable weight';
+        return 'First time: pick a comfortable weight';
+      }
+      /* allHit compares against the BAR (last session's top), not the raised
+         target, so the verdict stays a fact about the source session. */
+      const verdict = target.allHit ? '(all hit)' : '(missed ' + targetMissCount(target) + ')';
+      const lastReps = targetRepList(target);
+      const lastHolds = targetHoldList(target);
+      if (target.kind === 'duration') {
+        const lastPart = lastHolds ? ' — last ' + lastHolds : '';
+        const why = target.allHit ? '+5 s' : 'same time, beat last';
+        return 'Target: ' + formatDurationClock(target.durationSec) + ' · ' + why + lastPart + ' ' + verdict;
+      }
+      if (target.kind === 'load') {
+        const unit = targetUnitLabel();
+        const shown = formatDisplayWeight(target.weightKg);
+        const lastWeight = formatDisplayWeight(target.lastSets.reduce((m, s) => Math.max(m, Number(s.weight) || 0), 0));
+        let why = 'same weight, beat last';
+        if (target.allHit) {
+          const step = Math.round((Number(shown) - Number(lastWeight)) * 10) / 10;
+          why = '+' + step + ' ' + unit;
+        }
+        const lastPart = lastReps ? ' — last ' + lastWeight + ' ' + unit + ' × ' + lastReps : '';
+        return 'Target: ' + shown + ' ' + unit + ' × ' + target.reps + ' · ' + why + lastPart + ' ' + verdict;
+      }
+      /* reps only */
+      const lastPart = lastReps ? ' — last ' + lastReps : '';
+      const why = target.allHit ? '+1 rep' : 'same reps, beat last';
+      return 'Target: ' + target.reps + ' reps · ' + why + lastPart + ' ' + verdict;
+    }
+
+    function showTargetsEnabled() {
+      return state.showTargets !== false;
+    }
+
+    function targetsHiddenForWorkout() {
+      return !!(activeWorkout && activeWorkout.targetsHidden === true);
+    }
+
+    function targetLineHtml(exIdx) {
+      if (!showTargetsEnabled() || targetsHiddenForWorkout()) return '';
+      const target = computeNextTarget(exIdx);
+      if (!target) return '';
+      const useBtn = (target.kind !== 'none' && nextTargetCanFill(exIdx))
+        ? `<button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" onclick="useNextTarget(${exIdx})">Use</button>`
+        : '';
+      return `
+        <div class="target-line" id="target-line-${exIdx}" data-target-kind="${target.kind}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px;">
+          <span style="font-size:12px; color:var(--text-sub); min-width:0; overflow-wrap:anywhere;">${esc(nextTargetText(target))}</span>
+          <span style="display:flex; gap:6px; flex-shrink:0;">
+            ${useBtn}
+            <button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" onclick="hideTargetsForWorkout()">Hide</button>
+          </span>
+        </div>
+      `;
+    }
+
+    function isEmptyTargetField(v) {
+      return v === '' || v === null || v === undefined;
+    }
+
+    /* A row is fair game for Use only when the owner has not put anything of
+       their own in it: unticked, N or F, and every field the target would write
+       is either empty or still exactly the value the app prefilled from the
+       previous session. A typed value (55 kg, 6 reps, 1:20) never matches. */
+    function targetRowIsFillable(s, prev, target, durEx) {
+      if (!s || typeof s !== 'object' || s.done) return false;
+      const type = normSetType(s.type);
+      if (type !== 'N' && type !== 'F') return false;
+      const unchanged = (field) => {
+        const cur = s[field];
+        if (isEmptyTargetField(cur)) return true;
+        if (!prev || isEmptyTargetField(prev[field])) return false;
+        return Number(cur) === Number(prev[field]);
+      };
+      if (durEx) {
+        if (target.durationSec === null) return false;
+        if (!unchanged('durationSec')) return false;
+        if (target.weightKg !== null && target.weightKg !== undefined && !unchanged('weight')) return false;
+        return true;
+      }
+      if (!unchanged('reps')) return false;
+      if (target.kind === 'load' && target.weightKg !== null && !unchanged('weight')) return false;
+      return true;
+    }
+
+    /* Dry run: the rows Use() would write, with their current values as the
+       undo snapshot. Empty when nothing is fillable (then Use is not offered). */
+    function planTargetFill(exIdx) {
+      if (!activeWorkout || !Array.isArray(activeWorkout.exercises) || !activeWorkout.exercises[exIdx]) return null;
+      const target = computeNextTarget(exIdx);
+      if (!target || target.kind === 'none') return null;
+      const exItem = activeWorkout.exercises[exIdx];
+      const exInfo = state.exercises.find(e => e.id === exItem.exId) || null;
+      const durEx = isDurationEx(exInfo);
+      const instanceIdx = getExInstanceIdx(activeWorkout.exercises, exIdx);
+      const rows = [];
+      (exItem.sets || []).forEach((s, sIdx) => {
+        const lane = getSetLaneIndex(exItem.sets, sIdx);
+        const prev = getPreviousSet(exItem.exId, lane, s && s.type, instanceIdx, activeWorkout.routineId || null);
+        if (!targetRowIsFillable(s, prev, target, durEx)) return;
+        rows.push({
+          sIdx: sIdx,
+          backup: { sIdx: sIdx, weight: s.weight, reps: s.reps, durationSec: s.durationSec },
+          weight: (target.weightKg !== null && target.weightKg !== undefined) ? target.weightKg : null,
+          reps: durEx ? null : target.reps,
+          durationSec: durEx ? target.durationSec : null
+        });
+      });
+      return { target: target, exItem: exItem, durEx: durEx, rows: rows };
+    }
+
+    function nextTargetCanFill(exIdx) {
+      const plan = planTargetFill(exIdx);
+      return !!(plan && plan.rows.length > 0);
+    }
+
+    /* Fill the eligible rows only (N/F, unticked, no typed value), tick nothing. */
+    function useNextTarget(exIdx) {
+      const plan = planTargetFill(exIdx);
+      if (!plan || plan.rows.length === 0) return false;
+      plan.rows.forEach(r => {
+        const s = plan.exItem.sets[r.sIdx];
+        if (!s) return;
+        if (r.weight !== null) s.weight = r.weight;
+        if (r.reps !== null) s.reps = r.reps;
+        if (r.durationSec !== null) s.durationSec = r.durationSec;
+      });
+      targetFillBackup = {
+        exIdx: exIdx,
+        rows: plan.rows.map(r => r.backup),
+        expiresAt: Date.now() + 5000
+      };
+      try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
+      try { targetFillTimer = setTimeout(function () { expireTargetFill(); }, 5000); } catch (e) {}
+      renderActiveWorkout();
+      saveActiveSession();
+      return true;
+    }
+
+    function undoTargetFill() {
+      if (!targetFillBackup || !activeWorkout) return false;
+      const b = targetFillBackup;
+      const ex = activeWorkout.exercises[b.exIdx];
+      if (ex && Array.isArray(ex.sets)) {
+        b.rows.forEach(r => {
+          const s = ex.sets[r.sIdx];
+          if (!s) return;
+          s.weight = r.weight;
+          s.reps = r.reps;
+          s.durationSec = r.durationSec;
+        });
+      }
+      targetFillBackup = null;
+      try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
+      targetFillTimer = null;
+      renderActiveWorkout();
+      saveActiveSession();
+      return true;
+    }
+
+    function expireTargetFill(now) {
+      if (!targetFillBackup) return;
+      const t = (typeof now === 'number') ? now : Date.now();
+      if (t < targetFillBackup.expiresAt) return;
+      targetFillBackup = null;
+      targetFillTimer = null;
+      if (activeWorkout) renderActiveWorkout();
+    }
+
+    function hideTargetsForWorkout() {
+      if (!activeWorkout) return false;
+      activeWorkout.targetsHidden = true;
+      renderActiveWorkout();
+      saveActiveSession();
+      return true;
+    }
+
+    function showTargetsForWorkout() {
+      if (!activeWorkout) return false;
+      activeWorkout.targetsHidden = false;
+      renderActiveWorkout();
+      saveActiveSession();
+      return true;
+    }
+
+    /* P5-05 preference (Settings): saves and refreshes an open workout. */
+    function setShowTargets(on) {
+      state.showTargets = !!on;
+      saveState();
+      const check = document.getElementById('showTargetsCheck');
+      if (check) check.checked = showTargetsEnabled();
+      if (activeWorkout) renderActiveWorkout();
     }
 
     /* P2-02: validation helpers. Weight is canonical kg (0 allowed for
@@ -3875,7 +4233,8 @@
         startTime: Date.now(),
         exercises: [],
         finishing: false,
-        routineId: null
+        routineId: null,
+        targetsHidden: false // P5-05
       };
       restDeadline = null;
       restRemaining = 0;
@@ -3901,6 +4260,7 @@
         startTime: Date.now(),
         finishing: false,
         routineId: rt.id,
+        targetsHidden: false, // P5-05
         exercises: rt.exercises.map((item, itemIdx) => {
           const norm = normalizeRoutineItem(item);
           let inst = 0;
@@ -3989,6 +4349,9 @@
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
       deletedSetTimer = null;
+      targetFillBackup = null;
+      try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
+      targetFillTimer = null;
       document.getElementById('activeWorkoutTitle').value = activeWorkout.title;
       document.getElementById('activeWorkoutDrawer').classList.add('open');
       document.getElementById('minimizedWorkoutBar').style.display = 'none';
@@ -4039,6 +4402,34 @@
         `;
         container.appendChild(banner);
       }
+
+      /* P5-05: target-fill Undo (5 s, in-memory only) and the one per-workout
+         "targets hidden" banner. */
+      if (targetFillBackup) {
+        const fillBanner = document.createElement('div');
+        fillBanner.className = 'card';
+        fillBanner.id = 'targetFillBanner';
+        fillBanner.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <span style="font-size:14px;">Targets filled.</span>
+            <button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" onclick="undoTargetFill()">↩️ Undo (5s)</button>
+          </div>
+        `;
+        container.appendChild(fillBanner);
+      }
+      if (showTargetsEnabled() && targetsHiddenForWorkout()) {
+        const hiddenBanner = document.createElement('div');
+        hiddenBanner.className = 'card';
+        hiddenBanner.id = 'targetsHiddenBanner';
+        hiddenBanner.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <span style="font-size:14px;">Targets hidden for this workout.</span>
+            <button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" onclick="showTargetsForWorkout()">Show</button>
+          </div>
+        `;
+        container.appendChild(hiddenBanner);
+      }
+      const targetsVisible = showTargetsEnabled() && !targetsHiddenForWorkout();
 
       const supersetInfos = computeSupersetLabels(activeWorkout.exercises);
 
@@ -4183,6 +4574,7 @@
             </div>
             <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="removeActiveEx(${exIdx})">✕</button>
           </div>
+          ${targetsVisible ? targetLineHtml(exIdx) : ''}
           <input type="text" class="input-field" style="margin-top:6px; font-size:13px;" value="${noteEsc}" maxlength="140" placeholder="Note (optional)" onchange="updateActiveNote(${exIdx}, this.value)">
           ${setsHtml}
           <button class="btn btn-block" style="margin-top:8px; padding:8px;" onclick="addSetToActive(${exIdx})">+ Add Set</button>
@@ -4988,6 +5380,9 @@
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
       deletedSetTimer = null;
+      targetFillBackup = null;
+      try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
+      targetFillTimer = null;
       clearInterval(workoutInterval);
       clearInterval(restInterval);
       stopSetClockTicker(); // P2-12
@@ -7800,6 +8195,8 @@
       const advCheck = document.getElementById('supersetAdvanceCheck');
       if (advCheck) advCheck.checked = state.supersetAdvance !== false;
       paintKeepAwakeUi(); // P4-10: checkbox + unsupported note
+      const tgCheck = document.getElementById('showTargetsCheck');
+      if (tgCheck) tgCheck.checked = showTargetsEnabled(); // P5-05
       const unitDisp = document.getElementById('settingsUnitDisplay');
       if (unitDisp) unitDisp.innerHTML = (state.unit || 'KG') + ' (change with the KG button at the top)';
       const unitBtn = document.getElementById('unitToggleBtn');
@@ -9195,6 +9592,7 @@
       if (data.dropStepPct !== 10 && data.dropStepPct !== 20 && data.dropStepPct !== 30) data.dropStepPct = 20;
       if (typeof data.supersetAdvance !== 'boolean') data.supersetAdvance = true;
       if (typeof data.keepAwake !== 'boolean') data.keepAwake = false; // P4-10
+      if (typeof data.showTargets !== 'boolean') data.showTargets = true; // P5-05
       // P1-05: keep a valid profile from the backup (missing stays missing,
       // which never forces onboarding); no getting-started surprise on
       // restore unless the backup explicitly left the card up.
@@ -9400,6 +9798,7 @@
       if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
+      if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
       saveState();
       closeModal('restoreModal');
       hydrateSettingsControls();
@@ -9443,6 +9842,7 @@
       state.plans = normalizePlans(state.plans);
       state.body = normalizeBodyEntries(state.body);
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
+      if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
       try {
         // Write back the exact snapshot string so undo restores data byte-for-byte.
         localStorage.setItem('hevy_clone_state', raw);
