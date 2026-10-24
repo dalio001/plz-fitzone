@@ -81,6 +81,9 @@ export function makeElement(tag = 'div', onHtml = null) {
       this._attrs = this._attrs || {};
       this._attrs[String(k)] = String(v);
       if (String(k) === 'hidden') this.hidden = true;
+      // A real <input value="..."> starts with that value; render code relies on it.
+      if (String(k) === 'value') this.value = String(v);
+      if (String(k) === 'checked') this.checked = true;
     },
     getAttribute(k) { return (this._attrs && String(k) in this._attrs) ? this._attrs[String(k)] : null; },
     hasAttribute(k) { return this._attrs ? (String(k) in this._attrs) : false; },
@@ -121,9 +124,8 @@ function markupIds() {
 
 export function makeDocument() {
   const byId = new Map();
-  for (const id of markupIds()) byId.set(id, makeElement());
-  // Rendered HTML really exists in a browser: ids written into any innerHTML
-  // must be findable afterwards (set rows, pickers, detail panes).
+  // Every element registers the ids written into its innerHTML, exactly like a
+  // browser (static containers included: their rendered rows are real nodes).
   const registerHtmlIds = (html) => {
     if (typeof html !== 'string' || html.indexOf('id=') < 0) return;
     for (const m of html.matchAll(/<([a-zA-Z0-9-]+)\s+([^>]*?)id="([^"]+)"([^>]*)>/g)) {
@@ -140,6 +142,7 @@ export function makeDocument() {
       if (!byId.has(m[1])) byId.set(m[1], makeElement('div', registerHtmlIds));
     }
   };
+  for (const id of markupIds()) byId.set(id, makeElement('div', registerHtmlIds));
   const body = makeElement('body');
   const pushChild = body.appendChild.bind(body);
   // Banners (updateBar) are appended to document.body and then looked up by
@@ -411,6 +414,16 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   PROFILE_SECTION_KEY, getProfileSection, setProfileSection, saveRestPreference, hydrateSettingsControls,
   get activeProfileSection(){ return activeProfileSection; },
   emptyStateHtml, renderExercisesList, onExSearchInput,
+  normalizeBodyEntries, bodyEntries, upsertBodyWeight, upsertBodyMeasures,
+  bodySeries, bodyTrend, bodyBmi, toDisplayLength, fromInputLength,
+  saveBodyEntry, bodyDateChanged, toggleBodyMore, setBodyRange, setBodyMeasure,
+  openBodyEdit, saveBodyEdit, askDeleteBody, confirmDeleteBody, undoDeleteBody,
+  expireDeletedBody, renderBodySection,
+  get deletedBodyBackup(){ return deletedBodyBackup; },
+  get bodyRange(){ return bodyRange; }, set bodyRange(v){ bodyRange = v; },
+  get bodyMeasure(){ return bodyMeasure; }, set bodyMeasure(v){ bodyMeasure = v; },
+  get bodyEditId(){ return bodyEditId; },
+  get bodyMoreOpen(){ return bodyMoreOpen; },
 };`;
 
 // Creates one app instance: runs init() (the script self-initializes) in a

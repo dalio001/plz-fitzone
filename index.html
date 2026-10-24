@@ -175,7 +175,7 @@
       background: var(--bg-main);
       z-index: 10;
       display: flex;
-      gap: var(--space-8);
+      gap: var(--space-4);
       padding: var(--space-4) 0 var(--space-12);
       margin-bottom: var(--space-8);
     }
@@ -183,6 +183,9 @@
       flex: 1;
       min-height: var(--control-min-height);
       font-weight: 700;
+      padding: var(--space-8) var(--space-4);
+      font-size: var(--font-12);
+      white-space: nowrap;
     }
     .profile-section-btn.active,
     .profile-section-btn[aria-pressed="true"] {
@@ -192,6 +195,17 @@
     }
     .profile-section-panel[hidden] {
       display: none !important;
+    }
+    /* P5-04: optional measurements, two per row on every phone width. */
+    .body-field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+    }
+    .body-field-label {
+      display: block;
+      font-size: var(--font-12);
+      color: var(--text-sub);
     }
     #calendarCard {
       scroll-margin-top: 60px;
@@ -797,6 +811,7 @@
       <div id="profileSectionControl" role="group" aria-label="Profile sections" class="profile-section-control">
         <button type="button" id="profSecBtn-progress" class="btn profile-section-btn active" role="button" aria-pressed="true" aria-controls="profileProgress" onclick="setProfileSection('progress')">Progress</button>
         <button type="button" id="profSecBtn-records" class="btn profile-section-btn" role="button" aria-pressed="false" aria-controls="profileRecordsSection" onclick="setProfileSection('records')">Records</button>
+        <button type="button" id="profSecBtn-body" class="btn profile-section-btn" role="button" aria-pressed="false" aria-controls="profileBody" onclick="setProfileSection('body')">Body</button>
         <button type="button" id="profSecBtn-settings" class="btn profile-section-btn" role="button" aria-pressed="false" aria-controls="profileSettings" onclick="setProfileSection('settings')">Settings</button>
       </div>
 
@@ -857,7 +872,75 @@
         </div>
       </div>
 
-      <!-- Section 3: Settings -->
+      <!-- Section 3: Body weight & measurements (P5-04, private) -->
+      <div id="profileBody" class="profile-section-panel" hidden>
+        <div class="card" id="bodyEntryCard">
+          <div class="section-title" style="margin-bottom:2px; font-size:16px;">Body weight &amp; measurements</div>
+          <div style="font-size:var(--font-12); color:var(--text-sub); margin:2px 0 var(--space-12);">Private — stored only on this device.</div>
+          <div style="display:flex; gap:var(--space-8); align-items:flex-end; flex-wrap:wrap;">
+            <label style="flex:1 1 120px; min-width:0;">
+              <span class="body-field-label">Today's weight</span>
+              <span style="display:flex; align-items:center; gap:6px;">
+                <input type="number" id="bodyWeightInput" class="set-input" inputmode="decimal" step="any" min="0" placeholder="0" style="height:56px; font-size:24px; font-weight:700; text-align:left; padding:8px 12px;">
+                <span id="bodyWeightUnit" style="font-size:var(--font-14); color:var(--text-sub);">KG</span>
+              </span>
+            </label>
+            <label style="flex:0 0 120px;">
+              <span class="body-field-label">Date</span>
+              <input type="date" id="bodyDateInput" class="set-input" onchange="bodyDateChanged()" style="height:56px; padding:8px; text-align:left;">
+            </label>
+          </div>
+
+          <button type="button" id="bodyMoreToggle" class="btn btn-block" aria-expanded="false" aria-controls="bodyMoreFields" onclick="toggleBodyMore()" style="margin-top:var(--space-12);">+ More measurements</button>
+          <div id="bodyMoreFields" hidden style="margin-top:var(--space-8);">
+            <div class="body-field-grid">
+              <label><span class="body-field-label" id="bodyLbl-waistCm">Waist (cm)</span><input type="number" id="bodyWaistInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-chestCm">Chest (cm)</span><input type="number" id="bodyChestInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-hipsCm">Hips (cm)</span><input type="number" id="bodyHipsInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-armLCm">Arm L (cm)</span><input type="number" id="bodyArmLInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-armRCm">Arm R (cm)</span><input type="number" id="bodyArmRInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-thighLCm">Thigh L (cm)</span><input type="number" id="bodyThighLInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-thighRCm">Thigh R (cm)</span><input type="number" id="bodyThighRInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-neckCm">Neck (cm)</span><input type="number" id="bodyNeckInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+              <label><span class="body-field-label" id="bodyLbl-bodyFatPct">Body fat (%)</span><input type="number" id="bodyFatInput" class="set-input" inputmode="decimal" step="any" style="height:44px; text-align:left; padding:8px;"></label>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block" onclick="saveBodyEntry()" style="margin-top:var(--space-12);">Save</button>
+          <div id="bodyEntryNote" style="font-size:var(--font-12); color:var(--success); min-height:16px; margin-top:var(--space-8);"></div>
+          <div id="bodyError" role="alert" style="font-size:var(--font-12); color:var(--danger); min-height:16px;"></div>
+        </div>
+
+        <div class="card" id="bodyChartCard">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-8); margin-bottom:var(--space-8);">
+            <div id="bodyChartTitle" class="section-title" style="margin:0; font-size:16px;">Weight</div>
+            <select id="bodyMeasureSelect" class="set-input" style="width:auto; max-width:150px; min-height:44px; padding:6px 8px;" onchange="setBodyMeasure(this.value)" aria-label="Measurement to chart">
+              <option value="weight">Weight</option>
+              <option value="waistCm">Waist</option>
+              <option value="chestCm">Chest</option>
+              <option value="hipsCm">Hips</option>
+              <option value="armLCm">Arm L</option>
+              <option value="armRCm">Arm R</option>
+              <option value="thighLCm">Thigh L</option>
+              <option value="thighRCm">Thigh R</option>
+              <option value="neckCm">Neck</option>
+              <option value="bodyFatPct">Body fat %</option>
+            </select>
+          </div>
+          <div id="bodyChart"></div>
+          <div id="bodyTrend" style="font-size:13px; color:var(--text-sub); margin-top:var(--space-8);"></div>
+          <div class="chips" id="bodyRangeChips" style="margin-top:var(--space-12);"></div>
+        </div>
+
+        <div class="card" id="bodyHistoryCard">
+          <div class="section-title" style="margin-bottom:2px; font-size:16px;">History</div>
+          <div style="font-size:var(--font-12); color:var(--text-sub); margin:2px 0 var(--space-8);">Tap an entry to edit or delete it</div>
+          <div id="bodyUndo"></div>
+          <div id="bodyHistoryList"></div>
+        </div>
+      </div>
+
+      <!-- Section 4: Settings -->
       <div id="profileSettings" class="profile-section-panel" hidden>
         <div class="card" id="myProfileCard">
           <div class="section-title" style="margin-bottom:10px; font-size:16px;">My profile</div>
@@ -1943,7 +2026,8 @@
       supersetAdvance: true,
       exercises: [],
       routines: [],
-      history: []
+      history: [],
+      body: []
     };
 
     /* UNITS: canonical storage is kilograms. The KG/LBS toggle only changes
@@ -1983,6 +2067,119 @@
       const conv = u === 'LBS' ? n * LB_PER_KG : n;
       if (Math.abs(conv) >= 100) return Math.round(conv);
       return Math.round(conv * 10) / 10;
+    }
+
+    /* P5-04 BODY: canonical storage is kg (weight), cm (lengths) and % (body
+       fat). The unit preference only changes presentation / input reading,
+       exactly like set weights. Private data: never shared or published. */
+    const CM_PER_IN = 2.54;
+    const BODY_WEIGHT_MIN_KG = 20;
+    const BODY_WEIGHT_MAX_KG = 400;
+    const BODY_LENGTH_MIN_CM = 10;
+    const BODY_LENGTH_MAX_CM = 300;
+    const BODY_FAT_MIN_PCT = 2;
+    const BODY_FAT_MAX_PCT = 70;
+    const BODY_MEASURES = [
+      { key: 'weight', label: 'Weight', kind: 'weight', inputId: 'bodyWeightInput' },
+      { key: 'waistCm', label: 'Waist', kind: 'length', inputId: 'bodyWaistInput' },
+      { key: 'chestCm', label: 'Chest', kind: 'length', inputId: 'bodyChestInput' },
+      { key: 'hipsCm', label: 'Hips', kind: 'length', inputId: 'bodyHipsInput' },
+      { key: 'armLCm', label: 'Arm L', kind: 'length', inputId: 'bodyArmLInput' },
+      { key: 'armRCm', label: 'Arm R', kind: 'length', inputId: 'bodyArmRInput' },
+      { key: 'thighLCm', label: 'Thigh L', kind: 'length', inputId: 'bodyThighLInput' },
+      { key: 'thighRCm', label: 'Thigh R', kind: 'length', inputId: 'bodyThighRInput' },
+      { key: 'neckCm', label: 'Neck', kind: 'length', inputId: 'bodyNeckInput' },
+      { key: 'bodyFatPct', label: 'Body fat', kind: 'fat', inputId: 'bodyFatInput' }
+    ];
+
+    function bodyMeasureInfo(key) {
+      for (let i = 0; i < BODY_MEASURES.length; i++) {
+        if (BODY_MEASURES[i].key === key) return BODY_MEASURES[i];
+      }
+      return BODY_MEASURES[0];
+    }
+
+    function bodyUnitLabel(kind, unit) {
+      const u = unit || state.unit || 'KG';
+      if (kind === 'weight') return (u === 'LBS') ? 'LBS' : 'KG';
+      if (kind === 'fat') return '%';
+      return (u === 'LBS') ? 'in' : 'cm';
+    }
+
+    function toDisplayLength(cmVal, unit) {
+      if (cmVal === '' || cmVal === null || cmVal === undefined) return '';
+      const n = Number(cmVal);
+      if (!isFinite(n)) return '';
+      const u = unit || state.unit || 'KG';
+      if (u === 'LBS') return Math.round((n / CM_PER_IN) * 10) / 10;
+      return Math.round(n * 10) / 10;
+    }
+
+    function fromInputLength(inputVal, unit) {
+      if (inputVal === '' || inputVal === null || inputVal === undefined) return '';
+      const n = parseFloat(inputVal);
+      if (!isFinite(n)) return 0;
+      const u = unit || state.unit || 'KG';
+      if (u === 'LBS') return Math.round((n * CM_PER_IN) * 100) / 100;
+      return n;
+    }
+
+    /* 'YYYY-MM-DD' -> local noon timestamp (DST-safe date math); null when the
+       string is not a real calendar day. */
+    function bodyDateMs(dateKey) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateKey == null ? '' : dateKey));
+      if (!m) return null;
+      const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
+      const dt = new Date(y, mo, d, 12, 0, 0, 0);
+      if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) return null;
+      return dt.getTime();
+    }
+
+    function normalizeBodyMeasures(src) {
+      const out = {};
+      if (!src || typeof src !== 'object' || Array.isArray(src)) return out;
+      BODY_MEASURES.forEach(function (m) {
+        if (m.kind === 'weight') return;
+        const raw = src[m.key];
+        if (raw === '' || raw === null || raw === undefined) return;
+        const n = Number(raw);
+        if (!isFinite(n)) return;
+        if (m.kind === 'fat') {
+          if (n >= BODY_FAT_MIN_PCT && n <= BODY_FAT_MAX_PCT) out[m.key] = Math.round(n * 10) / 10;
+          return;
+        }
+        if (n >= BODY_LENGTH_MIN_CM && n <= BODY_LENGTH_MAX_CM) out[m.key] = Math.round(n * 10) / 10;
+      });
+      return out;
+    }
+
+    /* Idempotent: drops unusable entries, keeps one per date (later wins),
+       sorts oldest first and never throws. Old states have no `body` -> []. */
+    function normalizeBodyEntries(src) {
+      const out = [];
+      if (!Array.isArray(src)) return out;
+      const todayKey = dayKeyLocal(Date.now());
+      const byDate = {};
+      for (let i = 0; i < src.length; i++) {
+        const e = src[i];
+        if (!e || typeof e !== 'object' || Array.isArray(e)) continue;
+        if (bodyDateMs(e.date) === null) continue;
+        const date = String(e.date);
+        if (todayKey && date > todayKey) continue; // future days are not loggable
+        let weightKg = null;
+        if (e.weightKg !== null && e.weightKg !== undefined && e.weightKg !== '') {
+          const n = Number(e.weightKg);
+          if (isFinite(n) && n >= BODY_WEIGHT_MIN_KG && n <= BODY_WEIGHT_MAX_KG) {
+            weightKg = Math.round(n * 100) / 100;
+          }
+        }
+        const measures = normalizeBodyMeasures(e.measures);
+        if (weightKg === null && Object.keys(measures).length === 0) continue;
+        const id = (typeof e.id === 'string' && e.id.trim() !== '') ? e.id.trim() : ('body-' + date);
+        byDate[date] = { id: id, date: date, weightKg: weightKg, measures: measures };
+      }
+      Object.keys(byDate).sort().forEach(function (k) { out.push(byDate[k]); });
+      return out;
     }
 
     /* MIGRATION v1 -> v2: old weights have no per-set unit; they were recorded
@@ -2097,6 +2294,19 @@
     let pendingDeleteHistId = null;
     let deletedHistBackup = null;
     let deletedHistTimer = null;
+    /* P5-04 body weight & measurements: all UI state is in-memory; only Save /
+       Edit / Delete / Undo write state.body + saveState. */
+    let bodyMoreOpen = false;
+    let bodyRange = '3M';
+    let bodyMeasure = 'weight';
+    let bodyEditId = null;
+    let bodyEditError = '';
+    let bodyEntryMessage = '';
+    let bodyEntryError = '';
+    let bodyFormUnit = null; // unit the quick-entry fields were last written in
+    let pendingDeleteBodyId = null;
+    let deletedBodyBackup = null;
+    let deletedBodyTimer = null;
     /* P2-05 set actions (personal part): set-menu target, replace-picker
        target exercise, single-set undo snapshot. */
     let setMenuTarget = null;
@@ -2164,6 +2374,8 @@
       // P2-08: idempotent history-id backfill (no version bump); old entries
       // without ids get one, existing ids are untouched.
       ensureHistoryIds(state.history);
+      // P5-04: idempotent body-log normalisation (no version bump).
+      state.body = normalizeBodyEntries(state.body);
       if (hadSavedState) saveState();
       if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
       state.plateSettings = normalizePlateSettings(state.plateSettings);
@@ -6974,7 +7186,7 @@
     function getProfileSection() {
       try {
         const val = localStorage.getItem(PROFILE_SECTION_KEY);
-        if (val === 'progress' || val === 'records' || val === 'settings') {
+        if (val === 'progress' || val === 'records' || val === 'body' || val === 'settings') {
           return val;
         }
       } catch (e) {}
@@ -6982,7 +7194,7 @@
     }
 
     function setProfileSection(section, persist = true) {
-      if (section !== 'progress' && section !== 'records' && section !== 'settings') {
+      if (section !== 'progress' && section !== 'records' && section !== 'body' && section !== 'settings') {
         section = 'progress';
       }
       activeProfileSection = section;
@@ -6992,7 +7204,7 @@
         } catch (e) {}
       }
 
-      const sections = ['progress', 'records', 'settings'];
+      const sections = ['progress', 'records', 'body', 'settings'];
       sections.forEach(s => {
         const btn = document.getElementById('profSecBtn-' + s);
         if (btn) {
@@ -7006,6 +7218,7 @@
       const panels = {
         progress: document.getElementById('profileProgress'),
         records: document.getElementById('profileRecordsSection'),
+        body: document.getElementById('profileBody'),
         settings: document.getElementById('profileSettings'),
       };
 
@@ -7068,11 +7281,663 @@
 
       renderMyProfile();
       renderProfileRecords();
+      /* P5-04: chart, trend and history refresh; entry inputs are untouched. */
+      renderBodySection();
 
       /* P5-03: one card holds the calendar, the consistency line and the
          muscle workload. Both workload ranges recompute from history with
          P5-01 counting sets (warm-ups excluded) and Primary muscle only. */
       renderTrainingCalendar();
+    }
+
+    /* ================= P5-04 BODY WEIGHT & MEASUREMENTS =================
+       Private, local-only log: one entry per day, weight optional and any of
+       nine measurements optional. Chart/trend are plain facts, no advice. */
+
+    function bodyEntries() {
+      if (!Array.isArray(state.body)) state.body = [];
+      return state.body.slice().sort(function (a, b) {
+        return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+      });
+    }
+
+    function bodyByDate(dateKey) {
+      const all = bodyEntries();
+      for (let i = 0; i < all.length; i++) {
+        if (all[i].date === dateKey) return all[i];
+      }
+      return null;
+    }
+
+    function bodyMetricValue(entry, key) {
+      if (!entry) return null;
+      if (key === 'weight') {
+        return (entry.weightKg === null || entry.weightKg === undefined) ? null : Number(entry.weightKg);
+      }
+      if (!entry.measures) return null;
+      const v = entry.measures[key];
+      return (v === null || v === undefined || v === '') ? null : Number(v);
+    }
+
+    function bodyDisplayValue(entry, key) {
+      const v = bodyMetricValue(entry, key);
+      if (v === null || !isFinite(v)) return null;
+      const info = bodyMeasureInfo(key);
+      if (info.kind === 'weight') return toDisplayWeight(v);
+      if (info.kind === 'fat') return Math.round(v * 10) / 10;
+      return toDisplayLength(v);
+    }
+
+    /* Oldest first, cut by range. Only points that carry the chosen measure. */
+    function bodySeries(metric, range) {
+      const key = metric || bodyMeasure;
+      const r = range || bodyRange;
+      const daysBack = r === '1M' ? 30 : r === '3M' ? 90 : r === '1Y' ? 365 : 0;
+      const cutoff = daysBack > 0 ? dayKeyLocal(Date.now() - daysBack * 86400000) : null;
+      const out = [];
+      bodyEntries().forEach(function (e) {
+        if (cutoff && e.date < cutoff) return;
+        const y = bodyMetricValue(e, key);
+        if (y === null || !isFinite(y)) return;
+        out.push({ date: e.date, dateMs: bodyDateMs(e.date), y: y, display: bodyDisplayValue(e, key) });
+      });
+      return out;
+    }
+
+    /* Latest weight plus the change against a week / 30 days ago. Plain
+       arithmetic only: no goal, no judgement. */
+    function bodyTrend() {
+      const weights = bodyEntries().filter(function (e) {
+        return e.weightKg !== null && e.weightKg !== undefined && isFinite(Number(e.weightKg));
+      });
+      if (!weights.length) return { latest: null, week: null, month: null };
+      const latest = weights[weights.length - 1];
+      const latestMs = bodyDateMs(latest.date);
+      const prior = function (days) {
+        const d = new Date(latestMs);
+        d.setDate(d.getDate() - days);
+        const key = dayKeyLocal(d.getTime());
+        let found = null;
+        for (let i = 0; i < weights.length; i++) {
+          if (weights[i].date <= key) found = weights[i];
+        }
+        return found;
+      };
+      const pack = function (e) {
+        if (!e) return null;
+        const deltaKg = Math.round((Number(latest.weightKg) - Number(e.weightKg)) * 100) / 100;
+        return {
+          date: e.date,
+          weightKg: Number(e.weightKg),
+          deltaKg: deltaKg,
+          deltaDisplay: Number(toDisplayWeight(Math.abs(deltaKg))) || 0
+        };
+      };
+      return {
+        latest: { date: latest.date, weightKg: Number(latest.weightKg), display: toDisplayWeight(latest.weightKg) },
+        week: pack(prior(7)),
+        month: pack(prior(30))
+      };
+    }
+
+    /* Number only: no category, no advice. Needs a usable P1-05 height. */
+    function bodyBmi() {
+      const profile = normalizeProfile(state.profile);
+      const raw = String(profile.heightCm == null ? '' : profile.heightCm).trim();
+      if (raw === '') return null;
+      const hCm = Number(raw);
+      if (!isFinite(hCm) || hCm < 50 || hCm > 250) return null;
+      const weights = bodyEntries().filter(function (e) { return e.weightKg !== null && e.weightKg !== undefined; });
+      if (!weights.length) return null;
+      const weightKg = Number(weights[weights.length - 1].weightKg);
+      const m = hCm / 100;
+      return { bmi: Math.round((weightKg / (m * m)) * 10) / 10, weightKg: weightKg, heightCm: hCm };
+    }
+
+    function upsertBodyWeight(dateKey, weightKg) {
+      if (!Array.isArray(state.body)) state.body = [];
+      let entry = null;
+      let updated = false;
+      for (let i = 0; i < state.body.length; i++) {
+        if (state.body[i] && state.body[i].date === dateKey) { entry = state.body[i]; updated = true; break; }
+      }
+      if (!entry) {
+        if (weightKg === null || weightKg === undefined) return { entry: null, updated: false };
+        entry = { id: 'body-' + dateKey, date: dateKey, weightKg: null, measures: {} };
+        state.body.push(entry);
+      }
+      entry.weightKg = (weightKg === null || weightKg === undefined) ? null : weightKg;
+      state.body = normalizeBodyEntries(state.body);
+      return { entry: bodyByDate(dateKey), updated: updated };
+    }
+
+    /* Replaces the day's measurement set with what the form holds, so clearing
+       a field removes that measurement. Weight is not touched here. */
+    function upsertBodyMeasures(dateKey, measures) {
+      if (!Array.isArray(state.body)) state.body = [];
+      const clean = normalizeBodyMeasures(measures);
+      let entry = null;
+      let created = false;
+      for (let i = 0; i < state.body.length; i++) {
+        if (state.body[i] && state.body[i].date === dateKey) { entry = state.body[i]; break; }
+      }
+      if (!entry) {
+        if (Object.keys(clean).length === 0) return { entry: null, created: false };
+        entry = { id: 'body-' + dateKey, date: dateKey, weightKg: null, measures: {} };
+        state.body.push(entry);
+        created = true;
+      }
+      entry.measures = clean;
+      state.body = normalizeBodyEntries(state.body);
+      return { entry: bodyByDate(dateKey), created: created };
+    }
+
+    function bodyMeasureInputId(key, scope) {
+      if (scope === 'edit') return key === 'weight' ? 'bodyEditWeight' : ('bodyEdit-' + key);
+      return bodyMeasureInfo(key).inputId;
+    }
+
+    function bodyReadInputValue(id) {
+      const el = document.getElementById(id);
+      if (!el || el.value === null || el.value === undefined) return '';
+      return String(el.value).trim();
+    }
+
+    function bodyReadWeightInput(id) {
+      const raw = bodyReadInputValue(id);
+      if (raw === '') return { raw: raw, kg: null };
+      const n = Number(raw.replace(',', '.'));
+      if (!isFinite(n) || n <= 0) return { raw: raw, error: 'Weight must be a number.' };
+      const kg = fromInputWeight(n, state.unit);
+      if (!isFinite(kg) || kg < BODY_WEIGHT_MIN_KG || kg > BODY_WEIGHT_MAX_KG) {
+        return {
+          raw: raw,
+          error: 'Weight looks out of range (' + toDisplayWeight(BODY_WEIGHT_MIN_KG) + '\u2013'
+            + toDisplayWeight(BODY_WEIGHT_MAX_KG) + ' ' + bodyUnitLabel('weight') + ').'
+        };
+      }
+      return { raw: raw, kg: Math.round(kg * 100) / 100 };
+    }
+
+    function bodyReadMeasureInputs(scope) {
+      const values = {};
+      let error = '';
+      BODY_MEASURES.forEach(function (m) {
+        if (error || m.kind === 'weight') return;
+        const raw = bodyReadInputValue(bodyMeasureInputId(m.key, scope));
+        if (raw === '') return;
+        const n = Number(raw.replace(',', '.'));
+        if (!isFinite(n) || n <= 0) { error = m.label + ' must be a number.'; return; }
+        if (m.kind === 'fat') {
+          const pct = Math.round(n * 10) / 10;
+          if (pct < BODY_FAT_MIN_PCT || pct > BODY_FAT_MAX_PCT) {
+            error = m.label + ' looks out of range (' + BODY_FAT_MIN_PCT + '\u2013' + BODY_FAT_MAX_PCT + ' %).';
+            return;
+          }
+          values[m.key] = pct;
+          return;
+        }
+        const cm = Math.round(fromInputLength(n, state.unit) * 100) / 100;
+        if (cm < BODY_LENGTH_MIN_CM || cm > BODY_LENGTH_MAX_CM) {
+          error = m.label + ' looks out of range (' + toDisplayLength(BODY_LENGTH_MIN_CM) + '\u2013'
+            + toDisplayLength(BODY_LENGTH_MAX_CM) + ' ' + bodyUnitLabel('length') + ').';
+          return;
+        }
+        values[m.key] = cm;
+      });
+      return { values: values, error: error };
+    }
+
+    function bodyReadDateInput(id) {
+      const today = dayKeyLocal(Date.now());
+      const raw = bodyReadInputValue(id);
+      const key = raw === '' ? today : raw;
+      if (!key || bodyDateMs(key) === null) return { error: 'Pick a real date.' };
+      if (today && key > today) return { error: 'Pick a date up to today.' };
+      return { date: key };
+    }
+
+    /* Fill the quick-entry fields from that day's saved entry (display units).
+       Called on first render, on date change and after a save/delete. */
+    function bodyFillEntryForm(dateKey) {
+      const e = bodyByDate(dateKey);
+      const set = function (id, v) {
+        const el = document.getElementById(id);
+        if (el) el.value = v;
+      };
+      set('bodyWeightInput', e && e.weightKg !== null ? String(toDisplayWeight(e.weightKg)) : '');
+      BODY_MEASURES.forEach(function (m) {
+        if (m.kind === 'weight') return;
+        const v = e && e.measures ? e.measures[m.key] : null;
+        let out = '';
+        if (v !== null && v !== undefined) {
+          out = m.kind === 'fat' ? String(Math.round(Number(v) * 10) / 10) : String(toDisplayLength(v));
+        }
+        set(m.inputId, out);
+      });
+      bodyFormUnit = state.unit;
+    }
+
+    /* The unit toggle only changes presentation: convert what is typed so the
+       number still means the same body, never touching stored kg/cm. */
+    function bodyConvertFormUnit(fromUnit, toUnit) {
+      const wEl = document.getElementById('bodyWeightInput');
+      const rawW = wEl && wEl.value !== null && wEl.value !== undefined ? String(wEl.value).trim() : '';
+      if (rawW !== '') {
+        const kg = fromInputWeight(rawW, fromUnit);
+        if (isFinite(Number(kg))) wEl.value = String(toDisplayWeight(kg, toUnit));
+      }
+      BODY_MEASURES.forEach(function (m) {
+        if (m.kind !== 'length') return;
+        const el = document.getElementById(m.inputId);
+        const raw = el && el.value !== null && el.value !== undefined ? String(el.value).trim() : '';
+        if (raw === '') return;
+        const cm = fromInputLength(raw, fromUnit);
+        if (isFinite(Number(cm))) el.value = String(toDisplayLength(cm, toUnit));
+      });
+    }
+
+    function bodyDateChanged() {
+      bodyEntryError = '';
+      bodyEntryMessage = '';
+      const d = bodyReadDateInput('bodyDateInput');
+      if (d.error) {
+        bodyEntryError = d.error;
+        renderBodySection();
+        return false;
+      }
+      bodyFillEntryForm(d.date);
+      renderBodySection();
+      return true;
+    }
+
+    function toggleBodyMore() {
+      bodyMoreOpen = !bodyMoreOpen;
+      renderBodySection();
+      return bodyMoreOpen;
+    }
+
+    function setBodyRange(r) {
+      if (['1M', '3M', '1Y', 'All'].indexOf(r) < 0) return false;
+      bodyRange = r;
+      renderBodySection();
+      return true;
+    }
+
+    function setBodyMeasure(key) {
+      bodyMeasure = bodyMeasureInfo(key).key;
+      renderBodySection();
+      return true;
+    }
+
+    function saveBodyEntry() {
+      bodyEntryError = '';
+      bodyEntryMessage = '';
+      const d = bodyReadDateInput('bodyDateInput');
+      const w = bodyReadWeightInput('bodyWeightInput');
+      const m = bodyReadMeasureInputs('entry');
+      const err = d.error || w.error || m.error;
+      if (err) {
+        bodyEntryError = err;
+        renderBodySection();
+        return { ok: false, error: err };
+      }
+      const hasMeasures = Object.keys(m.values).length > 0;
+      if (w.kg === null && !hasMeasures) {
+        bodyEntryError = 'Enter a weight or at least one measurement.';
+        renderBodySection();
+        return { ok: false, error: bodyEntryError };
+      }
+      const existing = bodyByDate(d.date);
+      upsertBodyWeight(d.date, w.kg);
+      upsertBodyMeasures(d.date, m.values);
+      const isToday = d.date === dayKeyLocal(Date.now());
+      bodyEntryMessage = existing
+        ? (isToday ? "Updated today's weight" : 'Updated that day\u2019s entry')
+        : 'Saved';
+      saveState();
+      bodyFillEntryForm(d.date);
+      renderBodySection();
+      return { ok: true, entry: bodyByDate(d.date) };
+    }
+
+    function bodyNumberText(n) {
+      return String(Math.round(Number(n) * 10) / 10);
+    }
+
+    function bodyDeltaText(part, days) {
+      if (!part) return 'Not enough history yet for ' + days + ' days.';
+      const unit = (state.unit === 'LBS') ? 'lbs' : 'kg';
+      if (part.deltaKg === 0) return 'No change in ' + days + ' days.';
+      const sign = part.deltaKg > 0 ? '+' : '\u2212';
+      return sign + bodyNumberText(part.deltaDisplay) + ' ' + unit + ' in ' + days + ' days';
+    }
+
+    function bodyChartHtml() {
+      const info = bodyMeasureInfo(bodyMeasure);
+      const unit = bodyUnitLabel(info.kind);
+      const entries = bodyEntries();
+      if (!entries.length) {
+        return emptyStateHtml('No weight yet', 'Save today\u2019s weight to start a line.');
+      }
+      let anyOfThis = false;
+      entries.forEach(function (e) { if (bodyMetricValue(e, bodyMeasure) !== null) anyOfThis = true; });
+      if (!anyOfThis) {
+        return emptyStateHtml('No ' + info.label.toLowerCase() + ' yet', 'Add it from today\u2019s entry.');
+      }
+      const points = bodySeries(bodyMeasure, bodyRange);
+      if (!points.length) {
+        return emptyStateHtml('No ' + info.label.toLowerCase() + ' in this range', 'Try a wider range.');
+      }
+      const ys = points.map(function (p) { return Number(p.display) || 0; });
+      if (points.length === 1) {
+        return '<div style="text-align:center; padding:8px 0; color:var(--text-sub); font-size:14px;">Log another day to see a line</div>'
+          + '<svg viewBox="0 0 360 160" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">'
+          + '<circle cx="180" cy="80" r="4" fill="#3b82f6"/>'
+          + '</svg>';
+      }
+      const w = 360, h = 160, pad = { top: 20, right: 20, bottom: 30, left: 34 };
+      const chartW = w - pad.left - pad.right;
+      const chartH = h - pad.top - pad.bottom;
+      const maxVal = Math.max.apply(null, ys);
+      const minVal = Math.min.apply(null, ys);
+      const span = Math.max(maxVal - minVal, Math.abs(maxVal) * 0.05, 1);
+      const loY = Math.max(0, minVal - span * 0.15), hiY = maxVal + span * 0.15;
+      const xScale = function (i) { return pad.left + (i / (points.length - 1 || 1)) * chartW; };
+      const yScale = function (v) { return pad.top + chartH - (((v - loY) / (hiY - loY)) * chartH); };
+      const polylinePoints = points.map(function (p, i) {
+        return (xScale(i) || 0) + ',' + (yScale(ys[i]) || 0);
+      }).join(' ');
+      const dotsHtml = points.map(function (p, i) {
+        return '<circle cx="' + (xScale(i) || 0) + '" cy="' + (yScale(ys[i]) || 0)
+          + '" r="3.5" fill="#3b82f6" stroke="#151c2c" stroke-width="1.5"/>';
+      }).join('');
+      const maxLabelY = yScale(maxVal);
+      const minLabelY = yScale(minVal);
+      const axisFmt = function (v) { return String(Math.round(Number(v) * 10) / 10); };
+      return '<svg viewBox="0 0 360 160" style="width:100%; height:auto; display:block; background:var(--bg-elevated); border-radius:8px; border:1px solid var(--border);" xmlns="http://www.w3.org/2000/svg">'
+        + '<line x1="' + pad.left + '" y1="' + maxLabelY + '" x2="' + (w - pad.right) + '" y2="' + maxLabelY + '" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3 3"/>'
+        + '<line x1="' + pad.left + '" y1="' + minLabelY + '" x2="' + (w - pad.right) + '" y2="' + minLabelY + '" stroke-dasharray="3 3" stroke="var(--border)" stroke-width="0.5"/>'
+        + '<polyline points="' + polylinePoints + '" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+        + dotsHtml
+        + '<text x="4" y="' + (maxLabelY + 3) + '" text-anchor="start" font-size="10" fill="#94a3b8" font-family="sans-serif">' + axisFmt(maxVal) + '</text>'
+        + '<text x="4" y="' + (minLabelY + 3) + '" text-anchor="start" font-size="10" fill="#94a3b8" font-family="sans-serif">' + axisFmt(minVal) + '</text>'
+        + '</svg>';
+    }
+
+    function bodyTrendHtml() {
+      const t = bodyTrend();
+      if (!t.latest) return 'Save a weight to see your trend.';
+      const unit = (state.unit === 'LBS') ? 'lbs' : 'kg';
+      const when = new Date(bodyDateMs(t.latest.date)).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      let html = '<div>Latest: <b>' + bodyNumberText(t.latest.display) + ' ' + unit + '</b> \u00b7 ' + esc(when) + '</div>';
+      html += '<div>' + esc(bodyDeltaText(t.week, 7)) + '</div>';
+      html += '<div>' + esc(bodyDeltaText(t.month, 30)) + '</div>';
+      const bmi = bodyBmi();
+      if (bmi) html += '<div>BMI (from your height): ' + bmi.bmi.toFixed(1) + '</div>';
+      return html;
+    }
+
+    function bodyEditHtml(e) {
+      const pending = pendingDeleteBodyId === e.id;
+      let html = '<div style="border:1px solid var(--primary); border-radius:var(--radius-12); padding:var(--space-12); margin:var(--space-8) 0;">';
+      html += '<div class="body-field-label">Date</div>'
+        + '<input type="date" id="bodyEditDate" class="set-input" value="' + esc(e.date) + '" style="width:100%; min-height:44px; padding:8px; text-align:left; margin-bottom:8px;">';
+      html += '<div class="body-field-label">Weight (' + esc(bodyUnitLabel('weight')) + ')</div>'
+        + '<input type="number" id="bodyEditWeight" class="set-input" inputmode="decimal" step="any" value="'
+        + esc(e.weightKg === null ? '' : String(toDisplayWeight(e.weightKg))) + '" style="width:100%; min-height:44px; padding:8px; text-align:left; margin-bottom:8px;">';
+      html += '<div class="body-field-grid">';
+      BODY_MEASURES.forEach(function (m) {
+        if (m.kind === 'weight') return;
+        const v = e.measures ? e.measures[m.key] : null;
+        const shown = (v === null || v === undefined) ? '' : (m.kind === 'fat' ? String(Math.round(Number(v) * 10) / 10) : String(toDisplayLength(v)));
+        html += '<label><span class="body-field-label">' + esc(m.label) + ' (' + esc(bodyUnitLabel(m.kind)) + ')</span>'
+          + '<input type="number" id="bodyEdit-' + esc(m.key) + '" class="set-input" inputmode="decimal" step="any" value="' + esc(shown) + '" style="height:44px; text-align:left; padding:8px;"></label>';
+      });
+      html += '</div>';
+      if (bodyEditError) {
+        html += '<div role="alert" style="font-size:var(--font-12); color:var(--danger); margin-top:8px;">' + esc(bodyEditError) + '</div>';
+      }
+      html += '<div style="display:flex; gap:var(--space-8); margin-top:var(--space-12);">'
+        + '<button type="button" class="btn btn-primary" style="flex:1;" onclick="saveBodyEdit()">Save</button>';
+      if (pending) {
+        html += '<button type="button" class="btn btn-danger" style="flex:1;" onclick="confirmDeleteBody()">Confirm delete</button>'
+          + '<button type="button" class="btn" style="flex:1;" onclick="cancelDeleteBody()">Keep</button>';
+      } else {
+        html += '<button type="button" class="btn btn-danger" style="flex:1;" onclick="askDeleteBody(\'' + esc(e.id) + '\')">Delete</button>'
+          + '<button type="button" class="btn" style="flex:1;" onclick="closeBodyEdit()">Cancel</button>';
+      }
+      html += '</div>';
+      if (pending) {
+        html += '<div style="font-size:var(--font-12); color:var(--danger); margin-top:var(--space-8);">Deleting this entry can be undone for 5 seconds.</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function bodyHistoryHtml() {
+      const all = bodyEntries().reverse();
+      if (!all.length) return emptyStateHtml('No entries yet', 'Saved weight and measurements appear here.');
+      return all.map(function (e) {
+        if (bodyEditId !== null && e.id === bodyEditId) return bodyEditHtml(e);
+        const parts = [];
+        if (e.weightKg !== null && e.weightKg !== undefined) {
+          parts.push(bodyNumberText(toDisplayWeight(e.weightKg)) + ' ' + bodyUnitLabel('weight'));
+        } else {
+          parts.push('No weight');
+        }
+        const n = Object.keys(e.measures || {}).length;
+        if (n) parts.push('+' + n + (n === 1 ? ' measurement' : ' measurements'));
+        const when = new Date(bodyDateMs(e.date)).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        return '<button type="button" onclick="openBodyEdit(\'' + esc(e.id) + '\')" aria-label="Edit entry ' + esc(when) + '"'
+          + ' style="width:100%; display:flex; justify-content:space-between; align-items:center; gap:var(--space-8); background:none; border:0; border-bottom:1px solid var(--border); color:var(--text); padding:12px 0; min-height:44px; text-align:left; font-size:var(--font-14);">'
+          + '<span><b>' + esc(when) + '</b></span>'
+          + '<span style="font-size:var(--font-12); color:var(--text-sub); text-align:right;">' + esc(parts.join(' \u00b7 ')) + '</span>'
+          + '</button>';
+      }).join('');
+    }
+
+    function openBodyEdit(id) {
+      let found = null;
+      bodyEntries().forEach(function (e) { if (e.id === id) found = e; });
+      if (!found) return false;
+      bodyEditId = found.id;
+      bodyEditError = '';
+      pendingDeleteBodyId = null;
+      renderBodySection();
+      return true;
+    }
+
+    function closeBodyEdit() {
+      bodyEditId = null;
+      bodyEditError = '';
+      pendingDeleteBodyId = null;
+      renderBodySection();
+      return true;
+    }
+
+    function saveBodyEdit() {
+      let entry = null;
+      bodyEntries().forEach(function (e) { if (e.id === bodyEditId) entry = e; });
+      if (!entry) {
+        bodyEditId = null;
+        renderBodySection();
+        return { ok: false, error: 'Entry not found.' };
+      }
+      bodyEditError = '';
+      const d = bodyReadDateInput('bodyEditDate');
+      const w = bodyReadWeightInput('bodyEditWeight');
+      const m = bodyReadMeasureInputs('edit');
+      const err = d.error || w.error || m.error;
+      if (err) {
+        bodyEditError = err;
+        renderBodySection();
+        return { ok: false, error: err };
+      }
+      if (w.kg === null && Object.keys(m.values).length === 0) {
+        bodyEditError = 'Enter a weight or at least one measurement.';
+        renderBodySection();
+        return { ok: false, error: bodyEditError };
+      }
+      const other = bodyByDate(d.date);
+      if (other && other.id !== entry.id) {
+        bodyEditError = 'Another entry already exists on that date.';
+        renderBodySection();
+        return { ok: false, error: bodyEditError };
+      }
+      entry.date = d.date;
+      entry.weightKg = w.kg;
+      entry.measures = m.values;
+      state.body = normalizeBodyEntries(state.body);
+      bodyEditId = null;
+      pendingDeleteBodyId = null;
+      saveState();
+      renderBodySection();
+      return { ok: true, entry: bodyByDate(d.date) };
+    }
+
+    function askDeleteBody(id) {
+      let found = null;
+      bodyEntries().forEach(function (e) { if (e.id === id) found = e; });
+      if (!found) return false;
+      bodyEditId = found.id;
+      pendingDeleteBodyId = found.id;
+      renderBodySection();
+      return true;
+    }
+
+    function cancelDeleteBody() {
+      pendingDeleteBodyId = null;
+      renderBodySection();
+      return true;
+    }
+
+    function confirmDeleteBody() {
+      const id = pendingDeleteBodyId;
+      pendingDeleteBodyId = null;
+      if (id == null) return false;
+      if (!Array.isArray(state.body)) state.body = [];
+      let idx = -1;
+      for (let i = 0; i < state.body.length; i++) {
+        if (state.body[i] && state.body[i].id === id) { idx = i; break; }
+      }
+      if (idx < 0) { renderBodySection(); return false; }
+      const removed = state.body.splice(idx, 1)[0];
+      deletedBodyBackup = {
+        entry: removed,
+        index: Math.min(idx, state.body.length),
+        expiresAt: Date.now() + 5000
+      };
+      try { if (deletedBodyTimer) clearTimeout(deletedBodyTimer); } catch (e) {}
+      try { deletedBodyTimer = setTimeout(function () { expireDeletedBody(); }, 5000); } catch (e) {}
+      bodyEditId = null;
+      bodyEntryMessage = '';
+      bodyEntryError = '';
+      const dateEl = document.getElementById('bodyDateInput');
+      if (dateEl && dateEl.value === removed.date) bodyFillEntryForm(removed.date);
+      saveState();
+      renderBodySection();
+      return true;
+    }
+
+    function undoDeleteBody() {
+      if (!deletedBodyBackup) return false;
+      if (!Array.isArray(state.body)) state.body = [];
+      state.body.splice(Math.min(deletedBodyBackup.index, state.body.length), 0, deletedBodyBackup.entry);
+      const restoredDate = deletedBodyBackup.entry.date;
+      deletedBodyBackup = null;
+      try { if (deletedBodyTimer) clearTimeout(deletedBodyTimer); } catch (e) {}
+      deletedBodyTimer = null;
+      state.body = normalizeBodyEntries(state.body);
+      const dateEl = document.getElementById('bodyDateInput');
+      if (dateEl && dateEl.value === restoredDate) bodyFillEntryForm(restoredDate);
+      saveState();
+      renderBodySection();
+      return true;
+    }
+
+    function expireDeletedBody(now) {
+      if (!deletedBodyBackup) return false;
+      const t = (typeof now === 'number') ? now : Date.now();
+      if (t < deletedBodyBackup.expiresAt) return false;
+      deletedBodyBackup = null;
+      deletedBodyTimer = null;
+      renderBodySection();
+      return true;
+    }
+
+    /* The single body refresh: only the rendered blocks + labels, never the
+       quick-entry inputs (typing must stay stable). */
+    function renderBodySection() {
+      const today = dayKeyLocal(Date.now());
+      const dateEl = document.getElementById('bodyDateInput');
+      if (dateEl) {
+        if (today) { dateEl.max = today; dateEl.setAttribute('max', today); }
+        if (!dateEl.value && today) {
+          dateEl.value = today;
+          bodyFillEntryForm(today);
+        }
+      }
+      if (bodyFormUnit && bodyFormUnit !== state.unit) {
+        bodyConvertFormUnit(bodyFormUnit, state.unit);
+        bodyFormUnit = state.unit;
+      }
+
+      const weightUnit = bodyUnitLabel('weight');
+      const wuEl = document.getElementById('bodyWeightUnit');
+      if (wuEl) wuEl.textContent = weightUnit;
+      BODY_MEASURES.forEach(function (m) {
+        if (m.kind === 'weight') return;
+        const lbl = document.getElementById('bodyLbl-' + m.key);
+        if (lbl) lbl.textContent = m.label + ' (' + bodyUnitLabel(m.kind) + ')';
+      });
+
+      const moreBtn = document.getElementById('bodyMoreToggle');
+      if (moreBtn) {
+        moreBtn.setAttribute('aria-expanded', bodyMoreOpen ? 'true' : 'false');
+        moreBtn.textContent = bodyMoreOpen ? '\u2212 Fewer measurements' : '+ More measurements';
+      }
+      const moreBox = document.getElementById('bodyMoreFields');
+      if (moreBox) {
+        if (bodyMoreOpen) { moreBox.removeAttribute('hidden'); moreBox.hidden = false; }
+        else { moreBox.setAttribute('hidden', ''); moreBox.hidden = true; }
+      }
+
+      const sel = document.getElementById('bodyMeasureSelect');
+      if (sel) sel.value = bodyMeasure;
+      const info = bodyMeasureInfo(bodyMeasure);
+      const title = document.getElementById('bodyChartTitle');
+      if (title) title.textContent = info.label + ' \u00b7 ' + bodyUnitLabel(info.kind);
+
+      const chips = document.getElementById('bodyRangeChips');
+      if (chips) {
+        chips.innerHTML = ['1M', '3M', '1Y', 'All'].map(function (r) {
+          return '<button type="button" class="chip' + (bodyRange === r ? ' on' : '') + '"'
+            + ' aria-pressed="' + (bodyRange === r ? 'true' : 'false') + '"'
+            + ' style="min-height:44px; padding:6px 12px; font-size:var(--font-12);"'
+            + ' onclick="setBodyRange(\'' + r + '\')">' + r + '</button>';
+        }).join('');
+      }
+
+      const chart = document.getElementById('bodyChart');
+      if (chart) chart.innerHTML = bodyChartHtml();
+      const trend = document.getElementById('bodyTrend');
+      if (trend) trend.innerHTML = bodyTrendHtml();
+      const history = document.getElementById('bodyHistoryList');
+      if (history) history.innerHTML = bodyHistoryHtml();
+      const undo = document.getElementById('bodyUndo');
+      if (undo) {
+        undo.innerHTML = deletedBodyBackup
+          ? '<div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-8); background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); padding:var(--space-8) var(--space-12); margin-bottom:var(--space-8); font-size:var(--font-12);">'
+            + '<span>Entry deleted \u00b7</span>'
+            + '<button type="button" class="btn" style="min-height:44px; padding:6px 10px; font-size:var(--font-12);" onclick="undoDeleteBody()">\u21a9\ufe0f Undo (5s)</button>'
+            + '</div>'
+          : '';
+      }
+      const note = document.getElementById('bodyEntryNote');
+      if (note) note.textContent = bodyEntryMessage;
+      const errEl = document.getElementById('bodyError');
+      if (errEl) errEl.textContent = bodyEntryError;
     }
 
     function saveRestPreference() {
@@ -7780,6 +8645,9 @@
       // P2-10: a backup without plans restores fine (gains plans:{}); one with
       // plans keeps them (invalid entries dropped). Nothing is ever refused.
       data.plans = normalizePlans(data.plans);
+      // P5-04: a backup without body entries restores fine (gains body:[]);
+      // invalid entries/values are dropped, valid ones kept.
+      data.body = normalizeBodyEntries(data.body);
       if (data.dropStepPct !== 10 && data.dropStepPct !== 20 && data.dropStepPct !== 30) data.dropStepPct = 20;
       if (typeof data.supersetAdvance !== 'boolean') data.supersetAdvance = true;
       // P1-05: keep a valid profile from the backup (missing stays missing,
@@ -7978,6 +8846,7 @@
       }
       // P2-10: keep the plans that came with the backup (invalid dropped).
       state.plans = normalizePlans(state.plans);
+      state.body = normalizeBodyEntries(state.body);
       if (!state.unit) state.unit = 'KG';
       if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
       if (state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)) {
@@ -8026,6 +8895,7 @@
       // P2-10: the snapshot was taken from a normalised state, so this is a
       // no-op safety net for plans written by older code.
       state.plans = normalizePlans(state.plans);
+      state.body = normalizeBodyEntries(state.body);
       try {
         // Write back the exact snapshot string so undo restores data byte-for-byte.
         localStorage.setItem('hevy_clone_state', raw);

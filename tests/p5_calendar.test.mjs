@@ -110,15 +110,30 @@ describe('P5-03 calendar and consistency', () => {
 
   it('current-unfinished-week-does-not-break-streak', () => {
     const app = createApp();
-    const now = ts(2026, 9, 14, 12); // Wed 14 Oct: week of Mon 12 Oct is still empty
+    // Clock-relative fixture: the card path below reads the REAL clock, so pin
+    // the workouts to the two previous COMPLETE weeks instead of a fixed date.
+    const nowDate = new Date();
+    nowDate.setHours(12, 0, 0, 0);
+    const now = nowDate.getTime();
+    const weekStart = new Date(app.api.startOfWeekMs(now, 1));
+    const prev = (weeks) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() - 7 * weeks); // setDate keeps this DST-safe
+      d.setHours(10, 0, 0, 0);
+      return d.getTime();
+    };
     const history = [
-      histEntry('w_sep30', ts(2026, 8, 30), 'ex1', [loadSet(100, 5)]),
-      histEntry('w_oct07', ts(2026, 9, 7), 'ex1', [loadSet(100, 5)])
+      histEntry('w_prev2', prev(2), 'ex1', [loadSet(100, 5)]),
+      histEntry('w_prev1', prev(1), 'ex1', [loadSet(100, 5)])
     ];
     const cons = app.api.computeConsistency(history, now, 1);
     assert.equal(cons.thisWeek, 0, 'nothing this week yet');
     assert.equal(cons.streakWeeks, 2, 'the unfinished current week does not break the run');
-    assert.equal(cons.thisMonth, 1, 'only the October workout is in October');
+    const inThisMonth = history.filter((h) => {
+      const hd = new Date(h.date);
+      return hd.getFullYear() === nowDate.getFullYear() && hd.getMonth() === nowDate.getMonth();
+    }).length;
+    assert.equal(cons.thisMonth, inThisMonth, 'this month counts only this month\'s workouts');
 
     // …and the same run is what the card shows.
     app.api.state.history = history;
