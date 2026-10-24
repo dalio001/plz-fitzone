@@ -847,6 +847,7 @@
 
       <!-- Section 1: Progress -->
       <div id="profileProgress" class="profile-section-panel">
+        <div id="weekSummaryCard"></div>
         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;">
           <div class="card" style="text-align:center; margin:0;">
             <div style="font-size:22px; font-weight:800; color:var(--primary);" id="statWorkouts">0</div>
@@ -8232,8 +8233,271 @@
       if (unitBtn) unitBtn.innerText = state.unit || 'KG';
     }
 
+    /* ================= P5 WEEKLY SUMMARY =================
+       "This Week" summary card at top of Profile > Progress.
+       Pure computation (computeWeekSummary) + in-memory view state + render.
+       Reuses existing helpers: metricCountingSets, exerciseRecords, toDisplayVolume,
+       bodyEntries, muscleWorkloadCounts logic, startOfWeekMs, getWeekStartDayNum, esc. */
+
+    /* View state: week start ms currently shown. Initialized to current week. */
+    let weekSummaryViewWeekStartMs = startOfWeekMs(Date.now(), getWeekStartDayNum());
+
+    // Calendar arithmetic (not 7 x 24 h) so a daylight-saving change never
+    // shifts the week by an hour.
+    function addDaysMs(ms, days) {
+      const d = new Date(ms);
+      d.setDate(d.getDate() + days);
+      return d.getTime();
+    }
+
+    function weekSummaryEndMs(weekStartMs) {
+      return addDaysMs(weekStartMs, 7);
+    }
+
+    function formatWeekRangeLabel(weekStartMs) {
+      const start = new Date(weekStartMs);
+      const end = new Date(addDaysMs(weekStartMs, 6));
+      const opts = { day: 'numeric', month: 'short' };
+      return start.toLocaleDateString(undefined, opts) + ' – ' + end.toLocaleDateString(undefined, opts);
+    }
+
+    function formatTimeDisplay(totalSec, withSeconds) {
+      if (withSeconds && totalSec < 60) return Math.round(totalSec) + ' s';
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      if (h > 0 && m > 0) return h + ' h ' + m + ' min';
+      if (h > 0) return h + ' h';
+      return m + ' min';
+    }
+
+    function diffLabel(thisVal, prevVal, fmt) {
+      if (thisVal === prevVal) return 'same';
+      const diff = thisVal - prevVal;
+      const sign = diff > 0 ? '+' : '−';
+      return sign + (fmt ? fmt(Math.abs(diff)) : Math.abs(diff)) + ' vs last week';
+    }
+
+    function computeWeekSummary(weekStartMs) {
+      const ws = weekStartMs;
+      const we = weekSummaryEndMs(ws);
+      const prevWs = addDaysMs(ws, -7);
+      const prevWe = ws;
+
+      const nowMs = Date.now();
+      const currWeekStart = startOfWeekMs(nowMs, getWeekStartDayNum());
+      const isCurrentWeek = ws === currWeekStart;
+
+      const hist = Array.isArray(state.history) ? state.history : [];
+      const exercises = Array.isArray(state.exercises) ? state.exercises : [];
+
+      // Filter workouts for this week and previous week
+      const thisWeekWorkouts = hist.filter(w => w && typeof w === 'object' && Number(w.date) >= ws && Number(w.date) < we);
+      const prevWeekWorkouts = hist.filter(w => w && typeof w === 'object' && Number(w.date) >= prevWs && Number(w.date) < prevWe);
+
+      // Total workouts
+      const workoutsThis = thisWeekWorkouts.length;
+      const workoutsPrev = prevWeekWorkouts.length;
+
+      // Total time (durationSec) and total sets (counting sets only, warm-ups excluded)
+      let timeThis = 0, timePrev = 0;
+      let setsThis = 0, setsPrev = 0;
+      let volumeThisKg = 0, volumePrevKg = 0;
+
+      thisWeekWorkouts.forEach(w => {
+        timeThis += Number(w.durationSec) || 0;
+        (w.exercises || []).forEach(item => {
+          const counting = metricCountingSets(item.sets);
+          setsThis += counting.length;
+          counting.forEach(cs => { volumeThisKg += cs.weight * cs.reps; });
+        });
+      });
+      prevWeekWorkouts.forEach(w => {
+        timePrev += Number(w.durationSec) || 0;
+        (w.exercises || []).forEach(item => {
+          const counting = metricCountingSets(item.sets);
+          setsPrev += counting.length;
+          counting.forEach(cs => { volumePrevKg += cs.weight * cs.reps; });
+        });
+      });
+
+      // Records set IN THIS WEEK: the existing exerciseRecords() result per
+      // exercise, kept only when the record's date falls inside the week. One
+      // line per exercise (its strongest kind), so 3 lines = 3 exercises.
+      const unitLow = (state.unit || 'KG') === 'LBS' ? 'lb' : 'kg';
+      const RECORD_KINDS = [['bestE1RM', 'best e1RM'], ['heaviestWeight', 'heaviest'], ['longestHold', 'longest hold'], ['mostRepsInSet', 'most reps']];
+      const recordCandidates = [];
+      exercises.forEach(ex => {
+        if (!ex || typeof ex.id !== 'string') return;
+        const recs = exerciseRecords(ex.id) || {};
+        for (let i = 0; i < RECORD_KINDS.length; i++) {
+          const kind = RECORD_KINDS[i][0];
+          const rec = recs[kind];
+          if (!rec || !(Number(rec.dateMs) >= ws && Number(rec.dateMs) < we)) continue;
+          let display;
+          if (kind === 'mostRepsInSet') display = rec.reps + ' reps';
+          else if (kind === 'longestHold') display = formatTimeDisplay(Number(rec.durationSec) || 0, true);
+          else display = (Math.round(Number(toDisplayWeight(rec.valueKg)) * 10) / 10) + ' ' + unitLow;
+          recordCandidates.push({ exId: ex.id, exName: ex.name, kind: kind, rank: i, label: RECORD_KINDS[i][1], value: rec.valueKg, display: display, dateMs: rec.dateMs });
+          break;
+        }
+      });
+      recordCandidates.sort((x, y) => (x.rank - y.rank) || (Number(x.dateMs) - Number(y.dateMs)));
+      const topRecords = recordCandidates.slice(0, 3);
+      const moreCount = Math.max(0, recordCandidates.length - 3);
+
+      // Body line: latest weight entry in each week (from bodyEntries)
+      let bodyLine = null;
+      const bodyAll = bodyEntries();
+      const thisWeekBody = bodyAll.filter(e => e.weightKg !== null && e.weightKg !== undefined && e.date >= dayKeyLocal(ws) && e.date < dayKeyLocal(we));
+      const prevWeekBody = bodyAll.filter(e => e.weightKg !== null && e.weightKg !== undefined && e.date >= dayKeyLocal(prevWs) && e.date < dayKeyLocal(prevWe));
+      if (thisWeekBody.length > 0 && prevWeekBody.length > 0) {
+        const latestThis = thisWeekBody[thisWeekBody.length - 1];
+        const latestPrev = prevWeekBody[prevWeekBody.length - 1];
+        const deltaKg = Math.round((Number(latestThis.weightKg) - Number(latestPrev.weightKg)) * 100) / 100;
+        const wUnit = (state.unit || 'KG') === 'LBS' ? ' lb' : ' kg';
+        const absDisplay = toDisplayWeight(Math.abs(deltaKg)) + wUnit;
+        const sign = deltaKg === 0 ? '' : (deltaKg > 0 ? '+' : '−');
+        bodyLine = {
+          label: 'Weight',
+          thisWeekDisplay: toDisplayWeight(latestThis.weightKg) + wUnit,
+          prevWeekDisplay: toDisplayWeight(latestPrev.weightKg) + wUnit,
+          diffLabel: (deltaKg === 0 ? 'same' : sign + absDisplay + ' vs last week')
+        };
+      }
+
+      // Top 3 muscles by counting sets (primary muscle only, reuse muscleWorkloadCounts logic filtered to week)
+      const muscleCounts = { Chest: 0, Back: 0, Legs: 0, Shoulders: 0, Arms: 0, Core: 0 };
+      thisWeekWorkouts.forEach(w => {
+        (w.exercises || []).forEach(item => {
+          const ex = exercises.find(e => e && e.id === item.exId);
+          if (!ex) return;
+          const primary = exPrimary(ex);
+          const bucket = MUSCLE_BUCKETS[primary] || primary;
+          if (muscleCounts[bucket] === undefined) return;
+          muscleCounts[bucket] += metricCountingSets(item.sets).length + durationCountingSets(item.sets).length;
+        });
+      });
+      const muscleEntries = Object.entries(muscleCounts)
+        .filter(([, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([muscle, sets]) => ({ muscle, sets }));
+
+      return {
+        weekStartMs: ws,
+        weekEndMs: we,
+        dateRangeLabel: formatWeekRangeLabel(ws),
+        workouts: { thisWeek: workoutsThis, prevWeek: workoutsPrev, diffLabel: diffLabel(workoutsThis, workoutsPrev) },
+        totalTimeSec: { thisWeek: timeThis, prevWeek: timePrev, diffLabel: diffLabel(timeThis, timePrev, formatTimeDisplay) },
+        totalSets: { thisWeek: setsThis, prevWeek: setsPrev, diffLabel: diffLabel(setsThis, setsPrev) },
+        totalVolume: { thisWeek: volumeThisKg, prevWeek: volumePrevKg, diffLabel: diffLabel(volumeThisKg, volumePrevKg, v => String(toDisplayVolume(v))) },
+        records: topRecords,
+        moreRecords: moreCount,
+        bodyLine: bodyLine,
+        muscles: muscleEntries,
+        hasWorkouts: workoutsThis > 0,
+        isCurrentWeek: isCurrentWeek
+      };
+    }
+
+    function renderWeekSummaryCard() {
+      const container = document.getElementById('weekSummaryCard');
+      if (!container) return;
+      // Re-snap to the "Week starts on" setting in case it changed.
+      weekSummaryViewWeekStartMs = startOfWeekMs(addDaysMs(weekSummaryViewWeekStartMs, 3), getWeekStartDayNum());
+      const summary = computeWeekSummary(weekSummaryViewWeekStartMs);
+      const unit = state.unit || 'KG';
+
+      const prevBtnDisabled = summary.isCurrentWeek ? ' disabled' : '';
+      const prevBtnAria = summary.isCurrentWeek ? ' aria-disabled="true"' : '';
+
+      let statsHtml = '';
+      const stats = [
+        { key: 'workouts', label: 'Workouts', value: summary.workouts.thisWeek, diff: summary.workouts.diffLabel },
+        { key: 'time', label: 'Time', value: formatTimeDisplay(summary.totalTimeSec.thisWeek), diff: summary.totalTimeSec.diffLabel },
+        { key: 'sets', label: 'Sets', value: summary.totalSets.thisWeek, diff: summary.totalSets.diffLabel },
+        { key: 'volume', label: 'Volume (' + ((state.unit || 'KG') === 'LBS' ? 'lb' : 'kg') + ')', value: toDisplayVolume(summary.totalVolume.thisWeek, unit), diff: summary.totalVolume.diffLabel }
+      ];
+      stats.forEach(s => {
+        statsHtml += '<div style="text-align:center;">'
+          + '<div style="font-size:22px; font-weight:800; color:var(--primary);">' + esc(String(s.value)) + '</div>'
+          + '<div style="font-size:11px; color:var(--text-sub);">' + esc(s.label) + '</div>'
+          + '<div style="font-size:11px; color:var(--text-sub); margin-top:2px;">' + esc(s.diff) + '</div>'
+          + '</div>';
+      });
+
+      let recordsHtml = '';
+      if (summary.records.length > 0) {
+        recordsHtml = '<div style="margin-top:12px;">'
+          + '<div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Records this week</div>';
+        summary.records.forEach(r => {
+          recordsHtml += '<div style="font-size:13px; line-height:1.5;">'
+            + '<span style="font-weight:700;">' + esc(r.exName) + '</span> — '
+            + esc(r.label) + ' ' + esc(r.display)
+            + '</div>';
+        });
+        if (summary.moreRecords > 0) {
+          recordsHtml += '<div style="font-size:12px; color:var(--text-sub); margin-top:4px;">+' + summary.moreRecords + ' more</div>';
+        }
+        recordsHtml += '</div>';
+      }
+
+      let bodyHtml = '';
+      if (summary.bodyLine) {
+        bodyHtml = '<div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">'
+          + '<div style="font-size:13px;">'
+          + '<span style="font-weight:700;">' + esc(summary.bodyLine.label) + ' ' + esc(summary.bodyLine.thisWeekDisplay) + '</span>'
+          + ' <span style="color:var(--text-sub);">(' + esc(summary.bodyLine.diffLabel) + ')</span>'
+          + '</div>'
+          + '</div>';
+      }
+
+      let musclesHtml = '';
+      if (summary.muscles.length > 0) {
+        musclesHtml = '<div style="margin-top:12px;">'
+          + '<div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Top muscles</div>'
+          + '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
+        summary.muscles.forEach(m => {
+          musclesHtml += '<span class="badge">' + esc(m.muscle) + ' · ' + m.sets + ' sets</span>';
+        });
+        musclesHtml += '</div></div>';
+      }
+
+      let emptyHtml = '';
+      if (!summary.hasWorkouts) {
+        emptyHtml = emptyStateHtml('No workouts this week', 'Start a workout to see your summary');
+      }
+
+      container.innerHTML = '<div class="card" style="margin-bottom:12px;">'
+        + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;">'
+        + '<button class="btn" style="padding:6px 12px; min-height:44px; min-width:44px;" onclick="showWeekSummaryPrev()" aria-label="Previous week">‹</button>'
+        + '<div style="flex:1; text-align:center;"><div style="font-size:12px; color:var(--text-sub);">' + (summary.isCurrentWeek ? 'This week' : 'Week') + '</div><div style="font-weight:700; font-size:15px;">' + esc(summary.dateRangeLabel) + '</div></div>'
+        + '<button class="btn"' + prevBtnDisabled + prevBtnAria + ' style="padding:6px 12px; min-height:44px; min-width:44px; opacity:' + (summary.isCurrentWeek ? '0.4' : '1') + ';" onclick="showWeekSummaryNext()" aria-label="Next week">›</button>'
+        + '</div>'
+        + (emptyHtml || '')
+        + (summary.hasWorkouts ? '<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">' + statsHtml + '</div>' : '')
+        + recordsHtml + bodyHtml + musclesHtml
+        + '</div>';
+    }
+
+    function showWeekSummaryPrev() {
+      weekSummaryViewWeekStartMs = addDaysMs(weekSummaryViewWeekStartMs, -7);
+      renderWeekSummaryCard();
+    }
+
+    function showWeekSummaryNext() {
+      const nowMs = Date.now();
+      const currWeekStart = startOfWeekMs(nowMs, getWeekStartDayNum());
+      const nextWeekStart = addDaysMs(weekSummaryViewWeekStartMs, 7);
+      if (nextWeekStart > currWeekStart) return;
+      weekSummaryViewWeekStartMs = nextWeekStart;
+      renderWeekSummaryCard();
+    }
+
     /* PROFILE & ANALYTICS */
     function renderProfileStats() {
+      renderWeekSummaryCard();
+
       const totalWorkouts = state.history.length;
       const totalVolumeKg = state.history.reduce((sum, w) => sum + (Number(w.totalVolume) || 0), 0);
       const totalVolume = toDisplayVolume(totalVolumeKg);

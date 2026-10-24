@@ -436,6 +436,10 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   get bodyMeasure(){ return bodyMeasure; }, set bodyMeasure(v){ bodyMeasure = v; },
   get bodyEditId(){ return bodyEditId; },
   get bodyMoreOpen(){ return bodyMoreOpen; },
+  // P5 Weekly Summary
+  get weekSummaryViewWeekStartMs(){ return weekSummaryViewWeekStartMs; }, set weekSummaryViewWeekStartMs(v){ weekSummaryViewWeekStartMs = v; },
+  weekSummaryEndMs, formatWeekRangeLabel, formatTimeDisplay, diffLabel, computeWeekSummary,
+  renderWeekSummaryCard, showWeekSummaryPrev, showWeekSummaryNext,
 };`;
 
 // Creates one app instance: runs init() (the script self-initializes) in a
