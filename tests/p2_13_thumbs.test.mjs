@@ -43,4 +43,26 @@ describe('P2-13 exercise list thumbnails', () => {
   it('no-literal-thumb-asset-url-in-page', () => {
     assert.ok(!/(src|href)=["']\.?\/?assets\/exercises\/thumbs/.test(loadIndexHtml()), 'no precachable literal url');
   });
+  it('workout-card-has-tappable-thumb-opening-howto', () => {
+    const app = createApp();
+    app.api.startEmptyWorkout();
+    app.api.addExerciseToWorkout('ex1');
+    app.api.renderActiveWorkout();
+    const html = app.el('activeExercisesContainer').innerHTML;
+    assert.ok(html.includes('assets/exercises/thumbs/ex1.webp'), 'thumb shown in workout');
+    assert.ok(html.includes('class="ex-thumb ex-thumb-btn"'), 'thumb is a button');
+    assert.ok(html.includes("onclick=\"openExerciseDetail('ex1')\""), 'tap opens the how-to sheet');
+    app.api.openExerciseDetail('ex1');
+    assert.ok(app.el('exDetailBody').innerHTML.includes('How to do it'), 'how-to sheet has the steps');
+    assert.ok(app.api.activeWorkout, 'workout still running');
+  });
+
+  it('workout-thumb-button-handler-compiles', () => {
+    const app = createApp();
+    const html = app.api.exerciseThumbHtml({ id: 'ex_9', name: "O'Brien press" }, true);
+    const m = html.match(/onclick="([^"]*)"/);
+    assert.ok(m, 'has onclick');
+    assert.doesNotThrow(() => new Function(m[1].replace(/&#39;/g, "'")), 'handler compiles');
+    assert.ok(html.includes('>O<') && !html.includes('<img'), 'letter, no img for custom');
+  });
 });
