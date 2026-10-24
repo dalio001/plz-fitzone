@@ -44,7 +44,7 @@ Import error/preview; audience selector; permission rationale; consent settings;
 | P4-07 | P3 / F | Apple Watch then WearOS, ordered by user demand | Versioned offline session/routine payloads; phone/watch concurrent edits and finalization reconcile to one logical workout; locks/permissions/background timing tested on real devices; staged release and rollback | [Clips / evidence](#p4-07-reference) |
 | P4-08 | P3 / F | Widgets/live activities and optional external adapters | Capability-specific platform review; minimum OAuth scopes, token handling, revocation, rate limits, retries and deduplication; integrations do not become prerequisites to logging | [Clips / evidence](#p4-08-reference) |
 | P4-09 | P1 / C–F | Release trust review and recovery drills | Access/export/deletion/restore regressions pass; secret/dependency review appropriate to implemented stack; incident triage and user communication procedure; monitor failures without logging sensitive content | [Clips / evidence](#p4-09-reference) |
-| P4-10 | P1 / personal optional | Keep screen awake during an active workout; preference in P6-01, UI in P1-02 | Explicit opt-in; use supported platform capability; release when workout ends or app loses eligibility; refusal/unsupported state degrades gracefully; no claim that wake lock guarantees background timers | [Clips / evidence](#p4-10-reference) |
+| P4-10 | P1 / personal optional | [ ] in progress — personal part implemented 2026-10-24, awaiting owner phone check: Keep screen awake during an active workout; preference in P6-01, UI in P1-02 | Explicit opt-in; use supported platform capability; release when workout ends or app loses eligibility; refusal/unsupported state degrades gracefully; no claim that wake lock guarantees background timers | [Clips / evidence](#p4-10-reference) |
 
 ### Threat and failure scenarios to cover
 
@@ -115,6 +115,7 @@ Source/evidence definitions: [video index](../research/VIDEO_REFERENCE_INDEX.md)
 
 - **Keep Awake During Workout — Switch enabled:** [V2 5:15–5:21](https://www.youtube.com/watch?v=CkYBAlBrAAw&t=315s).
 - **Actual screen-sleep prevention and release/refusal behavior — Not demonstrated.** Evaluate the owner's browser/native capability and lifecycle; P6-01 owns the preference, P1-02 its presentation.
+- **Personal part implemented 2026-10-24 (`index.html`, branch `codex/p4-10-awake`), awaiting owner phone check.** Opt-in only: `state.keepAwake` (default `false`, no schema bump; old saves and old backups normalise to `false` on load, restore and undo) with a Settings row at least 44 px tall, the plain help line "Uses more battery. Only while a workout is open." and a "Not supported on this browser" note when `navigator.wakeLock.request` is absent. Uses the Screen Wake Lock API only, requested when a workout is open and the preference is on; the lock is in-memory, never persisted. Released on finish, discard, silent draft cleanup and when the preference is turned off; re-requested when the page becomes visible again or a saved workout is resumed, and a platform-initiated `release` clears the in-memory sentinel and the indicator. Refusal (`NotAllowedError`, unsupported context) is silent — no alert, no throw, workout logging unaffected. A passive `role="status"` "☀ Awake" pill inside the workout drawer shows only while a lock is actually held (hidden while minimized). No background timers, audio, vibration, retry loop or per-exercise behaviour: this does not claim that the screen staying on keeps rest/interval timers running in the background.
 
 ## Video references & Assets
 
@@ -124,5 +125,7 @@ Source/evidence definitions: [video index](../research/VIDEO_REFERENCE_INDEX.md)
 - [V2 review](https://www.youtube.com/watch?v=CkYBAlBrAAw); specific clips and limits above. [Video index](../research/VIDEO_REFERENCE_INDEX.md).
 
 ## Next Immediate Action
+
+**P4-10 personal part implemented 2026-10-24 in `index.html` on branch `codex/p4-10-awake`, awaiting owner phone check:** opt-in keep-screen-awake during an active workout (Settings toggle, passive "☀ Awake" pill), released on finish/discard/toggle-off, re-armed on visibility and resume, silent when unsupported or refused. Owner to confirm on the phone that the screen stays on with the toggle enabled, that the pill appears only during a workout, and that the note appears where wake lock is unsupported.
 
 **P4-01 personal part implemented 2026-10-14 in `index.html` on branch `codex/p0-03-safe-restore`, awaiting owner device check:** strict restore schema/bounds/reference checks before mutation, rejected input leaves storage intact, preview text rendered as data (textContent). Broader P4-01 work (shared-content rendering, URI boundaries) and P4-02 audiences remain planned with Pillar 0. Defer health/watch implementation until the core acceptance gates pass.
