@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PLZ FitZone">
+  <meta name="apple-mobile-web-app-title" content="PLZ Train">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="48x48" href="./icons/favicon-48.png">
-  <title>PLZ FitZone - Workout Tracker</title>
+  <title>PLZ Train - Workout Tracker</title>
   <style>
     :root {
       --bg-main: #0b0f19;
@@ -740,7 +740,7 @@
 
   <!-- TOP HEADER -->
   <header>
-    <div class="logo"><img class="logo-mascot" src="./icons/mascot-96.png" alt="" width="40" height="40"><b class="logo-plz">PLZ</b><span>FitZone</span></div>
+    <div class="logo"><img class="logo-mascot" src="./icons/mascot-96.png" alt="" width="40" height="40"><b class="logo-plz">PLZ</b><span>Train</span></div>
     <div style="display:flex; gap:8px;">
       <button class="btn" onclick="openPlateCalcModal()" title="Plate Calculator">🧮 Plates</button>
       <button class="btn" id="unitToggleBtn" onclick="toggleUnit()">KG</button>
@@ -8072,7 +8072,7 @@
     var OB_GOALS = ['build muscle', 'get stronger', 'lose fat', 'stay healthy'];
     var OB_EXPERIENCE = ['beginner', 'intermediate', 'advanced'];
     var OB_WELCOME = [
-      { t: 'Welcome to PLZ FitZone', d: 'Your own workout tracker. Log sets in seconds and keep every session saved on this phone.' },
+      { t: 'Welcome to PLZ Train', d: 'Your own workout tracker. Log sets in seconds and keep every session saved on this phone.' },
       { t: 'Routines that fit your week', d: 'Start from the sample routines or build your own. Your previous weights show up right under each set.' },
       { t: 'Private by default', d: 'No account, no sharing, no surprises. Everything stays on this device — back up anytime as JSON.' }
     ];
@@ -8347,7 +8347,7 @@
           dots += '<span class="ob-dot' + (i === obWelcomeIdx ? ' on' : '') + '"></span>';
         }
         dots += '</div>';
-        return '<img class="ob-mascot" src="./assets/brand/plz-fitzone-mascot.jpg" alt="PLZ FitZone mascot" width="120" height="120" onerror="this.onerror=null;this.src=\'./icons/mascot-96.png\'">' +
+        return '<img class="ob-mascot" src="./assets/brand/plz-fitzone-mascot.jpg" alt="PLZ Train mascot" width="120" height="120" onerror="this.onerror=null;this.src=\'./icons/mascot-96.png\'">' +
           '<h2 class="ob-title">' + esc(s.t) + '</h2>' +
           '<p class="ob-sub">' + esc(s.d) + '</p>' + dots;
       }
@@ -8405,7 +8405,7 @@
           obChoiceHtml('Keep my routines as they are', 'Change nothing', 'keep', 'routine') +
           obChoiceHtml('Add the sample routines', 'Adds any missing samples alongside yours', 'addsamples', 'routine');
       }
-      return '<img class="ob-mascot" src="./assets/brand/plz-fitzone-mascot.jpg" alt="PLZ FitZone mascot" width="120" height="120" onerror="this.onerror=null;this.src=\'./icons/mascot-96.png\'">' +
+      return '<img class="ob-mascot" src="./assets/brand/plz-fitzone-mascot.jpg" alt="PLZ Train mascot" width="120" height="120" onerror="this.onerror=null;this.src=\'./icons/mascot-96.png\'">' +
         '<h2 class="ob-title">You are ready!</h2>' +
         '<p class="ob-sub">Your answers are saved on this phone. Edit them anytime in Profile → My profile.</p>';
     }
@@ -8608,18 +8608,18 @@
     // state. The schemaVersion migration runs on a COPY. Returns
     // { ok:true, data, summary } or { ok:false, error }.
     function validateBackupData(input) {
-      if (!isPlainObject(input)) return { ok: false, error: 'This file is not a PLZ FitZone backup.' };
+      if (!isPlainObject(input)) return { ok: false, error: 'This file is not a PLZ Train backup.' };
       const hasHistory = 'history' in input;
       const hasRoutines = 'routines' in input;
       const hasExercises = 'exercises' in input;
       if (!hasHistory && !hasRoutines && !hasExercises) {
-        return { ok: false, error: 'This file is not a PLZ FitZone backup.' };
+        return { ok: false, error: 'This file is not a PLZ Train backup.' };
       }
       const arrayKeys = ['history', 'routines', 'exercises'];
       for (let ai = 0; ai < arrayKeys.length; ai++) {
         const k = arrayKeys[ai];
         if ((k in input) && input[k] !== undefined && !Array.isArray(input[k])) {
-          return { ok: false, error: 'This file is not a PLZ FitZone backup: "' + k + '" must be an array.' };
+          return { ok: false, error: 'This file is not a PLZ Train backup: "' + k + '" must be an array.' };
         }
       }
       if ('schemaVersion' in input && input.schemaVersion !== undefined &&
@@ -8956,7 +8956,7 @@
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `PLZ_FitZone_Backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `PLZ_Train_Backup_${new Date().toISOString().slice(0,10)}.json`;
       a.click();
     }
 
@@ -8970,7 +8970,7 @@
         try {
           parsed = JSON.parse(ev.target.result);
         } catch (err) {
-          alert('❌ This file is not a PLZ FitZone backup. Nothing was changed.');
+          alert('❌ This file is not a PLZ Train backup. Nothing was changed.');
           return;
         }
         // Validate BEFORE changing anything; migration runs on a copy inside.
@@ -9078,7 +9078,7 @@
     updateOfflinePill();
     requestPersistentStorage();
 
-    /* PLZ FitZone installability: register service worker; fail silently when
+    /* PLZ Train installability: register service worker; fail silently when
        service workers are unavailable (e.g. file://). */
     try {
       if ('serviceWorker' in navigator) {

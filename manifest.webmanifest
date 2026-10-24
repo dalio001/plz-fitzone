@@ -1,7 +1,7 @@
 {
-  "name": "PLZ FitZone",
-  "short_name": "FitZone",
-  "description": "PLZ FitZone workout tracker (Pure Living Zone).",
+  "name": "PLZ Train",
+  "short_name": "PLZ Train",
+  "description": "PLZ Train workout tracker (Pure Living Zone).",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

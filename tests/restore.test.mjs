@@ -54,7 +54,7 @@ describe('restore validation', () => {
     const storeBefore = [...app.store.entries()];
     const r = app.api.validateBackupData({ note: 'x' });
     assert.equal(r.ok, false, 'junk rejected');
-    assert.match(r.error || '', /not a PLZ FitZone backup/);
+    assert.match(r.error || '', /not a PLZ Train backup/);
     assert.equal(app.stateJson(), stateBefore, 'state untouched');
     assert.deepEqual([...app.store.entries()], storeBefore, 'storage untouched');
   });

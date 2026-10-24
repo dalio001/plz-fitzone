@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-10-24 — App renamed from "PLZ FitZone" to "PLZ Train" (owner decision)
+
+- Owner worried "Fit Zone" is used by other fitness brands. A web check found no "PLZ Train" app, brand or trademark; existing "PLZ" marks are for aerosol manufacturing (PLZ Corp) and a fitness class brand named "R3 Power Training" (PLZ Company Inc.). Not a legal clearance: a trademark lawyer should confirm before any store release.
+- Changed only what the user sees: page title, home-screen name (`manifest.webmanifest` name/short_name), header word, welcome slide, mascot alt text, backup file name (`PLZ_Train_Backup_<date>.json`) and backup error text. Service worker cache bumped to `plz-fitzone-v4` so phones pick up the new name.
+- Kept on purpose: every storage key (`hevy_clone_*`, `plz_fitzone_*`), IndexedDB names, asset file names and the backup format, so saved workouts and old backups keep working. 265/265 tests pass.
+
 ## 2026-10-24 — Private body weight and measurements with chart, trend and history (P5-04 personal part), awaiting owner phone check
 
 - Built the approved `docs/pillars/plans/P5-04/PLAN.md` including its "Supervisor decisions" in `index.html` on branch `codex/p5-04-measures` (no remote, never pushed; no build step, no dependency).

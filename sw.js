@@ -1,5 +1,5 @@
-/* PLZ FitZone service worker: offline support for the installable app. */
-var CACHE_VERSION = 'plz-fitzone-v3';
+/* PLZ Train service worker: offline support for the installable app. */
+var CACHE_VERSION = 'plz-fitzone-v4';
 var CACHE_NAME = CACHE_VERSION;
 
 /* P0-01: the onboarding mascot is a page asset too — precached so the first

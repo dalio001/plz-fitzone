@@ -48,7 +48,7 @@ describe('onboarding first-run flag', () => {
     assert.equal(app.api.state.profile.onboardingDone, false, 'profile seeded unfinished');
     assert.ok(overlayOpen(app), 'overlay open on true first run');
     const html = app.el('onboardingOverlay').innerHTML;
-    assert.ok(html.includes('Welcome to PLZ FitZone'), 'welcome slide shown');
+    assert.ok(html.includes('Welcome to PLZ Train'), 'welcome slide shown');
     assert.ok(html.includes('plz-fitzone-mascot.jpg'), 'mascot picture used');
     assert.ok(html.includes('id="obContinueBtn"'), 'sticky footer rendered');
     assert.ok(JSON.parse(app.store.get(STATE_KEY)).profile, 'profile persisted for reload');

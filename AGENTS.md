@@ -1,4 +1,4 @@
-# AGENTS.md — PLZ FitZone agent contract
+# AGENTS.md — PLZ Train (formerly PLZ FitZone) agent contract
 
 This is the shared source of project rules for Codex, Claude, Gemini, Cursor, and Windsurf. Read [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md) for product direction and [docs/WORKFLOW.md](docs/WORKFLOW.md) for the workflow.
 

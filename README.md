@@ -1,6 +1,6 @@
-# PLZ FitZone
+# PLZ Train
 
-**PLZ FitZone** — a single-file, mobile-first workout tracker (Pure Living Zone).
+**PLZ Train** (formerly PLZ FitZone) — a single-file, mobile-first workout tracker (Pure Living Zone).
 
 ## Features
 - Routines (Push / Pull / Legs presets + custom routines)
