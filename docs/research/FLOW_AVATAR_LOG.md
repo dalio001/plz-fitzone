@@ -16,3 +16,9 @@
 - Bicep curl clean: good (start palms face body, minor). Bicep curl see-through muscle: take 2 good (biceps only), take 1 also showed forearm/deltoid fibres.
 - Squat clean: take 1 OK (bottom slightly above parallel). Squat see-through: FAILED both takes, Flow message "unusual activity... browser extensions that modify the page". Pinterest "Save" button overlay is visible on pictures in this Chrome profile, likely the extension Flow complains about. Stopped generating (robot-check rule); owner told.
 - Option 2 body chart drawn from react-body-highlighter polygons (MIT, (c) 2020 GV79), no Flow needed.
+
+## Round 6 (2026-10-24 afternoon): the other 90 exercises
+- Same settings (image mode, Nano Banana 2.1, 16:9, x2, round-4 avatar as reference via "reuse prompt"), 0 credits. Prompts: docs/research/exercise-prompts-90.tsv (style prefix + exercise + START/END + scene suffix).
+- All 90 generated without a failed tile. Downloaded 180 takes at 1K, mapped in generation order, and picked the clearer take per exercise after checking form (ExRx as reference).
+- Weak but kept: ex34 shrug (lift small), ex91 single-leg calf raise (modest rise). Candidates for a redo if the owner wants.
+- App: all 100 built-in exercises now have a picture (WebP 960 wide, ~18 KB each, 1.8 MB total, lazy + runtime cached).

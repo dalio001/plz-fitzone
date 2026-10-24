@@ -85,11 +85,11 @@ describe('P2-13 exercise pictures (detail sheet only)', () => {
   it('picture-shown-only-for-listed-ids', () => {
     const app = createApp();
     const listed = app.api.EXERCISE_PICTURES;
-    assert.ok(Array.isArray(listed) && listed.length === 10, 'batch 1 lists 10 ids');
+    assert.ok(Array.isArray(listed) && listed.length === 100, 'all 100 built-in exercises have a picture');
     assert.deepEqual(
       [...listed].sort(),
-      ['ex1', 'ex11', 'ex12', 'ex13', 'ex2', 'ex4', 'ex5', 'ex7', 'ex8', 'ex9'],
-      'exactly the batch-1 ids',
+      Array.from({ length: 100 }, (_, i) => 'ex' + (i + 1)).sort(),
+      'exactly ex1..ex100',
     );
 
     for (const id of listed) {
