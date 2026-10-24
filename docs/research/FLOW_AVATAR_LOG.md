@@ -22,3 +22,8 @@
 - All 90 generated without a failed tile. Downloaded 180 takes at 1K, mapped in generation order, and picked the clearer take per exercise after checking form (ExRx as reference).
 - Weak but kept: ex34 shrug (lift small), ex91 single-leg calf raise (modest rise). Candidates for a redo if the owner wants.
 - App: all 100 built-in exercises now have a picture (WebP 960 wide, ~18 KB each, 1.8 MB total, lazy + runtime cached).
+
+## Round 7 (2026-10-24 evening): redo ex34 and ex91
+- Project: https://flow.google.com/project/e02a51f2-da70-455f-906d-cc85f8ac45d8 (image mode, Nano Banana 2.1, 16:9, x2, 0 credits).
+- ex34 shrug: prompt asked for shoulders almost touching the ears; take 2 kept (clear lift). ex91 calf raise: one foot on the step, heel low then high; take 1 kept (take 2 had feet floating off the step).
+- Files: assets/exercises/ex34.webp, ex91.webp and their thumbs (commit 92295a0). Flow tab closed. Nothing left to redo.
