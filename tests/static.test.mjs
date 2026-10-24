@@ -59,9 +59,9 @@ describe('static delivery checks', () => {
     assert.ok(html.includes('<span>Restore this backup?</span>'), 'title kept in modal header');
   });
 
-  it('sw.js CACHE_VERSION is bumped to v4', () => {
+  it('sw.js CACHE_VERSION is bumped to v5', () => {
     const sw = readFileSync(SW_PATH, 'utf8');
-    assert.ok(sw.includes("var CACHE_VERSION = 'plz-fitzone-v4';"), 'v4 cache version');
+    assert.ok(sw.includes("var CACHE_VERSION = 'plz-fitzone-v5';"), 'v5 cache version');
   });
 
   it('sw.js precaches every local asset referenced by index.html', () => {

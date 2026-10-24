@@ -1,5 +1,6 @@
 /* PLZ Train service worker: offline support for the installable app. */
-var CACHE_VERSION = 'plz-fitzone-v4';
+/* P2-13: v5 adds the exercise-picture cache (runtime cache-first, below). */
+var CACHE_VERSION = 'plz-fitzone-v5';
 var CACHE_NAME = CACHE_VERSION;
 
 /* P0-01: the onboarding mascot is a page asset too — precached so the first
@@ -69,9 +70,38 @@ function fetchWithTimeout(request, ms) {
   });
 }
 
+/* P2-13: exercise pictures are NOT precached (10 now, ~100 later; precaching
+   them would slow install and the offline page for pictures nobody opened).
+   They are cached at runtime on first view, then answered from cache offline. */
+function isExercisePicture(request) {
+  if (request.method !== 'GET') return false;
+  var url = new URL(request.url);
+  return url.pathname.indexOf('/assets/exercises/') >= 0;
+}
+
 self.addEventListener('fetch', function(event) {
   var request = event.request;
   if (request.method !== 'GET') return;
+  if (isExercisePicture(request)) {
+    // Runtime cache-first for exercise pictures: instant on the second view
+    // and available offline. A failed/404 response is never cached, so a
+    // missing file cannot stick; offline misses fall through to the browser,
+    // where the <img onerror> hides the picture box.
+    event.respondWith(
+      caches.match(request).then(function(cached) {
+        if (cached) return cached;
+        return fetch(request).then(function(response) {
+          if (!response || !response.ok) return response;
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(request, copy);
+          }).catch(function() {});
+          return response;
+        });
+      })
+    );
+    return;
+  }
   if (isPageRequest(request)) {
     // NETWORK-FIRST for the page (3 s cap): a new version on Vercel shows on
     // next open when online; the cache keeps the app usable offline.
