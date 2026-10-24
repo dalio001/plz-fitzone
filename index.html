@@ -1042,8 +1042,8 @@
               </select>
               <select id="soundRestVolumeSelect" class="set-input" style="width:84px;" onchange="setSoundRestVolume(this.value)">
                 <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="high" selected>High</option>
               </select>
               <button type="button" id="testSoundRestBtn" class="btn" style="min-height:44px; padding:6px 12px; font-size:13px;" onclick="testRestSound()">Test</button>
             </div>
@@ -2122,7 +2122,7 @@
       supersetAdvance: true,
       keepAwake: false,
       showTargets: true,
-      sounds: { restSound: 'beep', restVolume: 'medium', setVolume: 'off', prVolume: 'medium' },
+      sounds: { restSound: 'beep', restVolume: 'high', setVolume: 'off', prVolume: 'medium' },
       exercises: [],
       routines: [],
       history: [],
@@ -2136,7 +2136,7 @@
       const validToggleVolumes = ['off', 'low', 'medium', 'high'];
       return {
         restSound: validRestSounds.indexOf(s.restSound) >= 0 ? s.restSound : 'beep',
-        restVolume: validVolumes.indexOf(s.restVolume) >= 0 ? s.restVolume : 'medium',
+        restVolume: validVolumes.indexOf(s.restVolume) >= 0 ? s.restVolume : 'high',
         setVolume: validToggleVolumes.indexOf(s.setVolume) >= 0 ? s.setVolume : 'off',
         prVolume: validToggleVolumes.indexOf(s.prVolume) >= 0 ? s.prVolume : 'medium'
       };
@@ -5490,7 +5490,7 @@
 
     function setSoundRestVolume(val) {
       if (!state.sounds) state.sounds = normalizeSounds();
-      state.sounds.restVolume = ['low', 'medium', 'high'].indexOf(val) >= 0 ? val : 'medium';
+      state.sounds.restVolume = ['low', 'medium', 'high'].indexOf(val) >= 0 ? val : 'high';
       const el = document.getElementById('soundRestVolumeSelect');
       if (el) el.value = state.sounds.restVolume;
       saveState();

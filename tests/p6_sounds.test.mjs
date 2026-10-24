@@ -102,13 +102,13 @@ describe('P6-08 Web Audio sounds', () => {
     // Defaults keep today's behaviour: rest beep on, set complete off, PR chime medium
     assert.deepEqual(plain(app.api.state.sounds), {
       restSound: 'beep',
-      restVolume: 'medium',
+      restVolume: 'high',
       setVolume: 'off',
       prVolume: 'medium'
     });
 
     assert.equal(app.el('soundRestChoiceSelect').value, 'beep');
-    assert.equal(app.el('soundRestVolumeSelect').value, 'medium');
+    assert.equal(app.el('soundRestVolumeSelect').value, 'high');
     assert.equal(app.el('soundSetVolumeSelect').value, 'off');
     assert.equal(app.el('soundPrVolumeSelect').value, 'medium');
 
@@ -407,7 +407,7 @@ describe('P6-08 Web Audio sounds', () => {
     assert.equal(valResult.ok, true, 'old backup without sounds is valid');
     assert.deepEqual(plain(valResult.data.sounds), {
       restSound: 'beep',
-      restVolume: 'medium',
+      restVolume: 'high',
       setVolume: 'off',
       prVolume: 'medium'
     }, 'old backup receives safe defaults');
