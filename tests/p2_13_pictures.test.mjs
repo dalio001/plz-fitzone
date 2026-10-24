@@ -81,7 +81,7 @@ function swRespond(sw, url, method) {
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-describe('P2-13 exercise pictures (detail sheet only)', () => {
+describe('P2-13 exercise pictures (full size in detail sheet)', () => {
   it('picture-shown-only-for-listed-ids', () => {
     const app = createApp();
     const listed = app.api.EXERCISE_PICTURES;
@@ -171,13 +171,15 @@ describe('P2-13 exercise pictures (detail sheet only)', () => {
     assert.ok(app.api.muscleChartHtml({ id: 'x', name: 'No Muscle' }).includes('<svg '), 'chart builds without muscle fields');
   });
 
-  it('list-has-no-thumbnails', () => {
+  it('list-never-loads-full-pictures', () => {
     const app = createApp();
     app.api.renderExercisesTab();
     app.api.renderExercisesList();
     const listHtml = app.el('exercisesDirectory').innerHTML;
     assert.ok(listHtml.includes('Bench Press'), 'the list rendered');
-    assert.ok(!listHtml.includes('<img'), 'exercise list stays text only');
+    // The list shows small thumbs only (p2_13_thumbs); the wide 960 px
+    // picture stays in the detail sheet.
+    assert.ok(!/assets\/exercises\/ex\d+\.webp/.test(listHtml), 'no full-size picture in the list');
   });
 });
 

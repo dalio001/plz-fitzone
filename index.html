@@ -250,6 +250,8 @@
     .ex-pic { width:100%; aspect-ratio:16/9; border-radius:var(--radius-12); overflow:hidden; background:var(--bg-elevated); border:1px solid var(--border); position:relative; margin-bottom:var(--space-8); }
     .ex-pic img { width:100%; height:100%; object-fit:cover; display:block; }
     .ex-pic-cap { font-size:var(--font-12); color:var(--text-sub); margin-top:var(--space-4); }
+    .ex-thumb { width:56px; height:64px; flex:0 0 auto; border-radius:var(--radius-8); overflow:hidden; background:var(--bg-elevated); border:1px solid var(--border); position:relative; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:var(--font-20); color:var(--text-sub); }
+    .ex-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
 
     /* P2-13: how-to text under the start/end picture (Setup / Move / Avoid) */
     .ex-howto { width:100%; box-sizing:border-box; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); padding:var(--space-12); margin-bottom:var(--space-8); font-size:var(--font-14); line-height:1.45; }
@@ -5730,6 +5732,22 @@
         + '</div>';
     }
 
+    /* Small start-pose thumbnail for the Exercises list. Every row gets a box:
+       a picture when the exercise has one, otherwise the first letter of its
+       name. A failed load hides the img and leaves the letter. The URL is
+       built in a variable, like the detail picture (no literal ./assets/). */
+    function exerciseThumbHtml(ex) {
+      if (!ex) return '';
+      const letter = esc(String(ex.name || '?').trim().charAt(0).toUpperCase() || '?');
+      let img = '';
+      if (EXERCISE_PICTURES.indexOf(ex.id) >= 0) {
+        const src = './assets/exercises/thumbs/' + ex.id + '.webp';
+        const onerr = "this.style.display='none'";
+        img = '<img src="' + esc(src) + '" alt="" loading="lazy" decoding="async" onerror="' + onerr + '">';
+      }
+      return '<div class="ex-thumb" aria-hidden="true">' + letter + img + '</div>';
+    }
+
     /* P2-13 how-to block: Setup / Move / Avoid for a built-in exercise. Same
        guard shape as the picture: a custom exercise, an unknown id or a record
        with an empty field renders nothing at all (no empty shell). Plain
@@ -6066,6 +6084,7 @@
           const flags = (e.custom ? ' <span class="badge">custom</span>' : '') + (e.hidden ? ' <span class="badge">hidden</span>' : '') + (e.fav ? ' <span class="badge">★</span>' : '');
           return `
             <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-12); cursor:pointer; padding:var(--space-16);" onclick="openExerciseDetail('${e.id}')">
+              ${exerciseThumbHtml(e)}
               <div style="flex:1; min-width:0;">
                 <div style="font-weight:700; font-size:var(--font-16); word-break:break-word;">${esc(e.name)}${flags}</div>
                 <div style="margin-top:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-4);">${exerciseBadgesHtml(e)}</div>
