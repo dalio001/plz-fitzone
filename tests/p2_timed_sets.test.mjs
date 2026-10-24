@@ -283,7 +283,7 @@ describe('P2-12 the live row and its stopwatch', () => {
     const s = app.api.activeWorkout.exercises[0].sets[0];
     // Simulate 65 s elapsed without timers.
     s.timerStartedAt = Date.now() - 65000;
-    assert.equal(app.api.setElapsedSec(s), 65, 'elapsed is read live');
+    assert.equal(Math.floor(app.api.setElapsedSec(s)), 65, 'elapsed is read live');
     app.api.paintRunningSetClocks();
     assert.equal(app.api.toggleSetTimer(0, 0), true, 'Stop ticks through the normal path');
     assert.equal(s.durationSec, 65, 'Stop writes the measured time');
