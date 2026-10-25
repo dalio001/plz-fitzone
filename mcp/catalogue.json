@@ -1,0 +1,1080 @@
+{
+  "version": 1,
+  "muscles": [
+    "Chest",
+    "Back",
+    "Shoulders",
+    "Biceps",
+    "Triceps",
+    "Forearms",
+    "Core",
+    "Quads",
+    "Hamstrings",
+    "Glutes",
+    "Calves",
+    "Full body"
+  ],
+  "equipment": [
+    "Barbell",
+    "Dumbbell",
+    "Machine",
+    "Cable",
+    "Bodyweight",
+    "Kettlebell",
+    "Band",
+    "Other"
+  ],
+  "types": [
+    "weight_reps",
+    "bodyweight_reps",
+    "assisted",
+    "duration"
+  ],
+  "exercises": [
+    {
+      "id": "ex1",
+      "name": "Bench Press (Barbell)",
+      "equipment": "Barbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex2",
+      "name": "Incline Dumbbell Press",
+      "equipment": "Dumbbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex3",
+      "name": "Chest Fly (Cable)",
+      "equipment": "Cable",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex4",
+      "name": "Lat Pulldown (Cable)",
+      "equipment": "Cable",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex5",
+      "name": "Bent Over Row (Barbell)",
+      "equipment": "Barbell",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex6",
+      "name": "Seated Cable Row",
+      "equipment": "Cable",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex7",
+      "name": "Squat (Barbell)",
+      "equipment": "Barbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex8",
+      "name": "Romanian Deadlift (Barbell)",
+      "equipment": "Barbell",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex9",
+      "name": "Leg Press (Machine)",
+      "equipment": "Machine",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex10",
+      "name": "Leg Curl (Machine)",
+      "equipment": "Machine",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex11",
+      "name": "Overhead Press (Barbell)",
+      "equipment": "Barbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex12",
+      "name": "Lateral Raise (Dumbbell)",
+      "equipment": "Dumbbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex13",
+      "name": "Bicep Curl (Dumbbell)",
+      "equipment": "Dumbbell",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex14",
+      "name": "Tricep Rope Pushdown",
+      "equipment": "Cable",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex15",
+      "name": "Hanging Leg Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex16",
+      "name": "Dumbbell Bench Press",
+      "equipment": "Dumbbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex17",
+      "name": "Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex18",
+      "name": "Incline Barbell Press",
+      "equipment": "Barbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex19",
+      "name": "Decline Dumbbell Press",
+      "equipment": "Dumbbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex20",
+      "name": "Machine Chest Press",
+      "equipment": "Machine",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex21",
+      "name": "Cable Crossover",
+      "equipment": "Cable",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex22",
+      "name": "Incline Dumbbell Fly",
+      "equipment": "Dumbbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex23",
+      "name": "Standing Cable Press",
+      "equipment": "Cable",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex24",
+      "name": "Knee Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex25",
+      "name": "Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex26",
+      "name": "Chin-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex27",
+      "name": "One-Arm Dumbbell Row",
+      "equipment": "Dumbbell",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex28",
+      "name": "T-Bar Row",
+      "equipment": "Barbell",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex29",
+      "name": "Straight-Arm Pulldown",
+      "equipment": "Cable",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex30",
+      "name": "Face Pull",
+      "equipment": "Cable",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex31",
+      "name": "Back Extension",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex32",
+      "name": "Machine Row",
+      "equipment": "Machine",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex33",
+      "name": "Inverted Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex34",
+      "name": "Dumbbell Shrug",
+      "equipment": "Dumbbell",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex35",
+      "name": "Assisted Pull-Up",
+      "equipment": "Machine",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "assisted"
+    },
+    {
+      "id": "ex36",
+      "name": "Dumbbell Shoulder Press",
+      "equipment": "Dumbbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex37",
+      "name": "Arnold Press",
+      "equipment": "Dumbbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex38",
+      "name": "Cable Lateral Raise",
+      "equipment": "Cable",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex39",
+      "name": "Front Raise",
+      "equipment": "Dumbbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex40",
+      "name": "Rear-Delt Fly",
+      "equipment": "Dumbbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex41",
+      "name": "Machine Shoulder Press",
+      "equipment": "Machine",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex42",
+      "name": "Upright Row",
+      "equipment": "Barbell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex43",
+      "name": "Kettlebell Press",
+      "equipment": "Kettlebell",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex44",
+      "name": "Band Pull-Apart",
+      "equipment": "Band",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex45",
+      "name": "Barbell Curl",
+      "equipment": "Barbell",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex46",
+      "name": "Hammer Curl",
+      "equipment": "Dumbbell",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex47",
+      "name": "Preacher Curl",
+      "equipment": "Barbell",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex48",
+      "name": "Cable Curl",
+      "equipment": "Cable",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex49",
+      "name": "Concentration Curl",
+      "equipment": "Dumbbell",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex50",
+      "name": "Spider Curl",
+      "equipment": "Dumbbell",
+      "muscle": "Biceps",
+      "primary": "Biceps",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex51",
+      "name": "Overhead Extension",
+      "equipment": "Dumbbell",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex52",
+      "name": "Skull Crusher",
+      "equipment": "Barbell",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex53",
+      "name": "Cable Overhead Extension",
+      "equipment": "Cable",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex54",
+      "name": "Bench Dip",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex55",
+      "name": "Triceps Dip",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex56",
+      "name": "Machine Dip",
+      "equipment": "Machine",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex57",
+      "name": "Assisted Dip",
+      "equipment": "Machine",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "assisted"
+    },
+    {
+      "id": "ex58",
+      "name": "Wrist Curl",
+      "equipment": "Dumbbell",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex59",
+      "name": "Reverse Curl",
+      "equipment": "Barbell",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex60",
+      "name": "Plank",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "ex61",
+      "name": "Crunch",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex62",
+      "name": "Russian Twist",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex63",
+      "name": "Woodchopper",
+      "equipment": "Cable",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex64",
+      "name": "Mountain Climber",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "ex65",
+      "name": "Dead Bug",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex66",
+      "name": "Side Plank",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "ex67",
+      "name": "Ab Wheel Rollout",
+      "equipment": "Other",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex68",
+      "name": "Hanging Knee Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex69",
+      "name": "Front Squat",
+      "equipment": "Barbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex70",
+      "name": "Goblet Squat",
+      "equipment": "Dumbbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex71",
+      "name": "Leg Extension",
+      "equipment": "Machine",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex72",
+      "name": "Walking Lunge",
+      "equipment": "Dumbbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex73",
+      "name": "Bulgarian Split Squat",
+      "equipment": "Dumbbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex74",
+      "name": "Hack Squat",
+      "equipment": "Machine",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex75",
+      "name": "Step-Up",
+      "equipment": "Dumbbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex76",
+      "name": "Bodyweight Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex77",
+      "name": "Box Squat",
+      "equipment": "Barbell",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex78",
+      "name": "Seated Leg Curl",
+      "equipment": "Machine",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex79",
+      "name": "Good Morning",
+      "equipment": "Barbell",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex80",
+      "name": "Dumbbell Romanian Deadlift",
+      "equipment": "Dumbbell",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex81",
+      "name": "Nordic Curl",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex82",
+      "name": "Hip Thrust",
+      "equipment": "Barbell",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Hamstrings"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex83",
+      "name": "Glute Bridge",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Hamstrings"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex84",
+      "name": "Cable Kickback",
+      "equipment": "Cable",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex85",
+      "name": "Kettlebell Swing",
+      "equipment": "Kettlebell",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Hamstrings"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex86",
+      "name": "Sumo Deadlift",
+      "equipment": "Barbell",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Quads"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex87",
+      "name": "Conventional Deadlift",
+      "equipment": "Barbell",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Hamstrings",
+        "Back"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex88",
+      "name": "Trap Bar Deadlift",
+      "equipment": "Barbell",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Quads",
+        "Hamstrings"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex89",
+      "name": "Standing Calf Raise",
+      "equipment": "Machine",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex90",
+      "name": "Seated Calf Raise",
+      "equipment": "Dumbbell",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex91",
+      "name": "Single-Leg Calf Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex92",
+      "name": "Burpee",
+      "equipment": "Bodyweight",
+      "muscle": "Full body",
+      "primary": "Full body",
+      "secondary": [
+        "Chest",
+        "Quads"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex93",
+      "name": "Thruster",
+      "equipment": "Barbell",
+      "muscle": "Full body",
+      "primary": "Full body",
+      "secondary": [
+        "Quads",
+        "Shoulders"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex94",
+      "name": "Farmer Carry",
+      "equipment": "Dumbbell",
+      "muscle": "Full body",
+      "primary": "Full body",
+      "secondary": [
+        "Forearms",
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "ex95",
+      "name": "Battle Rope Wave",
+      "equipment": "Other",
+      "muscle": "Full body",
+      "primary": "Full body",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "ex96",
+      "name": "Band Row",
+      "equipment": "Band",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex97",
+      "name": "Floor Press",
+      "equipment": "Dumbbell",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "weight_reps"
+    },
+    {
+      "id": "ex98",
+      "name": "Incline Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex99",
+      "name": "Decline Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "ex100",
+      "name": "Clean and Press",
+      "equipment": "Barbell",
+      "muscle": "Full body",
+      "primary": "Full body",
+      "secondary": [
+        "Shoulders",
+        "Quads"
+      ],
+      "type": "weight_reps"
+    }
+  ]
+}

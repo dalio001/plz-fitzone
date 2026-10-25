@@ -829,6 +829,8 @@
           <h3 class="section-title" style="margin:0; font-size:var(--font-20); color:var(--text); text-transform:none; letter-spacing:normal;">My Routines (Unlimited)</h3>
           <button class="btn" onclick="openRoutineBuilder()">+ New Routine</button>
         </div>
+        <!-- P4-11: paste a routine from an AI assistant, or open an import link -->
+        <button class="btn btn-block" style="min-height:44px;" onclick="openRoutineImport()">⬇ Import routine</button>
         <div id="routinesList" style="margin-top:var(--space-12);"></div>
       </div>
     </section>
@@ -1565,6 +1567,27 @@
         </div>
         <button class="btn btn-primary btn-block" onclick="confirmRestore()">Restore</button>
         <button class="btn btn-block" style="margin-top:10px;" onclick="cancelRestore()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTINE IMPORT (P4-11): paste or pick a routine from an AI assistant.
+       Nothing is saved until the owner taps Add routine. -->
+  <div class="modal" id="routineImportModal">
+    <div class="modal-content sheet" style="max-width:412px;">
+      <div class="modal-header">
+        <span>Import routine</span>
+        <button class="btn" onclick="cancelRoutineImport()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:13px; color:var(--text-sub); margin-bottom:var(--space-8); line-height:1.5;">Paste a routine from your AI assistant, or choose the .json file it gave you. Nothing is saved until you tap Add routine.</div>
+        <textarea id="routineImportText" class="input-field" rows="5" placeholder="Paste routine JSON here" oninput="previewRoutineImportText(this.value)" style="min-height:96px; resize:vertical;"></textarea>
+        <input type="file" id="routineImportFile" accept=".json,.txt,application/json,text/plain" style="display:none;" onchange="routineFileChosen(event)">
+        <button class="btn btn-block" style="margin-top:var(--space-8); min-height:44px;" onclick="document.getElementById('routineImportFile').click()">📄 Choose file</button>
+        <div class="card" id="routineImportPreview" style="display:none; margin-top:var(--space-12);"></div>
+        <div id="routineImportErrors" role="alert" style="display:none; margin-top:var(--space-12); font-size:14px; line-height:1.5; color:var(--danger); white-space:pre-line;"></div>
+        <button class="btn btn-primary btn-block" style="margin-top:var(--space-12); min-height:44px;" onclick="confirmRoutineImport()">Add routine</button>
+        <button class="btn btn-block" style="margin-top:var(--space-8); min-height:44px;" onclick="cancelRoutineImport()">Cancel</button>
       </div>
     </div>
   </div>
@@ -2636,6 +2659,9 @@
           }
           return mirrorRecord.draft;
         }).catch(function() { return null; });
+
+      // P4-11: an import link opens the preview once the app is ready.
+      readHashRoutineImport();
     }
 
     /* P0-02: DURABLE LIVE SESSION (key hevy_clone_active_session; hevy_clone_state untouched; keys kept so existing saved workouts survive the PLZ FitZone rename) */
@@ -3438,6 +3464,319 @@
       saveState();
       renderRoutines();
       closeModal('routineModal');
+    }
+
+    /* P4-11 ROUTINE IMPORT (personal, no network, no schema bump).
+       One routine arrives either pasted/chosen as JSON or from a link hash
+       (#import-routine=<base64url>). The same rules live in
+       mcp/routine-format.mjs; the tests prove both copies agree. Nothing is
+       written to state until the owner taps "Add routine". */
+    const ROUTINE_IMPORT = {
+      VERSION: 1,
+      APP_URL: 'https://workout-engine-beta.vercel.app',
+      HASH_KEY: 'import-routine',
+      MAX_EXERCISES: 20,
+      MAX_NAME: 60,
+      MAX_SETS: 10,
+      MAX_REPS: 100,
+      MAX_REST_SEC: 600,
+      MAX_NOTE: 140,
+      ERROR_LIMIT: 8
+    };
+    let pendingRoutineImport = null;
+
+    function routineImportIsObject(v) {
+      return !!v && typeof v === 'object' && !Array.isArray(v);
+    }
+
+    function parseRoutineImportReps(reps) {
+      if (typeof reps !== 'string') return null;
+      const m = /^(\d+)(?:-(\d+))?$/.exec(reps.trim());
+      if (!m) return null;
+      const min = parseInt(m[1], 10);
+      const max = (m[2] === undefined) ? min : parseInt(m[2], 10);
+      return { min: min, max: max, reps: (min === max) ? String(min) : min + '-' + max };
+    }
+
+    /* Pure: checks a parsed payload without touching state. Returns
+       { ok:true, routine } or { ok:false, errors:[...] }. Text is identical to
+       mcp/routine-format.mjs validateRoutinePayload(). */
+    function validateRoutineImport(payload) {
+      const got = function (v) { return String(v); };
+      if (!routineImportIsObject(payload)) {
+        return { ok: false, errors: ['payload must be a JSON object (got ' + got(payload) + ')'] };
+      }
+      const errors = [];
+      if (payload.plzTrainRoutine !== ROUTINE_IMPORT.VERSION) {
+        errors.push('plzTrainRoutine must be 1 (got ' + got(payload.plzTrainRoutine) + ')');
+      }
+      const name = (typeof payload.name === 'string') ? payload.name.trim() : null;
+      if (name === null || name.length < 1 || name.length > ROUTINE_IMPORT.MAX_NAME) {
+        errors.push('name must be 1–60 characters (got ' + (name === null ? got(payload.name) : name.length) + ')');
+      }
+      const list = payload.exercises;
+      const exercises = [];
+      if (!Array.isArray(list) || list.length < 1 || list.length > ROUTINE_IMPORT.MAX_EXERCISES) {
+        errors.push('exercises must be an array of 1–20 exercises (got ' + (Array.isArray(list) ? list.length : got(list)) + ')');
+      } else {
+        for (let i = 0; i < list.length; i++) {
+          const item = list[i];
+          if (!routineImportIsObject(item)) {
+            errors.push('exercises[' + i + '] must be an object (got ' + got(item) + ')');
+            continue;
+          }
+          if (typeof item.exId !== 'string' || BUILTIN_EXERCISE_IDS[item.exId] !== true) {
+            errors.push('exercises[' + i + '].exId must be one of the built-in exercise ids (got ' + got(item.exId) + ')');
+          }
+          const sets = item.sets;
+          if (typeof sets !== 'number' || Math.floor(sets) !== sets || sets < 1 || sets > ROUTINE_IMPORT.MAX_SETS) {
+            errors.push('exercises[' + i + '].sets must be a whole number 1–10 (got ' + got(sets) + ')');
+          }
+          const parsed = parseRoutineImportReps(item.reps);
+          if (!parsed) {
+            errors.push('exercises[' + i + '].reps must be a string like "8" or "8-12" (got ' + got(item.reps) + ')');
+          } else if (parsed.min < 1 || parsed.max < 1 || parsed.min > ROUTINE_IMPORT.MAX_REPS || parsed.max > ROUTINE_IMPORT.MAX_REPS) {
+            errors.push('exercises[' + i + '].reps must be 1–100 (got ' + got(item.reps) + ')');
+          } else if (parsed.min > parsed.max) {
+            errors.push('exercises[' + i + '].reps min must not be greater than max (got ' + got(item.reps) + ')');
+          }
+          let restSec = null;
+          if (item.restSec !== undefined && item.restSec !== null) {
+            if (typeof item.restSec !== 'number' || Math.floor(item.restSec) !== item.restSec ||
+                item.restSec < 0 || item.restSec > ROUTINE_IMPORT.MAX_REST_SEC) {
+              errors.push('exercises[' + i + '].restSec must be a whole number 0–600 (got ' + got(item.restSec) + ')');
+            } else {
+              restSec = item.restSec;
+            }
+          }
+          let note = '';
+          if (item.note !== undefined && item.note !== null) {
+            if (typeof item.note !== 'string') {
+              errors.push('exercises[' + i + '].note must be text up to 140 characters (got ' + got(item.note) + ')');
+            } else if (item.note.length > ROUTINE_IMPORT.MAX_NOTE) {
+              errors.push('exercises[' + i + '].note must be at most 140 characters (got ' + item.note.length + ')');
+            } else {
+              note = item.note;
+            }
+          }
+          exercises.push({
+            exId: item.exId,
+            sets: sets,
+            reps: parsed ? parsed.reps : String(item.reps),
+            restSec: restSec,
+            note: note
+          });
+        }
+      }
+      if (errors.length > 0) return { ok: false, errors: errors };
+      return { ok: true, routine: { name: name, exercises: exercises } };
+    }
+
+    function formatRoutineImportErrors(errors) {
+      const all = Array.isArray(errors) ? errors : [];
+      const shown = all.slice(0, ROUTINE_IMPORT.ERROR_LIMIT);
+      const more = all.length - shown.length;
+      let text = shown.join('\n');
+      if (more > 0) text += (text ? '\n' : '') + 'and ' + more + ' more';
+      return text;
+    }
+
+    /* base64url -> JSON, using atob + percent-decoding so UTF-8 names survive.
+       Returns null (never throws) for anything unreadable. */
+    function decodeRoutineImportHash(hash) {
+      const prefix = '#' + ROUTINE_IMPORT.HASH_KEY + '=';
+      const raw = String(hash || '');
+      if (raw.indexOf(prefix) !== 0) return null;
+      const value = raw.slice(prefix.length);
+      if (!value) return null;
+      try {
+        const b64 = value.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
+        const bin = atob(b64 + pad);
+        let pct = '';
+        for (let i = 0; i < bin.length; i++) {
+          pct += '%' + ('00' + bin.charCodeAt(i).toString(16)).slice(-2);
+        }
+        return JSON.parse(decodeURIComponent(pct));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function renderRoutineImportPreview(routine, errors) {
+      const preview = document.getElementById('routineImportPreview');
+      const errBox = document.getElementById('routineImportErrors');
+      if (preview) {
+        if (!routine) {
+          preview.innerHTML = '';
+          preview.style.display = 'none';
+        } else {
+          const rows = routine.exercises.map(function (item) {
+            const ex = BUILTIN_EXERCISE_DEFS[item.exId];
+            const name = ex ? ex.name : item.exId;
+            const rest = (item.restSec === null || item.restSec === undefined) ? '' : ' · rest ' + item.restSec + 's';
+            return '<div style="font-size:14px; line-height:1.6;">' + esc(name) + ' — ' + item.sets + ' × ' + esc(item.reps) + rest + '</div>';
+          }).join('');
+          preview.innerHTML = '<div style="font-weight:800; font-size:15px; margin-bottom:6px;">' + esc(routine.name) + '</div>' + rows;
+          preview.style.display = 'block';
+        }
+      }
+      if (errBox) {
+        const list = Array.isArray(errors) ? errors : [];
+        if (list.length > 0) {
+          errBox.textContent = formatRoutineImportErrors(list);
+          errBox.style.display = 'block';
+        } else {
+          errBox.textContent = '';
+          errBox.style.display = 'none';
+        }
+      }
+    }
+
+    function openRoutineImport() {
+      pendingRoutineImport = null;
+      const ta = document.getElementById('routineImportText');
+      if (ta) ta.value = '';
+      const file = document.getElementById('routineImportFile');
+      if (file) { try { file.value = ''; } catch (e) {} }
+      renderRoutineImportPreview(null, []);
+      document.getElementById('routineImportModal').classList.add('open');
+    }
+
+    /* Paste (or a chosen file's text): parse and preview only. A rejected
+       payload leaves pendingRoutineImport null, so Add routine cannot save it. */
+    function previewRoutineImportText(text) {
+      pendingRoutineImport = null;
+      const raw = String(text === null || text === undefined ? '' : text).trim();
+      if (!raw) {
+        renderRoutineImportPreview(null, []);
+        return;
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        renderRoutineImportPreview(null, ['This is not JSON. Paste the routine text your AI assistant gave you.']);
+        return;
+      }
+      const result = validateRoutineImport(parsed);
+      if (!result.ok) {
+        renderRoutineImportPreview(null, result.errors);
+        return;
+      }
+      pendingRoutineImport = result.routine;
+      renderRoutineImportPreview(result.routine, []);
+    }
+
+    function routineFileChosen(e) {
+      const input = e && e.target ? e.target : null;
+      const file = (input && input.files) ? input.files[0] : null;
+      if (!file) return;
+      let reader;
+      try {
+        reader = new FileReader();
+      } catch (err) {
+        renderRoutineImportPreview(null, ['This browser cannot read files. Paste the text instead.']);
+        return;
+      }
+      reader.onload = function (ev) {
+        try { if (input) input.value = ''; } catch (err) {}
+        previewRoutineImportText(ev && ev.target ? ev.target.result : '');
+      };
+      reader.onerror = function () {
+        try { if (input) input.value = ''; } catch (err) {}
+        renderRoutineImportPreview(null, ['Could not read that file. Try pasting the text instead.']);
+      };
+      reader.readAsText(file);
+    }
+
+    function cancelRoutineImport() {
+      pendingRoutineImport = null;
+      renderRoutineImportPreview(null, []);
+      closeModal('routineImportModal');
+    }
+
+    function confirmRoutineImport() {
+      // A tap on Add with only pasted text validates it first (one tap).
+      if (!pendingRoutineImport) {
+        const ta = document.getElementById('routineImportText');
+        if (ta && String(ta.value || '').trim()) previewRoutineImportText(ta.value);
+      }
+      const routine = pendingRoutineImport;
+      if (!routine) return;
+      // Cleared before writing so a double tap can never add it twice.
+      pendingRoutineImport = null;
+      const base = routine.name;
+      const names = new Set((Array.isArray(state.routines) ? state.routines : []).map(function (r) { return r.name; }));
+      let name = base;
+      let n = 2;
+      while (names.has(name)) { name = base + ' (' + (n++) + ')'; }
+      const items = routine.exercises.map(function (item) {
+        return normalizeRoutineItem({
+          exId: item.exId,
+          sets: item.sets,
+          targetReps: item.reps,
+          restSec: (item.restSec === null || item.restSec === undefined) ? undefined : item.restSec,
+          note: item.note || ''
+        });
+      });
+      state.routines.unshift({ id: 'rt_' + Date.now(), name: name, exercises: items });
+      saveState();
+      renderRoutines();
+      closeModal('routineImportModal');
+      renderRoutineImportPreview(null, []);
+      const ta = document.getElementById('routineImportText');
+      if (ta) ta.value = '';
+    }
+
+    function routineImportOnboardingOpen() {
+      const el = document.getElementById('onboardingOverlay');
+      return !!(el && el.classList && el.classList.contains('open'));
+    }
+
+    /* Drops the hash BEFORE the payload is validated: an import link is never
+       stored and never part of a later request. */
+    function clearRoutineImportHash() {
+      try {
+        if (typeof history !== 'undefined' && history && typeof history.replaceState === 'function') {
+          const p = (typeof location !== 'undefined' && location) ? location : {};
+          history.replaceState(null, '', String(p.pathname || '') + String(p.search || ''));
+          return;
+        }
+      } catch (e) {}
+      try { if (typeof location !== 'undefined' && location) location.hash = ''; } catch (e) {}
+    }
+
+    function readHashRoutineImport() {
+      let hash = '';
+      try {
+        hash = (typeof location !== 'undefined' && location && location.hash) ? String(location.hash) : '';
+      } catch (e) { hash = ''; }
+      if (!hash || hash.indexOf('#' + ROUTINE_IMPORT.HASH_KEY + '=') !== 0) return;
+      const payload = decodeRoutineImportHash(hash);
+      clearRoutineImportHash();
+      if (!payload) {
+        alert('❌ Routine link is not valid.');
+        return;
+      }
+      const result = validateRoutineImport(payload);
+      if (!result.ok) {
+        alert('❌ ' + formatRoutineImportErrors(result.errors));
+        return;
+      }
+      pendingRoutineImport = result.routine;
+      // On a true first run the onboarding overlay owns the screen; the
+      // preview appears the moment it closes (flushPendingRoutineImport).
+      if (routineImportOnboardingOpen()) return;
+      renderRoutineImportPreview(result.routine, []);
+      document.getElementById('routineImportModal').classList.add('open');
+    }
+
+    function flushPendingRoutineImport() {
+      if (!pendingRoutineImport) return;
+      if (routineImportOnboardingOpen()) return;
+      renderRoutineImportPreview(pendingRoutineImport, []);
+      document.getElementById('routineImportModal').classList.add('open');
     }
 
     /* P2-04: optional "update routine from this workout" offer. History is
@@ -10640,6 +10979,8 @@
 
     function closeOnboarding() {
       document.getElementById('onboardingOverlay').classList.remove('open');
+      // P4-11: an import link that arrived during first run shows now.
+      flushPendingRoutineImport();
     }
 
     function obHeightError(d) {
@@ -10998,6 +11339,7 @@
       renderGettingStarted();
       renderProfileStats();
       showWorkoutTab();
+      flushPendingRoutineImport();
     }
 
     function showWorkoutTab() {

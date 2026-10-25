@@ -335,6 +335,12 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   renderRoutines, openRoutineBuilder, editRoutine, saveRoutine,
   deleteRoutine, undoDeleteRoutine, expireDeletedRoutine,
   duplicateRoutine, moveRoutine, renderRoutineBuilderList,
+  ROUTINE_IMPORT, validateRoutineImport, formatRoutineImportErrors,
+  decodeRoutineImportHash, renderRoutineImportPreview,
+  openRoutineImport, previewRoutineImportText, routineFileChosen,
+  confirmRoutineImport, cancelRoutineImport, readHashRoutineImport,
+  flushPendingRoutineImport,
+  get pendingRoutineImport(){ return pendingRoutineImport; },
   normalizeRoutineItem, parseRepsTarget, formatRepsTarget,
   updateBuilderSets, updateBuilderReps, updateBuilderWeight, updateBuilderNote,
   updateBuilderDuration,
@@ -546,6 +552,36 @@ function attachFakeCanvas(el, log) {
   return el;
 }
 
+// P4-11: a minimal FileReader that only does what the routine importer needs
+// (readAsText). The fake file may carry `_text`, or parts joined like a real
+// File, so a chosen file behaves like the browser's async read.
+export function makeFakeFileReader() {
+  function FileReader() {
+    this.result = null;
+    this.error = null;
+    this.onload = null;
+    this.onerror = null;
+    this.onabort = null;
+  }
+  FileReader.prototype.readAsText = function (file) {
+    const self = this;
+    queueMicrotask(() => {
+      try {
+        let text;
+        if (file && typeof file._text === 'string') text = file._text;
+        else if (file && Array.isArray(file.parts)) text = file.parts.join('');
+        else text = String(file === null || file === undefined ? '' : file);
+        self.result = text;
+        if (typeof self.onload === 'function') self.onload({ target: self });
+      } catch (e) {
+        self.error = e;
+        if (typeof self.onerror === 'function') self.onerror({ target: self });
+      }
+    });
+  };
+  return FileReader;
+}
+
 export function createApp(options = {}) {
   const store = options.store || new Map();
   const document = makeDocument();
@@ -614,7 +650,9 @@ export function createApp(options = {}) {
       },
       revokeObjectURL(url) { urlCalls.revoked.push(url); },
     },
-    FileReader: function FileReader() {},
+    FileReader: makeFakeFileReader(),
+    // P4-11: browsers have atob; the import link is decoded with it.
+    atob: (text) => Buffer.from(String(text), 'base64').toString('binary'),
   };
   // P5-04: default decoder returns a fixed-size bitmap; tests that need an
   // undecodable file pass their own createImageBitmap that rejects.

@@ -120,7 +120,8 @@ Source/evidence definitions: [video index](../research/VIDEO_REFERENCE_INDEX.md)
 
 ### P4-11 reference
 
-- **Owner request 2026-10-25:** "I want to add an MCP server. I can control it with my LLM, Claude, GPT, or whatever, to make me my workouts." Recorded as a planned task; not started.
+- **Owner request 2026-10-25:** "I want to add an MCP server. I can control it with my LLM, Claude, GPT, or whatever, to make me my workouts." Recorded as a planned task.
+- **Phase 1 implemented 2026-10-25 (`index.html`, `mcp/`, branch `codex/p4-11-mcp`), awaiting owner phone check.** A local stdio MCP server (`mcp/plz-train-mcp.mjs`, Node 18+, no npm dependencies, no network, no keys) exposes `list_exercises`, `get_routine_format` and `create_routine`. `create_routine` validates against the built-in ids (`ex1`–`ex100`) and returns a `https://workout-engine-beta.vercel.app/#import-routine=<base64url>` link plus the pretty routine JSON; invalid input returns `isError:true` with the full error list and creates nothing. The app gains one **⬇ Import routine** button under the My Routines header and one preview modal: paste JSON, choose a `.json`/`.txt` file, or open a link. The hash is dropped (`history.replaceState`) *before* validation, the preview shows the routine name and `Name — 3 × 8-12 · rest 90s` per exercise, and nothing is written until **Add routine**. Name collisions get ` (2)`, ` (3)`. The rules and the exact error text live in `mcp/routine-format.mjs` and are mirrored inside `index.html`; `tests/mcp_routine.test.mjs` holds a 12-case parity table proving both copies agree on `ok` and message text. `mcp/catalogue.json` is generated from the app's own `EXERCISE_ROWS` (`node mcp/build-catalogue.mjs`) and a freshness test keeps it current. Built-in ids only in phase 1: custom/private exercises are not in the catalogue. No schema bump, no history/records reading, no writes into storage from outside, no remote transport, no accounts/scopes/rate limits, no medical or progression advice.
 - **Why phased:** all training data lives only on the phone (localStorage + IndexedDB, P0-01). Without a backend an external assistant cannot write into the app, so Phase 1 hands over a routine the owner imports and confirms; direct read/write waits for P0-04/P0-05.
 - **Related:** P5-06 owns how AI-generated plans are validated and previewed; P0-09 owns the shared entity/unit contract the MCP tools must follow; P4-02/P4-04 apply before any remote access.
 
@@ -132,6 +133,8 @@ Source/evidence definitions: [video index](../research/VIDEO_REFERENCE_INDEX.md)
 - [V2 review](https://www.youtube.com/watch?v=CkYBAlBrAAw); specific clips and limits above. [Video index](../research/VIDEO_REFERENCE_INDEX.md).
 
 ## Next Immediate Action
+
+**P4-11 phase 1 implemented 2026-10-25 in `index.html` + `mcp/` on branch `codex/p4-11-mcp`, awaiting owner phone check:** local stdio MCP server with `list_exercises`, `get_routine_format` and `create_routine` (validated import link), plus the in-app **⬇ Import routine** paste/file/link preview that saves only on **Add routine**. Owner to confirm on the phone: opening an AI link shows the preview at 412 px, Add routine saves exactly one routine, Cancel saves nothing, and pasting a file's JSON works.
 
 **P4-10 personal part implemented 2026-10-24 in `index.html` on branch `codex/p4-10-awake`, awaiting owner phone check:** opt-in keep-screen-awake during an active workout (Settings toggle, passive "☀ Awake" pill), released on finish/discard/toggle-off, re-armed on visibility and resume, silent when unsupported or refused. Owner to confirm on the phone that the screen stays on with the toggle enabled, that the pill appears only during a workout, and that the note appears where wake lock is unsupported.
 

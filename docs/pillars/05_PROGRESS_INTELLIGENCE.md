@@ -99,6 +99,7 @@ Source/evidence definitions: [video index](../research/VIDEO_REFERENCE_INDEX.md)
 
 - **ChatGPT connection — Entry point/narration:** [V2 3:54–4:08](https://www.youtube.com/watch?v=CkYBAlBrAAw&t=234s).
 - **Conversation, history retrieval, chart generation and plan import — Not demonstrated.** Use [official ChatGPT product context](https://www.hevyapp.com/features/hevy-chatgpt/) and our authorized-read/proposal contract.
+- **Phase 1 routine-import contract implemented 2026-10-25 (`mcp/routine-format.mjs` + `index.html`, P4-11):** an AI-generated routine is a **proposal** that must pass one shared validator (schema, built-in ids, sets/reps/rest/note bounds) and is shown in a preview before the owner taps Add routine; nothing is applied silently, no history is read, no schema changes. This is the validated-plan-handover half of P5-06; conversational analysis over history stays planned.
 
 ### P5-07 reference
 
