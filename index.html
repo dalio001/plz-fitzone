@@ -806,7 +806,7 @@
           <div style="font-weight:800; font-size:15px;">Back up your training</div>
           <span id="backupReminderAge" style="font-size:13px; color:var(--text-sub);">No backup yet</span>
         </div>
-        <div style="font-size:14px; line-height:1.5; color:var(--text-sub); margin-bottom:var(--space-12);">Save a copy of your workouts so your training is safe on this phone.</div>
+        <div style="font-size:14px; line-height:1.5; color:var(--text-sub); margin-bottom:var(--space-12);">Your workouts are only on this phone. Save a copy (for example to Google Drive) so you never lose them.</div>
         <div style="display:flex; gap:var(--space-8); flex-wrap:wrap;">
           <button class="btn btn-primary" style="flex:1; min-height:44px;" onclick="exportData()">Back up now</button>
           <button class="btn" style="padding:6px 16px; min-height:44px;" onclick="snoozeBackupReminder()">Later</button>
@@ -10679,23 +10679,20 @@
         typeof File === 'function';
 
       if (canUseShare) {
-        // 1. Try a .json File
+        // Share the backup as a .txt file (same JSON content). Some Android
+        // Chrome builds report that a .json file can be shared, then refuse it
+        // with NotAllowedError (seen on the owner's Huawei), while text/plain
+        // always opens the share sheet. Import accepts both .json and .txt.
         try {
-          const jsonFile = new File([jsonStr], jsonName, { type: 'application/json' });
-          if (navigator.canShare({ files: [jsonFile] })) {
-            fileToShare = jsonFile;
-          }
+          const txtFile = new File([jsonStr], txtName, { type: 'text/plain' });
+          if (navigator.canShare({ files: [txtFile] })) fileToShare = txtFile;
         } catch (e) {
           fileToShare = null;
         }
-
-        // 2. If canShare says no, try a text/plain File with the SAME JSON content named .txt
         if (!fileToShare) {
           try {
-            const txtFile = new File([jsonStr], txtName, { type: 'text/plain' });
-            if (navigator.canShare({ files: [txtFile] })) {
-              fileToShare = txtFile;
-            }
+            const jsonFile = new File([jsonStr], jsonName, { type: 'application/json' });
+            if (navigator.canShare({ files: [jsonFile] })) fileToShare = jsonFile;
           } catch (e) {
             fileToShare = null;
           }
