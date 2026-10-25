@@ -800,6 +800,19 @@
         <div style="font-size:14px; line-height:1.7; color:var(--text-sub);">1. Tap a routine below, then Start Routine — your previous weights show under each set.<br>2. Tap Finish to save the workout on this phone.<br>3. Back up anytime from Profile → Backup JSON.</div>
       </div>
 
+      <!-- Backup reminder card -->
+      <div class="card" id="backupReminderCard" style="display:none; margin-top:var(--space-12);">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-8); margin-bottom:var(--space-8); flex-wrap:wrap;">
+          <div style="font-weight:800; font-size:15px;">Back up your training</div>
+          <span id="backupReminderAge" style="font-size:13px; color:var(--text-sub);">No backup yet</span>
+        </div>
+        <div style="font-size:14px; line-height:1.5; color:var(--text-sub); margin-bottom:var(--space-12);">Save a copy of your workouts so your training is safe on this phone.</div>
+        <div style="display:flex; gap:var(--space-8); flex-wrap:wrap;">
+          <button class="btn btn-primary" style="flex:1; min-height:44px;" onclick="exportData()">Back up now</button>
+          <button class="btn" style="padding:6px 16px; min-height:44px;" onclick="snoozeBackupReminder()">Later</button>
+        </div>
+      </div>
+
       <div class="section-group" style="margin-top:var(--space-24);">
         <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
           <h3 class="section-title" style="margin:0; font-size:var(--font-20); color:var(--text); text-transform:none; letter-spacing:normal;">My Routines (Unlimited)</h3>
@@ -1098,8 +1111,9 @@
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn" style="flex:1; min-height:44px;" onclick="exportData()">📤 Backup JSON</button>
             <button class="btn" style="flex:1; min-height:44px;" onclick="document.getElementById('importInput').click()">📥 Restore JSON</button>
-            <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
+            <input type="file" id="importInput" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importData(event)">
           </div>
+          <div id="settingsLastBackup" style="font-size:13px; color:var(--text-sub); margin-top:8px;">No backup yet</div>
           <div id="restoreDoneBanner" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--success-bg); border:1px solid rgba(16,185,129,0.4); font-size:14px; font-weight:700; align-items:center; justify-content:space-between; gap:8px;">
             <span>✅ Restored.</span>
             <button class="btn" style="padding:6px 12px; font-size:13px; min-height:44px;" onclick="undoLastRestore()">Undo</button>
@@ -2503,6 +2517,12 @@
       // P5-05: next-target hints are on unless the owner turned them off.
       if (typeof state.showTargets !== 'boolean') state.showTargets = true;
       state.sounds = normalizeSounds(state.sounds);
+      if (typeof state.lastBackupAt !== 'number' || !isFinite(state.lastBackupAt) || state.lastBackupAt <= 0) {
+        delete state.lastBackupAt;
+      }
+      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
+        delete state.backupSnoozeUntil;
+      }
 
       hydrateSettingsControls();
       paintKeepAwakeUi(); // P4-10: note/checkbox reflect this browser
@@ -2514,6 +2534,7 @@
       setProfileSection(activeProfileSection, false);
       refreshUndoRestoreUI();
       renderGettingStarted();
+      renderBackupReminder();
       // P1-05: show the flow only for unfinished profiles (true first run
       // or a reload mid-onboarding). Existing saved states without a
       // profile never trigger this.
@@ -2969,6 +2990,7 @@
       const container = document.getElementById('routinesList');
       container.innerHTML = '';
       renderTodayPlan();
+      renderBackupReminder();
 
       // P2-04: delete-undo banner (10 s, in-memory only; a reload drops it).
       if (deletedRoutineBackup) {
@@ -5730,6 +5752,7 @@
       cleanupActiveWorkout();
       renderHistory();
       renderProfileStats();
+      renderBackupReminder();
       switchTab('history', document.querySelectorAll('.nav-item')[1]);
       if (finishedRoutineId && performedForUpdate && performedForUpdate.length > 0 &&
           state.routines.some(r => r.id === finishedRoutineId)) {
@@ -8616,6 +8639,8 @@
       if (unitDisp) unitDisp.innerHTML = (state.unit || 'KG') + ' (change with the KG button at the top)';
       const unitBtn = document.getElementById('unitToggleBtn');
       if (unitBtn) unitBtn.innerText = state.unit || 'KG';
+      const lastBk = document.getElementById('settingsLastBackup');
+      if (lastBk) lastBk.innerText = formatBackupAge(state && state.lastBackupAt);
     }
 
     /* ================= P5 WEEKLY SUMMARY =================
@@ -10131,6 +10156,37 @@
       renderGettingStarted();
     }
 
+    function formatBackupAge(ms) {
+      if (!ms || typeof ms !== 'number' || !isFinite(ms) || ms <= 0) return 'No backup yet';
+      const days = Math.floor(Math.max(0, Date.now() - ms) / 86400000);
+      if (days <= 0) return 'Last backup: today';
+      if (days === 1) return 'Last backup: 1 day ago';
+      return 'Last backup: ' + days + ' days ago';
+    }
+
+    function renderBackupReminder() {
+      const card = document.getElementById('backupReminderCard');
+      if (!card) return;
+      const hasHistory = !!(state && Array.isArray(state.history) && state.history.length > 0);
+      const now = Date.now();
+      const SEVEN_DAYS_MS = 7 * 86400000;
+      const needsBackup = !state || !state.lastBackupAt || (now - state.lastBackupAt >= SEVEN_DAYS_MS);
+      const snoozed = !!(state && typeof state.backupSnoozeUntil === 'number' && now < state.backupSnoozeUntil);
+      const show = hasHistory && needsBackup && !snoozed;
+      card.style.display = show ? '' : 'none';
+      if (show) {
+        const ageEl = document.getElementById('backupReminderAge');
+        if (ageEl) ageEl.innerText = formatBackupAge(state && state.lastBackupAt);
+      }
+    }
+
+    function snoozeBackupReminder() {
+      if (!state || typeof state !== 'object') return;
+      state.backupSnoozeUntil = Date.now() + 3 * 86400000;
+      try { saveState(); } catch (e) {}
+      renderBackupReminder();
+    }
+
     function obFormatHeight(p) {
       if (!p) return '—';
       if (p.heightUnit === 'ftin' && (String(p.heightFt).trim() !== '' || String(p.heightIn).trim() !== '')) {
@@ -10272,6 +10328,16 @@
       if (typeof data.keepAwake !== 'boolean') data.keepAwake = false; // P4-10
       if (typeof data.showTargets !== 'boolean') data.showTargets = true; // P5-05
       data.sounds = normalizeSounds(data.sounds);
+      if (typeof data.lastBackupAt === 'number' && isFinite(data.lastBackupAt) && data.lastBackupAt > 0) {
+        // kept
+      } else {
+        delete data.lastBackupAt;
+      }
+      if (typeof data.backupSnoozeUntil === 'number' && isFinite(data.backupSnoozeUntil) && data.backupSnoozeUntil > 0) {
+        // kept
+      } else {
+        delete data.backupSnoozeUntil;
+      }
       // P1-05: keep a valid profile from the backup (missing stays missing,
       // which never forces onboarding); no getting-started surprise on
       // restore unless the backup explicitly left the card up.
@@ -10457,8 +10523,20 @@
         clearActiveSessionStorage();
         silentCleanupActiveWorkout();
       }
+      const existingLastBackup = (state && typeof state.lastBackupAt === 'number' && isFinite(state.lastBackupAt) && state.lastBackupAt > 0) ? state.lastBackupAt : 0;
+      const fileLastBackup = (pendingRestore && typeof pendingRestore.lastBackupAt === 'number' && isFinite(pendingRestore.lastBackupAt) && pendingRestore.lastBackupAt > 0) ? pendingRestore.lastBackupAt : 0;
+      const mergedLastBackup = Math.max(existingLastBackup, fileLastBackup);
+
       state = pendingRestore;
       pendingRestore = null;
+
+      if (mergedLastBackup > 0) state.lastBackupAt = mergedLastBackup;
+      else delete state.lastBackupAt;
+
+      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
+        delete state.backupSnoozeUntil;
+      }
+
       normalizeExercises(state);
       ensureHistoryIds(state.history);
       if (Array.isArray(state.routines)) {
@@ -10488,6 +10566,7 @@
       renderProfileStats();
       refreshUndoRestoreUI();
       renderGettingStarted();
+      renderBackupReminder();
       // P1-05: a restored backup that never finished setup re-opens it in
       // safe re-run mode (never deletes). Backups without a profile show
       // nothing new. A finished profile closes any stale overlay + draft.
@@ -10524,6 +10603,12 @@
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
       if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
       state.sounds = normalizeSounds(state.sounds);
+      if (typeof state.lastBackupAt !== 'number' || !isFinite(state.lastBackupAt) || state.lastBackupAt <= 0) {
+        delete state.lastBackupAt;
+      }
+      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
+        delete state.backupSnoozeUntil;
+      }
       try {
         // Write back the exact snapshot string so undo restores data byte-for-byte.
         localStorage.setItem('hevy_clone_state', raw);
@@ -10543,6 +10628,7 @@
       renderExercisesTab();
       renderProfileStats();
       refreshUndoRestoreUI();
+      renderBackupReminder();
     }
 
     function refreshUndoRestoreUI() {
@@ -10580,12 +10666,74 @@
       } catch (e) {}
     }
 
-    function exportData() {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `PLZ_Train_Backup_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
+    async function exportData() {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const jsonName = `PLZ_Train_Backup_${dateStr}.json`;
+      const txtName = `PLZ_Train_Backup_${dateStr}.txt`;
+      const jsonStr = JSON.stringify(state, null, 2);
+
+      let fileToShare = null;
+      const canUseShare = typeof navigator !== 'undefined' &&
+        typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        typeof File === 'function';
+
+      if (canUseShare) {
+        // 1. Try a .json File
+        try {
+          const jsonFile = new File([jsonStr], jsonName, { type: 'application/json' });
+          if (navigator.canShare({ files: [jsonFile] })) {
+            fileToShare = jsonFile;
+          }
+        } catch (e) {
+          fileToShare = null;
+        }
+
+        // 2. If canShare says no, try a text/plain File with the SAME JSON content named .txt
+        if (!fileToShare) {
+          try {
+            const txtFile = new File([jsonStr], txtName, { type: 'text/plain' });
+            if (navigator.canShare({ files: [txtFile] })) {
+              fileToShare = txtFile;
+            }
+          } catch (e) {
+            fileToShare = null;
+          }
+        }
+      }
+
+      let shared = false;
+      if (fileToShare) {
+        try {
+          await navigator.share({
+            files: [fileToShare],
+            title: fileToShare.name,
+          });
+          shared = true;
+        } catch (err) {
+          // (4) Only an AbortError counts as cancel (no backup recorded, no download).
+          // Any other share error falls back to the normal download.
+          const isAbort = !!(err && (err.name === 'AbortError' || String(err.message || err).indexOf('AbortError') !== -1));
+          if (isAbort) {
+            return;
+          }
+          shared = false;
+        }
+      }
+
+      // 3. Fallback: download .json as today
+      if (!shared) {
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = jsonName;
+        a.click();
+      }
+
+      state.lastBackupAt = Date.now();
+      try { saveState(); } catch (e) {}
+      renderBackupReminder();
+      hydrateSettingsControls();
     }
 
     function importData(e) {

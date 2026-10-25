@@ -143,6 +143,7 @@ export function makeDocument() {
     }
   };
   for (const id of markupIds()) byId.set(id, makeElement('div', registerHtmlIds));
+  registerHtmlIds(loadIndexHtml().split('<script>')[0]);
   const body = makeElement('body');
   const pushChild = body.appendChild.bind(body);
   // Banners (updateBar) are appended to document.body and then looked up by
@@ -445,6 +446,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   testRestSound, testSetSound, testPrSound,
   setSoundRestChoice, setSoundRestVolume, setSoundSetVolume, setSoundPrVolume,
   isNewLiveRecord,
+  exportData, formatBackupAge, renderBackupReminder, snoozeBackupReminder,
 };`;
 
 // Creates one app instance: runs init() (the script self-initializes) in a
@@ -497,6 +499,11 @@ export function createApp(options = {}) {
     setTimeout: () => 0,
     clearTimeout: () => {},
     Blob: function Blob() {},
+    File: typeof File !== 'undefined' ? File : function File(parts, name, opts) {
+      this.name = name;
+      this.parts = parts;
+      this.type = (opts && opts.type) || '';
+    },
     URL: { createObjectURL: () => 'blob:fake', revokeObjectURL: () => {} },
     FileReader: function FileReader() {},
   };
