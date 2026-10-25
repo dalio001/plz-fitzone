@@ -791,6 +791,13 @@
   <!-- P0-01: offline indicator: normal flow UNDER the header, at most 36 px
        high, so it can never cover the Continue or bottom-nav buttons. -->
   <div id="offlinePill" role="status" aria-live="polite" style="display:none; max-height:36px; overflow:hidden; padding:8px 12px; background:#0f172a; color:#e2e8f0; border-bottom:1px solid rgba(148,163,184,0.35); font-size:13px; font-weight:700; line-height:1.2; text-align:center; pointer-events:none;">Offline — your workouts are saved on this phone</div>
+  <!-- P4-11: AI update banner: appears when the remote AI modified routines/plan, with Undo -->
+  <div id="aiUpdateBanner" class="card" style="display:none; max-width:412px; margin:8px auto; padding:10px 14px; background:var(--bg-card); border:1px solid var(--primary); border-radius:10px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <div style="font-size:13px; line-height:1.4;" id="aiUpdateBannerText">Updated by your AI</div>
+      <button type="button" id="undoAiUpdateBtn" class="btn" style="min-height:44px; padding:6px 12px; font-size:13px;" onclick="undoAiUpdate()">↩️ Undo</button>
+    </div>
+  </div>
 
   <!-- MAIN VIEWS -->
   <main>
@@ -1022,6 +1029,7 @@
           <div class="section-title" style="margin-bottom:10px; font-size:16px;">My profile</div>
           <div id="myProfileBody"></div>
         </div>
+        </div>
 
         <div class="card">
           <div class="section-title" style="margin-bottom:10px; font-size:16px;">Settings & Data Backup</div>
@@ -1153,6 +1161,30 @@
           </div>
           <button class="btn btn-block" id="undoRestoreBtn" style="display:none; margin-top:10px; min-height:44px;" onclick="undoLastRestore()">↩️ Undo last restore</button>
         </div>
+
+        <!-- P4-11: Connect your AI section -->
+        <div class="card" id="aiConnectCard">
+          <div class="section-title" style="margin-bottom:10px; font-size:16px;">Connect your AI</div>
+          <div id="aiConnectNotPaired">
+            <div style="font-size:13px; color:var(--text-sub); margin-bottom:12px; line-height:1.5;">
+              Connect Claude or ChatGPT to read your workouts, suggest routines, and update your training plan. Your secret key never leaves the server, and photos stay on your phone.
+            </div>
+            <button type="button" id="pairAiBtn" class="btn btn-primary btn-block" style="min-height:44px;" onclick="pairAiConnector()">Connect your AI</button>
+          </div>
+          <div id="aiConnectPaired" style="display:none;">
+            <div style="font-size:13px; color:var(--text-sub); margin-bottom:8px;">Your personal connector URL:</div>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <input type="text" id="aiConnectorUrl" class="input-field" readonly style="font-size:12px; flex:1;" value="">
+              <button type="button" id="copyAiUrlBtn" class="btn" style="min-height:44px; padding:0 14px;" onclick="copyAiConnectorUrl()">Copy</button>
+            </div>
+            <div style="font-size:12px; color:var(--text-sub); line-height:1.5; margin-bottom:12px;">
+              <strong>In Claude:</strong> Settings &gt; Connectors &gt; Add custom connector &gt; paste this URL.<br>
+              <strong>In ChatGPT:</strong> Settings &gt; Connected apps &gt; Add MCP &gt; paste this URL.
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" id="disconnectAiBtn" class="btn btn-block" style="min-height:44px; color:var(--danger);" onclick="disconnectAiConnector()">Disconnect</button>
+            </div>
+          </div>
       </div>
     </section>
   </main>
@@ -1581,7 +1613,7 @@
       </div>
       <div class="modal-body">
         <div style="font-size:13px; color:var(--text-sub); margin-bottom:var(--space-8); line-height:1.5;">Paste a routine from your AI assistant, or choose the .json file it gave you. Nothing is saved until you tap Add routine.</div>
-        <textarea id="routineImportText" class="input-field" rows="5" placeholder="Paste routine JSON here" oninput="previewRoutineImportText(this.value)" style="min-height:96px; resize:vertical;"></textarea>
+        <textarea id="routineImportText" class="input-field" rows="5" placeholder="Paste routine JSON here" oninput="previewRoutineImportText(this.value)" style="min-height:96px; resize:vertical; display:none;"></textarea>
         <input type="file" id="routineImportFile" accept=".json,.txt,application/json,text/plain" style="display:none;" onchange="routineFileChosen(event)">
         <button class="btn btn-block" style="margin-top:var(--space-8); min-height:44px;" onclick="document.getElementById('routineImportFile').click()">📄 Choose file</button>
         <div class="card" id="routineImportPreview" style="display:none; margin-top:var(--space-12);"></div>
@@ -2641,6 +2673,8 @@
       refreshUndoRestoreUI();
       renderGettingStarted();
       renderBackupReminder();
+      paintAiConnectUi();
+      try { pullSyncState(); } catch (e) {}
       // P1-05: show the flow only for unfinished profiles (true first run
       // or a reload mid-onboarding). Existing saved states without a
       // profile never trigger this.
@@ -3064,6 +3098,7 @@
       localStorage.setItem('hevy_clone_state', raw);
       // P0-01: mirror the exact bytes into IndexedDB as well.
       queueMainStateMirror(raw, state.savedAt);
+      try { scheduleSyncPush(); } catch (e) {}
     }
 
     /* NAVIGATION */
@@ -9249,6 +9284,7 @@
       if (rEl) rEl.value = state.defaultRest || 90;
       const dropSelect = document.getElementById('dropStepPctSelect');
       if (dropSelect) dropSelect.value = state.dropStepPct || 20;
+      paintAiConnectUi();
       const advCheck = document.getElementById('supersetAdvanceCheck');
       if (advCheck) advCheck.checked = state.supersetAdvance !== false;
       paintKeepAwakeUi(); // P4-10: checkbox + unsupported note
@@ -12262,7 +12298,12 @@
     }
 
     try {
-      window.addEventListener('online', updateOfflinePill);
+      window.addEventListener('online', function() {
+      updateOfflinePill();
+      try {
+        if (localStorage.getItem(SYNC_QUEUE_KEY) === '1') scheduleSyncPush(true);
+      } catch (e) {}
+    });
       window.addEventListener('offline', updateOfflinePill);
       window.addEventListener('pagehide', flushDurableState);
       document.addEventListener('visibilitychange', function() {
@@ -12321,9 +12362,316 @@
           // P4-10: the browser drops the lock when the page hides; re-arm it.
           try { syncWakeLock(); } catch (e) {}
           checkForUpdate();
+          try { pullSyncState(); } catch (e) {}
+          try {
+            if (localStorage.getItem(SYNC_QUEUE_KEY) === '1') scheduleSyncPush(true);
+          } catch (e) {}
         }
       });
     } catch (e) {}
+
+    /* P4-11: REMOTE AI CONNECTOR & SUPABASE SYNC ------------------------- */
+    const AI_TOKEN_KEY = 'plz_ai_token';
+    const AI_REV_KEY = 'plz_ai_rev';
+    const AI_UNDO_KEY = 'plz_ai_undo_state';
+    const SYNC_QUEUE_KEY = 'plz_sync_pending';
+
+    function getAiToken() {
+      try { return localStorage.getItem(AI_TOKEN_KEY); } catch (e) { return null; }
+    }
+
+    function isAiPaired() {
+      return !!getAiToken();
+    }
+
+    function generateRandomToken() {
+      try {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        return Math.random().toString(36).slice(2) + Date.now().toString(36);
+      }
+    }
+
+    async function sha256Hex(str) {
+      const buf = new TextEncoder().encode(str);
+      const hash = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function pairAiConnector() {
+      const btn = document.getElementById('pairAiBtn');
+      if (btn) btn.disabled = true;
+      try {
+        const token = generateRandomToken();
+        const tokenHash = await sha256Hex(token);
+        const curRev = Number(localStorage.getItem(AI_REV_KEY) || 0);
+        const payloadState = Object.assign({}, state);
+        delete payloadState.photos;
+
+        const res = await fetch('/api/pair', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokenHash: tokenHash, rev: curRev, state: payloadState })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(function() { return {}; });
+          alert(err.error || 'Pairing failed. If already paired, reset with existing token.');
+          if (btn) btn.disabled = false;
+          return;
+        }
+
+        localStorage.setItem(AI_TOKEN_KEY, token);
+        paintAiConnectUi();
+        scheduleSyncPush(true);
+      } catch (err) {
+        alert('Could not reach pairing server: ' + (err.message || 'offline'));
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function disconnectAiConnector() {
+      if (!confirm('Disconnect your AI? It will lose access until you reconnect.')) return;
+      const token = getAiToken();
+      if (token) {
+        try {
+          const tokenHash = await sha256Hex(token);
+          await fetch('/api/pair', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'disconnect', oldTokenHash: tokenHash })
+          });
+        } catch (e) {}
+      }
+      localStorage.removeItem(AI_TOKEN_KEY);
+      localStorage.removeItem(AI_REV_KEY);
+      localStorage.removeItem(SYNC_QUEUE_KEY);
+      paintAiConnectUi();
+    }
+
+    function copyAiConnectorUrl() {
+      const el = document.getElementById('aiConnectorUrl');
+      if (!el) return;
+      el.select();
+      try {
+        if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          navigator.clipboard.writeText(el.value);
+        } else {
+          document.execCommand('copy');
+        }
+        alert('Connector URL copied!');
+      } catch (e) {
+        alert('Connector URL: ' + el.value);
+      }
+    }
+
+    function paintAiConnectUi() {
+      const token = getAiToken();
+      const notPaired = document.getElementById('aiConnectNotPaired');
+      const paired = document.getElementById('aiConnectPaired');
+      const urlEl = document.getElementById('aiConnectorUrl');
+      if (!notPaired || !paired) return;
+
+      if (token) {
+        notPaired.style.display = 'none';
+        paired.style.display = 'block';
+        if (urlEl) {
+          const origin = (typeof location !== 'undefined' && location.origin && !location.origin.includes('localhost') && !location.origin.includes('127.0.0.1'))
+            ? location.origin
+            : 'https://workout-engine-beta.vercel.app';
+          urlEl.value = origin + '/api/mcp/' + token;
+        }
+      } else {
+        notPaired.style.display = 'block';
+        paired.style.display = 'none';
+        if (urlEl) urlEl.value = '';
+      }
+    }
+
+    let syncPushTimer = null;
+    let isSyncing = false;
+
+    function scheduleSyncPush(immediate) {
+      if (!isAiPaired()) return;
+      if (syncPushTimer) clearTimeout(syncPushTimer);
+      syncPushTimer = setTimeout(function() {
+        pushSyncState();
+      }, immediate ? 50 : 1500);
+    }
+
+    async function pushSyncState() {
+      const token = getAiToken();
+      if (!token || isSyncing) return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        localStorage.setItem(SYNC_QUEUE_KEY, '1');
+        return;
+      }
+
+      isSyncing = true;
+      try {
+        const clientRev = Number(localStorage.getItem(AI_REV_KEY) || 0);
+        const payloadState = Object.assign({}, state);
+        delete payloadState.photos;
+
+        const res = await fetch('/api/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ state: payloadState, clientRev: clientRev })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rev) localStorage.setItem(AI_REV_KEY, String(data.rev));
+          localStorage.removeItem(SYNC_QUEUE_KEY);
+        } else if (res.status === 409) {
+          const data = await res.json().catch(function() { return null; });
+          if (data && data.serverState) {
+            handleSyncConflict(data.serverState, data.serverRev, data.summary);
+          }
+        } else {
+          localStorage.setItem(SYNC_QUEUE_KEY, '1');
+        }
+      } catch (err) {
+        localStorage.setItem(SYNC_QUEUE_KEY, '1');
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    async function pullSyncState() {
+      const token = getAiToken();
+      if (!token || isSyncing) return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
+      isSyncing = true;
+      try {
+        const localRev = Number(localStorage.getItem(AI_REV_KEY) || 0);
+        const res = await fetch('/api/sync', {
+          method: 'GET',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) return;
+        const data = await res.json();
+        const serverRev = Number(data.rev || 0);
+
+        if (serverRev > localRev && data.state && typeof data.state === 'object') {
+          localStorage.setItem(AI_UNDO_KEY, JSON.stringify({ state: state, rev: localRev }));
+          localStorage.setItem(AI_REV_KEY, String(serverRev));
+          applyPulledState(data.state, data.updated_by, data.summary);
+        }
+      } catch (err) {
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    function applyPulledState(newState, updatedBy, summary) {
+      if (newState.routines) state.routines = newState.routines;
+      if (newState.plans) state.plans = newState.plans;
+      if (Array.isArray(newState.history) && newState.history.length > 0) {
+        const seen = new Set();
+        const merged = [];
+        (newState.history || []).forEach(function(w) { if (w.id && !seen.has(w.id)) { seen.add(w.id); merged.push(w); } });
+        (state.history || []).forEach(function(w) { if (w.id && !seen.has(w.id)) { seen.add(w.id); merged.push(w); } });
+        state.history = merged;
+      }
+      if (Array.isArray(newState.body)) state.body = normalizeBodyEntries(newState.body);
+
+      saveState();
+
+      if (updatedBy === 'ai') {
+        showAiUpdateBanner(summary || 'Updated routines or plan');
+      }
+
+      renderRoutines();
+      renderHistory();
+      renderExercisesTab();
+      renderProfileStats();
+    }
+
+    function showAiUpdateBanner(text) {
+      const banner = document.getElementById('aiUpdateBanner');
+      const textEl = document.getElementById('aiUpdateBannerText');
+      if (!banner || !textEl) return;
+      textEl.textContent = 'Updated by your AI: ' + text;
+      banner.style.display = 'block';
+    }
+
+    function hideAiUpdateBanner() {
+      const banner = document.getElementById('aiUpdateBanner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    async function undoAiUpdate() {
+      const raw = localStorage.getItem(AI_UNDO_KEY);
+      if (!raw) {
+        const token = getAiToken();
+        if (token) {
+          try {
+            const res = await fetch('/api/sync?undo=1', {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.state) {
+                state = data.state;
+                if (data.rev) localStorage.setItem(AI_REV_KEY, String(data.rev));
+                saveState();
+                hideAiUpdateBanner();
+                renderRoutines();
+                renderHistory();
+                renderExercisesTab();
+                renderProfileStats();
+                return;
+              }
+            }
+          } catch (e) {}
+        }
+        hideAiUpdateBanner();
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.state) {
+          state = parsed.state;
+          if (parsed.rev) localStorage.setItem(AI_REV_KEY, String(parsed.rev));
+          localStorage.removeItem(AI_UNDO_KEY);
+          saveState();
+          scheduleSyncPush(true);
+          hideAiUpdateBanner();
+          renderRoutines();
+          renderHistory();
+          renderExercisesTab();
+          renderProfileStats();
+        }
+      } catch (e) {}
+    }
+
+    function handleSyncConflict(serverState, serverRev, summary) {
+      if (serverState.routines) state.routines = serverState.routines;
+      if (serverState.plans) state.plans = serverState.plans;
+      if (Array.isArray(serverState.history)) {
+        const existingIds = new Set(state.history.map(function(w) { return w.id; }));
+        serverState.history.forEach(function(w) {
+          if (w.id && !existingIds.has(w.id)) {
+            state.history.push(w);
+          }
+        });
+      }
+      localStorage.setItem(AI_REV_KEY, String(serverRev));
+      saveState();
+      scheduleSyncPush(true);
+      showAiUpdateBanner(summary || 'Merged local workouts with AI changes');
+    }
+
   </script>
 </body>
 </html>

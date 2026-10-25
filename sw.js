@@ -81,6 +81,9 @@ function isExercisePicture(request) {
 
 self.addEventListener('fetch', function(event) {
   var request = event.request;
+  var url = new URL(request.url);
+  // P4-11: never cache or intercept /api requests: network only, no fallback.
+  if (url.pathname.startsWith('/api/') || url.pathname === '/api') return;
   if (request.method !== 'GET') return;
   if (isExercisePicture(request)) {
     // Runtime cache-first for exercise pictures: instant on the second view
