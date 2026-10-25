@@ -172,12 +172,14 @@ export function makeDocument() {
   };
 }
 
-// ---- Optional fake IndexedDB (P0-01 draft mirror) ------------------------
+// ---- Optional fake IndexedDB (P0-01 draft mirror + P5-04 photos) ---------
 // Only what the app uses: open() with onupgradeneeded/onsuccess,
-// objectStoreNames.contains, createObjectStore, transaction(store, mode[,
-// options]), objectStore().put/get/delete and tx.oncomplete/onerror. Values
-// are snapshotted like a structured clone, so a written mirror record can
-// never change afterwards.
+// objectStoreNames.contains, createObjectStore(name[, {keyPath}]),
+// transaction(store, mode[, options]), objectStore().put/get/getAll/delete
+// and tx.oncomplete/onerror. Values are snapshotted like a structured clone,
+// so a written record can never change afterwards. A keyPath store derives
+// the key from the value (the photo store), while the draft mirror keeps
+// using out-of-line keys.
 function cloneValue(value) {
   if (value === null || typeof value !== 'object') return value;
   if (Array.isArray(value)) return value.map(cloneValue);
@@ -187,13 +189,14 @@ function cloneValue(value) {
 }
 
 export function makeFakeIndexedDB() {
-  const dbs = new Map(); // name -> { version, stores: Map<storeName, Map> }
+  const dbs = new Map(); // name -> { version, stores: Map<storeName, Map>, keyPaths: Map }
   function dbEntry(name, version) {
     let db = dbs.get(name);
     if (!db) {
-      db = { version: typeof version === 'number' ? version : 1, stores: new Map() };
+      db = { version: typeof version === 'number' ? version : 1, stores: new Map(), keyPaths: new Map() };
       dbs.set(name, db);
     }
+    if (!db.keyPaths) db.keyPaths = new Map();
     return db;
   }
   return {
@@ -215,6 +218,7 @@ export function makeFakeIndexedDB() {
       const txFor = (storeName, mode) => {
         if (!db.stores.has(storeName)) db.stores.set(storeName, new Map());
         const map = db.stores.get(storeName);
+        const keyPath = db.keyPaths ? db.keyPaths.get(storeName) : undefined;
         const tx = {
           mode, error: null, oncomplete: null, onerror: null, onabort: null,
           objectStore: () => store,
@@ -222,15 +226,25 @@ export function makeFakeIndexedDB() {
         };
         const store = {
           name: storeName,
+          keyPath,
           put(value, key) {
-            const r = { result: key, onsuccess: null, onerror: null };
-            map.set(key, cloneValue(value));
+            let usedKey = key;
+            if (usedKey === undefined && keyPath) usedKey = value ? value[keyPath] : undefined;
+            const r = { result: usedKey, onsuccess: null, onerror: null };
+            if (usedKey === undefined) throw new Error('fake IndexedDB: put() needs a key or keyPath');
+            map.set(usedKey, cloneValue(value));
             queueMicrotask(() => { if (typeof tx.oncomplete === 'function') tx.oncomplete({ target: tx }); });
             return r;
           },
           get(key) {
             const r = { result: undefined, onsuccess: null, onerror: null };
             r.result = map.has(key) ? cloneValue(map.get(key)) : undefined;
+            queueMicrotask(() => { if (typeof r.onsuccess === 'function') r.onsuccess({ target: r }); });
+            return r;
+          },
+          getAll() {
+            const r = { result: undefined, onsuccess: null, onerror: null };
+            r.result = [...map.values()].map(cloneValue);
             queueMicrotask(() => { if (typeof r.onsuccess === 'function') r.onsuccess({ target: r }); });
             return r;
           },
@@ -247,9 +261,13 @@ export function makeFakeIndexedDB() {
         name,
         version: db.version,
         objectStoreNames: { contains: (n) => db.stores.has(String(n)) },
-        createObjectStore(n) {
-          if (!db.stores.has(String(n))) db.stores.set(String(n), new Map());
-          return { name: String(n) };
+        createObjectStore(n, opts) {
+          const storeName = String(n);
+          if (!db.stores.has(storeName)) db.stores.set(storeName, new Map());
+          if (!db.keyPaths) db.keyPaths = new Map();
+          const keyPath = opts && opts.keyPath ? String(opts.keyPath) : undefined;
+          if (keyPath) db.keyPaths.set(storeName, keyPath);
+          return { name: storeName, keyPath };
         },
         transaction: txFor,
         close() {},
@@ -437,6 +455,31 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   get bodyMeasure(){ return bodyMeasure; }, set bodyMeasure(v){ bodyMeasure = v; },
   get bodyEditId(){ return bodyEditId; },
   get bodyMoreOpen(){ return bodyMoreOpen; },
+  // P5-04 private progress photos (IndexedDB only, never state)
+  PHOTOS_DB_NAME, PHOTOS_DB_VERSION, PHOTOS_STORE_NAME, PHOTO_POSES, PHOTO_FILTERS,
+  PHOTO_FULL_MAX_PX, PHOTO_THUMB_MAX_PX, PHOTO_JPEG_QUALITY, PHOTO_UNDO_MS,
+  photosSupported, openPhotosDb, getPhotos, loadPhotos, savePhotoRecord, deletePhotoRecord,
+  normalizePhotoRecord, photoSourceSize, decodePhotoFile, resizeImageToBlob, buildPhotoRecord,
+  releasePhotoUrls, photoObjectUrl,
+  addPhoto, openPhotoAdd, closePhotoAdd, photoFileChosen, paintPhotoAddError,
+  setPhotoFilter, renderPhotosSection, photoById, sortedPhotos, chronologicalPhotos,
+  photoDateText, photoShortDateText, photoWeightKg, photoWeightText, photoDeltaText, photoUnitWord,
+  openPhotoViewer, closePhotoViewer, renderPhotoViewerBody,
+  deletePhoto, undoDeletePhoto, photoUndoDelete, expirePhotoDelete, savePhotoToPhone,
+  openPhotoCompare, closePhotoCompare, setComparePhoto, renderCompareBody,
+  requestPhotoPersistenceOnce,
+  get photos(){ return photosCache; },
+  get photosLoaded(){ return photosLoaded; },
+  get photosUnavailable(){ return photosUnavailable; },
+  get photosLoadError(){ return photosLoadError; },
+  get photoFilter(){ return photoFilter; },
+  get photoViewerId(){ return photoViewerId; },
+  get photoCompareA(){ return photoCompareA; },
+  get photoCompareB(){ return photoCompareB; },
+  get pendingPhotoDelete(){ return pendingPhotoDelete; },
+  get photoAddError(){ return photoAddError; },
+  get activePhotoUrls(){ return activePhotoUrls; },
+  get photoPersistRequested(){ return photoPersistRequested; },
   // P5 Weekly Summary
   get weekSummaryViewWeekStartMs(){ return weekSummaryViewWeekStartMs; }, set weekSummaryViewWeekStartMs(v){ weekSummaryViewWeekStartMs = v; },
   weekSummaryEndMs, formatWeekRangeLabel, formatTimeDisplay, diffLabel, computeWeekSummary,
@@ -460,6 +503,49 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
 //   options.indexedDB      injected as `indexedDB` (see makeFakeIndexedDB)
 //   options.listeners      record window/document listeners; fire them with
 //                          app.fire(type[, event])
+// P5-04: a canvas fake that records every resize/encode. The app's real
+// <canvas> calls are what the tests assert on (<=1080 and <=240 long side,
+// JPEG quality 0.8); the produced "blob" carries its dimensions so a stored
+// IndexedDB record can be checked without a browser.
+export function makeFakeCanvasLog() {
+  return [];
+}
+
+function attachFakeCanvas(el, log) {
+  el.width = 0;
+  el.height = 0;
+  el.getContext = function (kind) {
+    if (String(kind) !== '2d') return null;
+    return {
+      drawImage(source, x, y, w, h) {
+        const s = source || {};
+        log.push({
+          type: 'drawImage',
+          width: Number(w) || 0,
+          height: Number(h) || 0,
+          sourceWidth: Number(s.naturalWidth || s.width) || 0,
+          sourceHeight: Number(s.naturalHeight || s.height) || 0,
+        });
+      },
+    };
+  };
+  el.toBlob = function (cb, type, quality) {
+    const w = Number(this.width) || 0;
+    const h = Number(this.height) || 0;
+    log.push({ type: 'toBlob', width: w, height: h, mime: type || '', quality: quality });
+    const blob = {
+      _fakeBlob: true,
+      type: type || 'image/jpeg',
+      size: Math.max(1, w * h),
+      _canvasWidth: w,
+      _canvasHeight: h,
+      _quality: quality,
+    };
+    if (typeof cb === 'function') cb(blob);
+  };
+  return el;
+}
+
 export function createApp(options = {}) {
   const store = options.store || new Map();
   const document = makeDocument();
@@ -469,6 +555,15 @@ export function createApp(options = {}) {
   const trackListeners = !!options.listeners;
   const listeners = [];
   const navigatorObj = options.navigator || {};
+  const canvasLog = options.canvasLog || makeFakeCanvasLog();
+  const bitmapCalls = [];
+  const urlCalls = { created: [], revoked: [] };
+  const origCreateElement = document.createElement.bind(document);
+  document.createElement = function (tag) {
+    const el = origCreateElement(tag);
+    if (String(tag).toLowerCase() === 'canvas') attachFakeCanvas(el, canvasLog);
+    return el;
+  };
 
   if (trackListeners) {
     document.addEventListener = (type, fn) => {
@@ -498,15 +593,39 @@ export function createApp(options = {}) {
     clearInterval: () => {},
     setTimeout: () => 0,
     clearTimeout: () => {},
-    Blob: function Blob() {},
-    File: typeof File !== 'undefined' ? File : function File(parts, name, opts) {
-      this.name = name;
-      this.parts = parts;
+    Blob: function Blob(parts, opts) {
+      this.parts = parts || [];
       this.type = (opts && opts.type) || '';
+      this.size = this.parts.join('').length;
     },
-    URL: { createObjectURL: () => 'blob:fake', revokeObjectURL: () => {} },
+    // A fake File never validates parts, so a fake canvas blob can be shared
+    // exactly like a real JPEG. Existing share tests only read name/type.
+    File: function File(parts, name, opts) {
+      this.name = name;
+      this.parts = parts || [];
+      this.type = (opts && opts.type) || '';
+      this.size = this.parts.reduce((n, p) => n + (p && p.size ? p.size : 0), 0);
+    },
+    URL: options.URL || {
+      createObjectURL(blob) {
+        const url = 'blob:photo-' + (urlCalls.created.length + 1);
+        urlCalls.created.push({ url, blob });
+        return url;
+      },
+      revokeObjectURL(url) { urlCalls.revoked.push(url); },
+    },
     FileReader: function FileReader() {},
   };
+  // P5-04: default decoder returns a fixed-size bitmap; tests that need an
+  // undecodable file pass their own createImageBitmap that rejects.
+  sandbox.createImageBitmap = options.createImageBitmap || function (file, opts) {
+    bitmapCalls.push({ file, options: opts });
+    return Promise.resolve({
+      width: (file && file._width) || 1600,
+      height: (file && file._height) || 1200,
+    });
+  };
+  if (options.Image) sandbox.Image = options.Image;
   if (options.location) sandbox.location = options.location;
   if (typeof options.fetch === 'function') sandbox.fetch = options.fetch;
   if (options.indexedDB) sandbox.indexedDB = options.indexedDB;
@@ -527,6 +646,9 @@ export function createApp(options = {}) {
     confirms,
     listeners,
     navigator: navigatorObj,
+    canvasLog,
+    bitmapCalls,
+    urlCalls,
     setConfirmResult(v) { confirmResult = v; },
     api: sandbox.__app,
     el: (id) => document.getElementById(id),

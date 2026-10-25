@@ -574,6 +574,17 @@
     }
     .modal-content.sheet { max-width: 412px; }
 
+    /* P5-04: private progress photos. Two columns on the phone, stacked
+       compare on narrow screens. Nothing fixed wider than the 412 px shell. */
+    .photo-compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-8);
+    }
+    @media (max-width: 412px) {
+      .photo-compare-grid { grid-template-columns: 1fr; }
+    }
+
     .badge {
       display: inline-block;
       padding: 2px 8px;
@@ -955,6 +966,25 @@
           <div id="bodyError" role="alert" style="font-size:var(--font-12); color:var(--danger); min-height:16px;"></div>
         </div>
 
+        <!-- P5-04 PRIVATE PROGRESS PHOTOS: names only, never rendered here.
+             The card shell is static so typing elsewhere never rebuilds it. -->
+        <div class="card" id="bodyPhotosCard">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-8); flex-wrap:wrap;">
+            <div style="min-width:0;">
+              <div class="section-title" style="margin-bottom:2px; font-size:16px;">Progress photos</div>
+              <div style="font-size:var(--font-12); color:var(--text-sub);">Private — stored only on this device</div>
+            </div>
+            <div style="display:flex; gap:var(--space-8); flex-wrap:wrap;">
+              <button type="button" id="photoAddBtn" class="btn btn-primary" style="min-height:44px; padding:8px 12px;" onclick="openPhotoAdd()">+ Add photo</button>
+              <button type="button" id="photoCompareBtn" class="btn" style="min-height:44px; padding:8px 12px;" onclick="openPhotoCompare()">Compare</button>
+            </div>
+          </div>
+          <div class="chips" id="photoFilterChips" style="margin-top:var(--space-12);"></div>
+          <div id="photoUndo"></div>
+          <div id="photoGrid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-8); margin-top:var(--space-8);"></div>
+          <div id="photoSectionNote" role="status" style="font-size:var(--font-12); color:var(--text-sub); margin-top:var(--space-8);"></div>
+        </div>
+
         <div class="card" id="bodyChartCard">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-8); margin-bottom:var(--space-8);">
             <div id="bodyChartTitle" class="section-title" style="margin:0; font-size:16px;">Weight</div>
@@ -1114,6 +1144,7 @@
             <input type="file" id="importInput" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="importData(event)">
           </div>
           <div id="settingsLastBackup" style="font-size:13px; color:var(--text-sub); margin-top:8px;">No backup yet</div>
+          <div id="settingsPhotosNote" style="font-size:12px; color:var(--text-sub); margin-top:6px;">Photos are not in the backup file. Use Save to phone for each photo.</div>
           <div id="restoreDoneBanner" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--success-bg); border:1px solid rgba(16,185,129,0.4); font-size:14px; font-weight:700; align-items:center; justify-content:space-between; gap:8px;">
             <span>✅ Restored.</span>
             <button class="btn" style="padding:6px 12px; font-size:13px; min-height:44px;" onclick="undoLastRestore()">Undo</button>
@@ -1453,6 +1484,54 @@
       <div class="modal-body">
         <div id="supersetPickerList" style="display:flex; flex-direction:column; gap:8px;"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ADD PROGRESS PHOTO (P5-04): pose + date + camera/gallery picker -->
+  <div class="modal" id="photoAddModal">
+    <div class="modal-content sheet" style="max-width:412px;">
+      <div class="modal-header">
+        <span>Add progress photo</span>
+        <button class="btn" onclick="closePhotoAdd()">✕</button>
+      </div>
+      <div class="modal-body">
+        <label for="photoPoseSelect" class="body-field-label">Pose</label>
+        <select id="photoPoseSelect" class="set-input" style="width:100%; min-height:44px; margin-bottom:var(--space-12);">
+          <option value="Front" selected>Front</option>
+          <option value="Side">Side</option>
+          <option value="Back">Back</option>
+        </select>
+        <label for="photoDateInput" class="body-field-label">Date</label>
+        <input type="date" id="photoDateInput" class="set-input" style="width:100%; min-height:44px; margin-bottom:var(--space-12); padding:8px; text-align:left;">
+        <input type="file" id="photoFileInput" accept="image/*" style="display:none" onchange="photoFileChosen()">
+        <button type="button" class="btn btn-block" style="min-height:44px;" onclick="document.getElementById('photoFileInput').click()">Choose a photo</button>
+        <div id="photoFileName" style="font-size:var(--font-12); color:var(--text-sub); margin-top:var(--space-8);">No photo chosen</div>
+        <div id="photoAddError" role="alert" style="font-size:var(--font-12); color:var(--danger); min-height:16px; margin-top:var(--space-8);"></div>
+        <button type="button" class="btn btn-primary btn-block" style="min-height:44px; margin-top:var(--space-8);" onclick="addPhoto()">Save photo</button>
+        <div style="font-size:var(--font-12); color:var(--text-sub); margin-top:var(--space-8);">Photos are shrunk on this phone and never uploaded.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS PHOTO VIEWER (P5-04): weight, pose, delete with 5 s undo -->
+  <div class="modal" id="photoViewerModal">
+    <div class="modal-content sheet" style="max-width:412px;">
+      <div class="modal-header">
+        <span>Photo</span>
+        <button class="btn" onclick="closePhotoViewer()">✕</button>
+      </div>
+      <div class="modal-body" id="photoViewerBody"></div>
+    </div>
+  </div>
+
+  <!-- COMPARE TWO PROGRESS PHOTOS (P5-04): plain facts, no advice -->
+  <div class="modal" id="photoCompareModal">
+    <div class="modal-content sheet" style="max-width:412px;">
+      <div class="modal-header">
+        <span>Compare photos</span>
+        <button class="btn" onclick="closePhotoCompare()">✕</button>
+      </div>
+      <div class="modal-body" id="photoCompareBody"></div>
     </div>
   </div>
 
@@ -9582,6 +9661,794 @@
       if (note) note.textContent = bodyEntryMessage;
       const errEl = document.getElementById('bodyError');
       if (errEl) errEl.textContent = bodyEntryError;
+
+      /* P5-04 photos: paints only the photo card's own inner blocks. */
+      renderPhotosSection();
+    }
+
+    /* ================= P5-04 PRIVATE PROGRESS PHOTOS =================
+       Photos live ONLY in a dedicated IndexedDB database (plz_train_photos).
+       They are never copied into `state`, localStorage or the JSON backup,
+       and they are never uploaded. The card shell is static markup, so typing
+       in the body form never rebuilds it; this block only paints its inner
+       chips, grid, undo banner and note. */
+    const PHOTOS_DB_NAME = 'plz_train_photos';
+    const PHOTOS_DB_VERSION = 1;
+    const PHOTOS_STORE_NAME = 'photos';
+    const PHOTO_POSES = ['Front', 'Side', 'Back'];
+    const PHOTO_FILTERS = ['All', 'Front', 'Side', 'Back'];
+    const PHOTO_FULL_MAX_PX = 1080;
+    const PHOTO_THUMB_MAX_PX = 240;
+    const PHOTO_JPEG_QUALITY = 0.8;
+    const PHOTO_UNDO_MS = 5000;
+
+    let photosDbPromise = null;
+    let photosLoadPromise = null;
+    let photosSupportedCache = null;
+    let photosUnavailable = false;
+    let photosLoading = false;
+    let photosLoaded = false;
+    let photosCache = [];
+    let photosLoadError = '';
+    let photoFilter = 'All';
+    let photoViewerId = null;
+    let photoCompareA = null;
+    let photoCompareB = null;
+    let pendingPhotoDelete = null;
+    let photoDeleteTimer = null;
+    let photoAddError = '';
+    let photoAddBusy = false;
+    let photoPersistRequested = false;
+    let activePhotoUrls = [];
+
+    function photosSupported() {
+      if (photosSupportedCache !== null) return photosSupportedCache;
+      try {
+        photosSupportedCache = typeof indexedDB !== 'undefined' && !!indexedDB &&
+          typeof indexedDB.open === 'function';
+      } catch (e) { photosSupportedCache = false; }
+      return photosSupportedCache;
+    }
+
+    function openPhotosDb() {
+      if (!photosSupported()) return Promise.resolve(null);
+      if (photosDbPromise) return photosDbPromise;
+      photosDbPromise = new Promise(function (resolve) {
+        try {
+          const req = indexedDB.open(PHOTOS_DB_NAME, PHOTOS_DB_VERSION);
+          req.onupgradeneeded = function () {
+            try {
+              const db = req.result;
+              if (db && db.objectStoreNames && !db.objectStoreNames.contains(PHOTOS_STORE_NAME)) {
+                db.createObjectStore(PHOTOS_STORE_NAME, { keyPath: 'id' });
+              }
+            } catch (e) {}
+          };
+          req.onsuccess = function () {
+            const db = req.result || null;
+            if (!db) photosUnavailable = true;
+            resolve(db);
+          };
+          req.onerror = function () {
+            photosDbPromise = null;
+            photosUnavailable = true;
+            resolve(null);
+          };
+          req.onblocked = function () {
+            photosDbPromise = null;
+            photosUnavailable = true;
+            resolve(null);
+          };
+        } catch (e) {
+          photosDbPromise = null;
+          photosUnavailable = true;
+          resolve(null);
+        }
+      });
+      return photosDbPromise;
+    }
+
+    /* A stored photo must carry its own identity, day, pose and bytes. Broken
+       records are ignored, never rendered or re-saved. */
+    function normalizePhotoRecord(src) {
+      if (!src || typeof src !== 'object') return null;
+      if (typeof src.id !== 'string' || !src.id) return null;
+      const date = typeof src.date === 'string' && bodyDateMs(src.date) !== null ? src.date : null;
+      if (!date) return null;
+      const pose = PHOTO_POSES.indexOf(src.pose) >= 0 ? src.pose : 'Front';
+      if (!src.blob || typeof src.blob !== 'object') return null;
+      const createdAt = (typeof src.createdAt === 'number' && isFinite(src.createdAt)) ? src.createdAt : 0;
+      return {
+        id: src.id,
+        date: date,
+        pose: pose,
+        blob: src.blob,
+        thumbBlob: (src.thumbBlob && typeof src.thumbBlob === 'object') ? src.thumbBlob : src.blob,
+        createdAt: createdAt
+      };
+    }
+
+    function getPhotos() {
+      if (!photosSupported()) {
+        photosUnavailable = true;
+        photosLoaded = true;
+        photosLoading = false;
+        photosCache = [];
+        return Promise.resolve([]);
+      }
+      if (photosLoadPromise) return photosLoadPromise;
+      photosLoading = true;
+      photosLoadPromise = openPhotosDb().then(function (db) {
+        if (!db) {
+          photosUnavailable = true;
+          photosLoaded = true;
+          photosLoading = false;
+          photosCache = [];
+          return [];
+        }
+        return new Promise(function (resolve) {
+          const finish = function (values) {
+            const out = [];
+            (Array.isArray(values) ? values : []).forEach(function (r) {
+              const rec = normalizePhotoRecord(r);
+              if (rec) out.push(rec);
+            });
+            photosCache = out;
+            photosUnavailable = false;
+            photosLoadError = '';
+            photosLoaded = true;
+            photosLoading = false;
+            resolve(out);
+          };
+          try {
+            const tx = db.transaction(PHOTOS_STORE_NAME, 'readonly');
+            const store = tx.objectStore(PHOTOS_STORE_NAME);
+            if (typeof store.getAll === 'function') {
+              const req = store.getAll();
+              req.onsuccess = function () { finish(req.result); };
+              req.onerror = function () { photosLoadError = 'Could not read photos.'; finish([]); };
+            } else {
+              const found = [];
+              const req = store.openCursor();
+              req.onsuccess = function () {
+                const cursor = req.result;
+                if (cursor) { found.push(cursor.value); cursor.continue(); }
+                else finish(found);
+              };
+              req.onerror = function () { photosLoadError = 'Could not read photos.'; finish([]); };
+            }
+          } catch (e) {
+            photosLoadError = 'Could not read photos.';
+            finish([]);
+          }
+        });
+      }).catch(function () {
+        photosUnavailable = true;
+        photosLoadError = 'Could not read photos.';
+        photosLoaded = true;
+        photosLoading = false;
+        photosCache = [];
+        return [];
+      });
+      photosLoadPromise.then(function () { photosLoadPromise = null; });
+      return photosLoadPromise;
+    }
+
+    function loadPhotos() {
+      if (!photosSupported()) {
+        photosUnavailable = true;
+        photosLoaded = true;
+        photosLoading = false;
+        return Promise.resolve([]);
+      }
+      return getPhotos();
+    }
+
+    function savePhotoRecord(record) {
+      return openPhotosDb().then(function (db) {
+        if (!db) return false;
+        return new Promise(function (resolve) {
+          try {
+            const tx = db.transaction(PHOTOS_STORE_NAME, 'readwrite');
+            tx.oncomplete = function () { resolve(true); };
+            tx.onerror = function () { resolve(false); };
+            tx.onabort = function () { resolve(false); };
+            tx.objectStore(PHOTOS_STORE_NAME).put(record);
+          } catch (e) { resolve(false); }
+        });
+      }).catch(function () { return false; });
+    }
+
+    function deletePhotoRecord(id) {
+      return openPhotosDb().then(function (db) {
+        if (!db) return false;
+        return new Promise(function (resolve) {
+          try {
+            const tx = db.transaction(PHOTOS_STORE_NAME, 'readwrite');
+            tx.oncomplete = function () { resolve(true); };
+            tx.onerror = function () { resolve(false); };
+            tx.onabort = function () { resolve(false); };
+            tx.objectStore(PHOTOS_STORE_NAME).delete(String(id));
+          } catch (e) { resolve(false); }
+        });
+      }).catch(function () { return false; });
+    }
+
+    /* ---- image decode + canvas resize (never leaves the device) ---- */
+
+    function photoSourceSize(source) {
+      if (!source) return { width: 0, height: 0 };
+      return {
+        width: Number(source.naturalWidth || source.width) || 0,
+        height: Number(source.naturalHeight || source.height) || 0
+      };
+    }
+
+    async function decodePhotoFile(file) {
+      if (typeof createImageBitmap === 'function') {
+        // Supervisor addition 1: keep portrait photos the right way up.
+        try {
+          const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+          if (bitmap && photoSourceSize(bitmap).width > 0) return bitmap;
+        } catch (e) {}
+        try {
+          const plain = await createImageBitmap(file);
+          if (plain && photoSourceSize(plain).width > 0) return plain;
+        } catch (e) {}
+      }
+      if (typeof Image === 'function') {
+        return new Promise(function (resolve) {
+          let url = '';
+          try {
+            const img = new Image();
+            const clean = function () {
+              try { if (url && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(url); } catch (e) {}
+            };
+            img.onload = function () { clean(); resolve(img); };
+            img.onerror = function () { clean(); resolve(null); };
+            if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') url = URL.createObjectURL(file);
+            if (url) img.src = url;
+            else resolve(null);
+          } catch (e) { resolve(null); }
+        });
+      }
+      return null;
+    }
+
+    function resizeImageToBlob(source, maxLongSide, quality) {
+      return new Promise(function (resolve) {
+        try {
+          const size = photoSourceSize(source);
+          if (!(size.width > 0) || !(size.height > 0)) { resolve(null); return; }
+          const scale = Math.min(1, maxLongSide / Math.max(size.width, size.height));
+          const width = Math.max(1, Math.round(size.width * scale));
+          const height = Math.max(1, Math.round(size.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext && canvas.getContext('2d');
+          if (!ctx || typeof ctx.drawImage !== 'function') { resolve(null); return; }
+          ctx.drawImage(source, 0, 0, width, height);
+          if (typeof canvas.toBlob !== 'function') { resolve(null); return; }
+          canvas.toBlob(function (blob) { resolve(blob || null); }, 'image/jpeg', quality);
+        } catch (e) { resolve(null); }
+      });
+    }
+
+    function photoNewId() {
+      return 'photo-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+
+    /* Builds the two on-device JPEGs. Returns { ok:false, error } and saves
+       nothing when the file is not an image or cannot be decoded. */
+    async function buildPhotoRecord(file, date, pose) {
+      const type = String((file && file.type) || '');
+      const name = String((file && file.name) || '');
+      const imageName = /\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(name);
+      if (!file || (!/^image\//i.test(type) && !(type === '' && imageName))) {
+        return { ok: false, error: 'That file is not an image. Choose a photo.' };
+      }
+      const source = await decodePhotoFile(file);
+      const size = photoSourceSize(source);
+      if (!source || !(size.width > 0) || !(size.height > 0)) {
+        return { ok: false, error: 'That image could not be read. Try another photo.' };
+      }
+      const blob = await resizeImageToBlob(source, PHOTO_FULL_MAX_PX, PHOTO_JPEG_QUALITY);
+      const thumbBlob = await resizeImageToBlob(source, PHOTO_THUMB_MAX_PX, PHOTO_JPEG_QUALITY);
+      if (!blob || !thumbBlob) {
+        return { ok: false, error: 'That image could not be prepared. Try another photo.' };
+      }
+      return {
+        ok: true,
+        record: {
+          id: photoNewId(),
+          date: date,
+          pose: PHOTO_POSES.indexOf(pose) >= 0 ? pose : 'Front',
+          blob: blob,
+          thumbBlob: thumbBlob,
+          createdAt: Date.now()
+        }
+      };
+    }
+
+    /* ---- object URLs: every active reference is revoked on re-render ---- */
+
+    function releasePhotoUrls() {
+      const urls = activePhotoUrls;
+      activePhotoUrls = [];
+      urls.forEach(function (u) {
+        try { if (typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(u); } catch (e) {}
+      });
+    }
+
+    function photoObjectUrl(blob) {
+      try {
+        if (!blob || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return '';
+        const url = URL.createObjectURL(blob);
+        if (url) activePhotoUrls.push(url);
+        return url;
+      } catch (e) { return ''; }
+    }
+
+    /* ---- plain-fact helpers shared by the grid, viewer and compare ---- */
+
+    function photoById(id) {
+      for (let i = 0; i < photosCache.length; i++) {
+        if (photosCache[i].id === id) return photosCache[i];
+      }
+      return null;
+    }
+
+    function sortedPhotos() {
+      return photosCache.slice().sort(function (a, b) {
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+        return (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0);
+      });
+    }
+
+    function chronologicalPhotos() {
+      return sortedPhotos().reverse();
+    }
+
+    function photoDateText(dateKey) {
+      const ms = bodyDateMs(dateKey);
+      if (ms === null) return String(dateKey || '');
+      return new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function photoShortDateText(dateKey) {
+      const ms = bodyDateMs(dateKey);
+      if (ms === null) return String(dateKey || '');
+      return new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    }
+
+    function photoUnitWord() {
+      return (state.unit === 'LBS') ? 'lbs' : 'kg';
+    }
+
+    function photoWeightKg(dateKey) {
+      const entry = bodyByDate(dateKey);
+      if (!entry || entry.weightKg === null || entry.weightKg === undefined) return null;
+      const kg = Number(entry.weightKg);
+      return isFinite(kg) ? kg : null;
+    }
+
+    /* Viewer: the day's weight or the plain "No weight logged". Compare:
+       a dash, and no change line unless both days carry a weight. */
+    function photoWeightText(dateKey, dashWhenMissing) {
+      const kg = photoWeightKg(dateKey);
+      if (kg === null) return dashWhenMissing ? '\u2014' : 'No weight logged';
+      return Number(toDisplayWeight(kg)).toFixed(1) + ' ' + photoUnitWord();
+    }
+
+    function photoDeltaText(aDate, bDate) {
+      const aKg = photoWeightKg(aDate);
+      const bKg = photoWeightKg(bDate);
+      if (aKg === null || bKg === null) return '\u0394 \u2014';
+      const diffKg = bKg - aKg;
+      const shown = Number(toDisplayWeight(Math.abs(diffKg))).toFixed(1);
+      const sign = diffKg > 0 ? '+' : (diffKg < 0 ? '-' : '');
+      return '\u0394 ' + sign + shown + ' ' + photoUnitWord();
+    }
+
+    function photoAltText(photo) {
+      return photo.pose + ' photo, ' + photoDateText(photo.date);
+    }
+
+    /* ---- add flow ---- */
+
+    function paintPhotoAddError() {
+      const el = document.getElementById('photoAddError');
+      if (el) el.textContent = photoAddError;
+    }
+
+    function openPhotoAdd() {
+      photoAddError = '';
+      const today = dayKeyLocal(Date.now());
+      const dateEl = document.getElementById('photoDateInput');
+      if (dateEl) {
+        dateEl.value = today || '';
+        if (today) dateEl.setAttribute('max', today);
+      }
+      const poseEl = document.getElementById('photoPoseSelect');
+      if (poseEl) poseEl.value = 'Front';
+      const fileEl = document.getElementById('photoFileInput');
+      if (fileEl) fileEl.value = '';
+      const nameEl = document.getElementById('photoFileName');
+      if (nameEl) nameEl.textContent = 'No photo chosen';
+      paintPhotoAddError();
+      document.getElementById('photoAddModal').classList.add('open');
+      return true;
+    }
+
+    function closePhotoAdd() {
+      closeModal('photoAddModal');
+      photoAddError = '';
+      paintPhotoAddError();
+      return true;
+    }
+
+    function photoFileChosen() {
+      photoAddError = '';
+      paintPhotoAddError();
+      const fileEl = document.getElementById('photoFileInput');
+      const file = fileEl && fileEl.files && fileEl.files[0];
+      const nameEl = document.getElementById('photoFileName');
+      if (nameEl) nameEl.textContent = file ? String(file.name || 'Photo chosen') : 'No photo chosen';
+      return true;
+    }
+
+    /* Asked only when the first photo lands; refusal changes nothing. */
+    function requestPhotoPersistenceOnce() {
+      if (photoPersistRequested) return false;
+      photoPersistRequested = true;
+      try {
+        if (typeof navigator !== 'undefined' && navigator.storage && typeof navigator.storage.persist === 'function') {
+          const p = navigator.storage.persist();
+          if (p && typeof p.catch === 'function') p.catch(function () {});
+        }
+      } catch (e) {}
+      return true;
+    }
+
+    async function addPhoto() {
+      photoAddError = '';
+      const dateEl = document.getElementById('photoDateInput');
+      const rawDate = dateEl && dateEl.value !== null && dateEl.value !== undefined ? String(dateEl.value).trim() : '';
+      const date = rawDate === '' ? dayKeyLocal(Date.now()) : rawDate;
+      const today = dayKeyLocal(Date.now());
+      if (!date || bodyDateMs(date) === null) {
+        photoAddError = 'Pick a real date.';
+        paintPhotoAddError();
+        return { ok: false, error: photoAddError };
+      }
+      if (today && date > today) {
+        photoAddError = 'Pick a date up to today.';
+        paintPhotoAddError();
+        return { ok: false, error: photoAddError };
+      }
+      const poseEl = document.getElementById('photoPoseSelect');
+      const pose = poseEl && PHOTO_POSES.indexOf(poseEl.value) >= 0 ? poseEl.value : 'Front';
+      const fileEl = document.getElementById('photoFileInput');
+      const file = fileEl && fileEl.files && fileEl.files[0];
+      if (!file) {
+        photoAddError = 'Choose a photo first.';
+        paintPhotoAddError();
+        return { ok: false, error: photoAddError };
+      }
+      if (photoAddBusy) return { ok: false, error: 'Saving the photo…' };
+      photoAddBusy = true;
+      try {
+        if (!photosSupported()) {
+          photoAddError = 'Photos unavailable: storage access is restricted';
+          paintPhotoAddError();
+          return { ok: false, error: photoAddError };
+        }
+        const built = await buildPhotoRecord(file, date, pose);
+        if (!built.ok) {
+          photoAddError = built.error;
+          paintPhotoAddError();
+          return { ok: false, error: built.error };
+        }
+        const saved = await savePhotoRecord(built.record);
+        if (!saved) {
+          photoAddError = 'Could not save the photo on this device.';
+          paintPhotoAddError();
+          return { ok: false, error: photoAddError };
+        }
+        photosLoaded = false;
+        await getPhotos();
+        if (photosCache.length === 1) requestPhotoPersistenceOnce();
+        closePhotoAdd();
+        renderPhotosSection();
+        return { ok: true, id: built.record.id, record: built.record };
+      } finally {
+        photoAddBusy = false;
+      }
+    }
+
+    /* ---- grid, chips, note ---- */
+
+    function setPhotoFilter(filter) {
+      photoFilter = PHOTO_FILTERS.indexOf(filter) >= 0 ? filter : 'All';
+      renderPhotosSection();
+      return photoFilter;
+    }
+
+    function renderPhotosSection() {
+      const chipsEl = document.getElementById('photoFilterChips');
+      const gridEl = document.getElementById('photoGrid');
+      const noteEl = document.getElementById('photoSectionNote');
+      const undoEl = document.getElementById('photoUndo');
+      if (!chipsEl && !gridEl && !noteEl && !undoEl) return;
+
+      releasePhotoUrls();
+
+      if (!photosSupported()) {
+        photosUnavailable = true;
+        photosLoaded = true;
+      } else if (!photosLoaded && !photosLoading) {
+        getPhotos().then(function () { renderPhotosSection(); });
+      }
+
+      if (chipsEl) {
+        chipsEl.innerHTML = PHOTO_FILTERS.map(function (f) {
+          const isOn = photoFilter === f;
+          return '<button type="button" class="chip' + (isOn ? ' on' : '') + '"'
+            + ' aria-pressed="' + (isOn ? 'true' : 'false') + '"'
+            + ' style="min-height:44px; padding:6px 12px; font-size:var(--font-12);"'
+            + ' onclick="setPhotoFilter(\'' + esc(f) + '\')">' + esc(f) + '</button>';
+        }).join('');
+      }
+
+      if (undoEl) {
+        undoEl.innerHTML = pendingPhotoDelete
+          ? '<div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-8); background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); padding:var(--space-8) var(--space-12); margin-top:var(--space-8); font-size:var(--font-12);">'
+            + '<span>Photo deleted \u00b7</span>'
+            + '<button type="button" class="btn" style="min-height:44px; padding:6px 10px; font-size:var(--font-12);" onclick="photoUndoDelete()">\u21a9\ufe0f Undo (5s)</button>'
+            + '</div>'
+          : '';
+      }
+
+      if (gridEl) {
+        if (photosUnavailable) {
+          gridEl.innerHTML = emptyStateHtml('Photos unavailable: storage access is restricted', 'Everything else still works.');
+        } else if (photosLoading && !photosLoaded) {
+          gridEl.innerHTML = '<div style="text-align:center; color:var(--text-sub); font-size:var(--font-12); padding:var(--space-12);">Loading photos…</div>';
+        } else {
+          const matching = sortedPhotos().filter(function (p) {
+            return photoFilter === 'All' || p.pose === photoFilter;
+          });
+          if (!matching.length) {
+            gridEl.innerHTML = emptyStateHtml('No photos yet', 'Photos stay on this phone only.');
+          } else {
+            gridEl.innerHTML = matching.map(function (p) {
+              const url = photoObjectUrl(p.thumbBlob || p.blob);
+              const alt = photoAltText(p);
+              return '<button type="button" onclick="openPhotoViewer(\'' + esc(p.id) + '\')"'
+                + ' aria-label="Open ' + esc(alt) + '"'
+                + ' style="position:relative; display:block; width:100%; min-height:44px; padding:0; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); overflow:hidden; color:var(--text); text-align:left; cursor:pointer;">'
+                + '<img src="' + esc(url) + '" alt="' + esc(alt) + '" style="display:block; width:100%; height:auto; aspect-ratio:3 / 4; object-fit:cover;">'
+                + '<span class="badge" style="position:absolute; top:6px; right:6px;">' + esc(p.pose) + '</span>'
+                + '<span style="position:absolute; left:6px; bottom:6px; padding:2px 6px; border-radius:6px; background:rgba(0,0,0,0.65); color:#fff; font-size:11px; font-weight:700;">' + esc(photoShortDateText(p.date)) + '</span>'
+                + '</button>';
+            }).join('');
+          }
+        }
+      }
+
+      if (noteEl) {
+        if (photosUnavailable) noteEl.textContent = 'Photos unavailable: storage access is restricted';
+        else if (photosLoadError) noteEl.textContent = photosLoadError;
+        else noteEl.textContent = '';
+      }
+
+      if (photoViewerId) renderPhotoViewerBody();
+      const compareModal = document.getElementById('photoCompareModal');
+      if (compareModal && compareModal.classList && compareModal.classList.contains('open')) renderCompareBody();
+    }
+
+    /* ---- viewer ---- */
+
+    function openPhotoViewer(id) {
+      const photo = photoById(id);
+      if (!photo) return false;
+      photoViewerId = photo.id;
+      document.getElementById('photoViewerModal').classList.add('open');
+      renderPhotoViewerBody();
+      return true;
+    }
+
+    function closePhotoViewer() {
+      photoViewerId = null;
+      closeModal('photoViewerModal');
+      renderPhotosSection();
+      return true;
+    }
+
+    function renderPhotoViewerBody() {
+      const el = document.getElementById('photoViewerBody');
+      if (!el) return;
+      if (pendingPhotoDelete && pendingPhotoDelete.record.id === photoViewerId) {
+        el.innerHTML = '<div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-8); background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); padding:var(--space-12); font-size:var(--font-14);">'
+          + '<span>Photo deleted</span>'
+          + '<button type="button" class="btn" style="min-height:44px; padding:6px 10px; font-size:var(--font-12);" onclick="photoUndoDelete()">\u21a9\ufe0f Undo (5s)</button>'
+          + '</div>';
+        return;
+      }
+      const photo = photoById(photoViewerId);
+      if (!photo) {
+        el.innerHTML = emptyStateHtml('Photo not found', 'It may have been deleted.');
+        return;
+      }
+      const url = photoObjectUrl(photo.blob || photo.thumbBlob);
+      const alt = photoAltText(photo);
+      el.innerHTML = '<img src="' + esc(url) + '" alt="' + esc(alt) + '" style="display:block; width:100%; height:auto; max-height:55vh; object-fit:contain; background:#000; border-radius:var(--radius-12);">'
+        + '<div style="display:flex; align-items:center; gap:var(--space-8); flex-wrap:wrap; margin-top:var(--space-12);">'
+        + '<span style="font-weight:700; font-size:var(--font-14);">' + esc(photoDateText(photo.date)) + '</span>'
+        + '<span class="badge">' + esc(photo.pose) + '</span>'
+        + '</div>'
+        + '<div style="font-size:var(--font-14); margin-top:var(--space-8);">Weight: ' + esc(photoWeightText(photo.date, false)) + '</div>'
+        + '<div style="display:flex; gap:var(--space-8); flex-wrap:wrap; margin-top:var(--space-12);">'
+        + '<button type="button" class="btn btn-danger" style="flex:1 1 120px; min-height:44px;" onclick="deletePhoto(\'' + esc(photo.id) + '\')">Delete</button>'
+        + '<button type="button" class="btn" style="flex:1 1 120px; min-height:44px;" onclick="savePhotoToPhone(\'' + esc(photo.id) + '\')">Save to phone</button>'
+        + '</div>';
+    }
+
+    /* ---- delete with a 5 s undo ---- */
+
+    function deletePhoto(id) {
+      const photo = photoById(id);
+      if (!photo) return false;
+      if (pendingPhotoDelete && pendingPhotoDelete.record.id !== id) {
+        try { if (photoDeleteTimer) clearTimeout(photoDeleteTimer); } catch (e) {}
+        deletePhotoRecord(pendingPhotoDelete.record.id);
+      }
+      pendingPhotoDelete = { record: photo, expiresAt: Date.now() + PHOTO_UNDO_MS };
+      photosCache = photosCache.filter(function (p) { return p.id !== id; });
+      try { if (photoDeleteTimer) clearTimeout(photoDeleteTimer); } catch (e) {}
+      try {
+        photoDeleteTimer = setTimeout(function () { expirePhotoDelete(); }, PHOTO_UNDO_MS);
+      } catch (e) {}
+      if (photoViewerId === id) renderPhotoViewerBody();
+      renderPhotosSection();
+      return true;
+    }
+
+    function undoDeletePhoto() {
+      if (!pendingPhotoDelete) return false;
+      const photo = pendingPhotoDelete.record;
+      pendingPhotoDelete = null;
+      try { if (photoDeleteTimer) clearTimeout(photoDeleteTimer); } catch (e) {}
+      photoDeleteTimer = null;
+      if (!photoById(photo.id)) photosCache.push(photo);
+      renderPhotosSection();
+      return true;
+    }
+
+    function photoUndoDelete() {
+      return undoDeletePhoto();
+    }
+
+    async function expirePhotoDelete(now) {
+      if (!pendingPhotoDelete) return false;
+      const t = (typeof now === 'number') ? now : Date.now();
+      if (t < pendingPhotoDelete.expiresAt) return false;
+      const photo = pendingPhotoDelete.record;
+      pendingPhotoDelete = null;
+      try { if (photoDeleteTimer) clearTimeout(photoDeleteTimer); } catch (e) {}
+      photoDeleteTimer = null;
+      await deletePhotoRecord(photo.id);
+      photosCache = photosCache.filter(function (p) { return p.id !== photo.id; });
+      renderPhotosSection();
+      return true;
+    }
+
+    /* ---- save to phone: Web Share, else a .jpg download ---- */
+
+    async function savePhotoToPhone(id) {
+      const photo = photoById(id) || (pendingPhotoDelete && pendingPhotoDelete.record.id === id ? pendingPhotoDelete.record : null);
+      if (!photo || !photo.blob) return false;
+      const name = 'PLZ_Train_photo_' + photo.date + '_' + photo.pose + '.jpg';
+      let shared = false;
+      try {
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function' && typeof File === 'function') {
+          const file = new File([photo.blob], name, { type: 'image/jpeg' });
+          let can = true;
+          if (typeof navigator.canShare === 'function') {
+            try { can = !!navigator.canShare({ files: [file] }); } catch (e) { can = false; }
+          }
+          if (can) {
+            await navigator.share({ files: [file], title: name });
+            shared = true;
+          }
+        }
+      } catch (e) { shared = false; }
+      if (!shared) {
+        try {
+          const url = photoObjectUrl(photo.blob);
+          if (!url) return false;
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = name;
+          a.rel = 'noopener';
+          a.click();
+        } catch (e) { return false; }
+      }
+      return true;
+    }
+
+    /* ---- compare: two photos, plain numbers only ---- */
+
+    function openPhotoCompare() {
+      const chrono = chronologicalPhotos();
+      photoCompareA = chrono.length ? chrono[0].id : null;
+      photoCompareB = chrono.length ? chrono[chrono.length - 1].id : null;
+      document.getElementById('photoCompareModal').classList.add('open');
+      renderCompareBody();
+      return true;
+    }
+
+    function closePhotoCompare() {
+      closeModal('photoCompareModal');
+      renderPhotosSection();
+      return true;
+    }
+
+    function setComparePhoto(slot, id) {
+      if (!photoById(id)) return false;
+      if (slot === 'a') photoCompareA = id;
+      else if (slot === 'b') photoCompareB = id;
+      else return false;
+      renderCompareBody();
+      return true;
+    }
+
+    function photoCompareSelectHtml(slot, selectedId) {
+      const options = chronologicalPhotos().map(function (p) {
+        return '<option value="' + esc(p.id) + '"' + (p.id === selectedId ? ' selected' : '') + '>'
+          + esc(photoDateText(p.date) + ' \u00b7 ' + p.pose) + '</option>';
+      }).join('');
+      return '<label style="display:block; min-width:0; font-size:var(--font-12); color:var(--text-sub);">Photo '
+        + (slot === 'a' ? 'A' : 'B')
+        + '<select class="set-input" style="width:100%; min-height:44px; margin-top:4px; padding:6px 8px;"'
+        + ' onchange="setComparePhoto(\'' + slot + '\', this.value)" aria-label="Photo ' + (slot === 'a' ? 'A' : 'B') + '">'
+        + options + '</select></label>';
+    }
+
+    function photoCompareCardHtml(label, photo) {
+      const url = photoObjectUrl(photo.thumbBlob || photo.blob);
+      return '<div style="min-width:0; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); overflow:hidden;">'
+        + '<img src="' + esc(url) + '" alt="' + esc(photoAltText(photo)) + '" style="display:block; width:100%; height:auto; max-height:40vh; object-fit:contain; background:#000;">'
+        + '<div style="padding:var(--space-8); min-width:0;">'
+        + '<div style="font-size:var(--font-12); color:var(--text-sub);">Photo ' + esc(label) + '</div>'
+        + '<div style="font-weight:700; font-size:var(--font-14);">' + esc(photoDateText(photo.date)) + '</div>'
+        + '<div style="margin-top:4px;"><span class="badge">' + esc(photo.pose) + '</span></div>'
+        + '<div style="font-size:var(--font-12); margin-top:4px;">Weight: ' + esc(photoWeightText(photo.date, true)) + '</div>'
+        + '</div></div>';
+    }
+
+    function renderCompareBody() {
+      const el = document.getElementById('photoCompareBody');
+      if (!el) return;
+      const chrono = chronologicalPhotos();
+      if (!chrono.length) {
+        el.innerHTML = emptyStateHtml('No photos yet', 'Photos stay on this phone only.');
+        return;
+      }
+      const a = photoById(photoCompareA) || chrono[0];
+      const b = photoById(photoCompareB) || chrono[chrono.length - 1];
+      photoCompareA = a.id;
+      photoCompareB = b.id;
+      el.innerHTML = '<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-8); margin-bottom:var(--space-12);">'
+        + photoCompareSelectHtml('a', a.id)
+        + photoCompareSelectHtml('b', b.id)
+        + '</div>'
+        + '<div class="photo-compare-grid">'
+        + photoCompareCardHtml('A', a)
+        + photoCompareCardHtml('B', b)
+        + '</div>'
+        + '<div id="photoCompareDelta" style="text-align:center; font-size:var(--font-16); font-weight:800; margin-top:var(--space-12);">' + esc(photoDeltaText(a.date, b.date)) + '</div>';
     }
 
     function saveRestPreference() {
