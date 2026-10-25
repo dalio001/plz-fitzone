@@ -2546,6 +2546,10 @@
     /* P5-05 next-target fill undo (in-memory only): the rows Use touched. */
     let targetFillBackup = null;
     let targetFillTimer = null;
+    /* P2-14 warm-up set helper (in-memory only): 5 s undo snapshot. */
+    let warmupBackup = null;
+    let warmupTimer = null;
+    let warmupNoteExIdx = null; // exercise showing "Enter your working weight first" until the next render
     /* P2-05 plate calculator (personal part): editable bar/plates per unit. */
     const DEFAULT_PLATE_SETTINGS = {
       barKg: 20, barLb: 45,
@@ -3031,6 +3035,9 @@
       targetFillBackup = null;
       try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
       targetFillTimer = null;
+      warmupBackup = null;
+      try { if (warmupTimer) clearTimeout(warmupTimer); } catch (e) {}
+      warmupTimer = null;
       clearInterval(workoutInterval);
       clearInterval(restInterval);
       stopSetClockTicker(); // P2-12
@@ -4150,6 +4157,107 @@
       };
     }
 
+    /* ================= P2-14 WARM-UP SET HELPER (pure helpers) ================= */
+
+    /* Returns true for Barbell equipment (uses bar + plates). */
+    function isBarbellEquipment(exInfo) {
+      return !!(exInfo && exInfo.equipment === 'Barbell');
+    }
+
+    /* Returns true for Dumbbell, Machine, Cable, Kettlebell, Band, Other (step increments only). */
+    function isDumbbellMachineCableEquipment(exInfo) {
+      if (!exInfo) return false;
+      const eq = String(exInfo.equipment || '');
+      return ['Dumbbell', 'Machine', 'Cable', 'Kettlebell', 'Band', 'Other'].indexOf(eq) >= 0;
+    }
+
+    /* Greedy plate math: returns nearest loadable <= weightKg. Reuses computePlates logic. */
+    function roundDownToPlateLoad(weightKg, unit, ps) {
+      const u = unit || state.unit || 'KG';
+      const targetDisplay = formatDisplayWeight(weightKg, u);
+      const r = computePlates(targetDisplay, u);
+      if (r.under) return 0;
+      // computePlates works in display units; hand back canonical kg.
+      const kg = fromInputWeight(r.loadable, u);
+      return (kg === '' || !isFinite(Number(kg))) ? 0 : Number(kg);
+    }
+
+    /* Rounds down to step (2.5 kg / 5 lb). */
+    function roundDownToStep(weightKg, unit, stepKg) {
+      const u = unit || state.unit || 'KG';
+      if (u === 'LBS') {
+        const lb = weightKg * LB_PER_KG;
+        const stepLb = 5;
+        const rounded = Math.floor(lb / stepLb + 1e-9) * stepLb;
+        return Math.round((rounded / LB_PER_KG) * 100) / 100;
+      }
+      return Math.round((Math.floor(weightKg / stepKg + 1e-9) * stepKg) * 100) / 100;
+    }
+
+    /* Builds warm-up ramp: bar×10 / 40%×5 / 60%×3 / 80%×1 for barbell; 40%×5 / 60%×3 / 80%×1 for others.
+       Filtered: keep only if target > previousKeptWeight AND target < firstWorkingKg. */
+    function buildWarmupRamp(firstWorkingKg, exInfo, unit, ps) {
+      const u = unit || state.unit || 'KG';
+      const isBarbell = isBarbellEquipment(exInfo);
+      const isDMC = isDumbbellMachineCableEquipment(exInfo);
+      if (!isBarbell && !isDMC) return [];
+
+      const steps = isBarbell
+        ? [{ pct: 0, reps: 10, label: 'bar' }, { pct: 0.4, reps: 5 }, { pct: 0.6, reps: 3 }, { pct: 0.8, reps: 1 }]
+        : [{ pct: 0.4, reps: 5 }, { pct: 0.6, reps: 3 }, { pct: 0.8, reps: 1 }];
+
+      const out = [];
+      let prevKept = -1;
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        let targetKg;
+        if (step.label === 'bar') {
+          targetKg = (u === 'KG') ? ps.barKg : ps.barLb / LB_PER_KG;
+        } else {
+          const raw = firstWorkingKg * step.pct;
+          if (isBarbell) {
+            targetKg = roundDownToPlateLoad(raw, u, ps);
+          } else {
+            targetKg = roundDownToStep(raw, u, 2.5); // 2.5 kg, or 5 lb inside roundDownToStep
+          }
+        }
+        if (targetKg > prevKept + 1e-9 && targetKg < firstWorkingKg - 1e-9) {
+          out.push({ weightKg: targetKg, reps: step.reps, type: 'W' });
+          prevKept = targetKg;
+        }
+      }
+      return out;
+    }
+
+    /* Resolves first working weight in order:
+       1. First N/F set with finite weight > 0
+       2. computeNextTarget(exIdx).weightKg
+       3. getPreviousSet(exId, 0, 'N', instanceIdx, routineId).weight
+       Returns null if none found. */
+    function getFirstWorkingWeight(exItem, exIdx) {
+      // 1. First typed N/F set
+      if (exItem && Array.isArray(exItem.sets)) {
+        for (let i = 0; i < exItem.sets.length; i++) {
+          const s = exItem.sets[i];
+          const t = normSetType(s && s.type);
+          const w = Number(s && s.weight);
+          if ((t === 'N' || t === 'F') && isFinite(w) && w > 0) return w;
+        }
+      }
+      // 2. P5-05 next target
+      const target = computeNextTarget(exIdx);
+      if (target && target.kind === 'load' && target.weightKg !== null && target.weightKg !== undefined && isFinite(target.weightKg) && target.weightKg > 0) {
+        return target.weightKg;
+      }
+      // 3. Previous session lane 0
+      if (!activeWorkout || !activeWorkout.exercises[exIdx]) return null;
+      const exInfo = state.exercises.find(e => e.id === activeWorkout.exercises[exIdx].exId);
+      const instanceIdx = getExInstanceIdx(activeWorkout.exercises, exIdx);
+      const prev = getPreviousSet(activeWorkout.exercises[exIdx].exId, 0, 'N', instanceIdx, activeWorkout.routineId || null);
+      if (prev && isFinite(prev.weight) && prev.weight > 0) return prev.weight;
+      return null;
+    }
+
     /* "kg" / "lbs", matching the PREVIOUS column's unit wording. */
     function targetUnitLabel() {
       return String(state.unit || 'KG').toLowerCase();
@@ -5081,6 +5189,16 @@
               ${targetChip}
               <button class="rest-chip" style="margin-left:6px;" onclick="openRestPicker(${exIdx})">${formatRestLabel(restSec)}</button>
               <button class="btn" style="margin-left:6px; padding:4px 8px; font-size:12px;" title="Plate calculator" onclick="openPlateCalcFor(${exIdx})">🧮</button>
+              ${(function() {
+                if (!loadEx || exInfo.type !== 'weight_reps') return '';
+                const hasWSets = exItem.sets.some(s => normSetType(s.type) === 'W');
+                if (warmupBackup && warmupBackup.exIdx === exIdx) {
+                  return '<div style="margin-top:6px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:8px; font-size:13px;"><span>Warm-ups added</span><button class="btn" style="padding:4px 10px; min-height:44px; font-size:12px;" onclick="undoWarmupSets()">↩️ Undo (5s)</button></div>';
+                }
+                if (hasWSets) return '';
+                const note = (warmupNoteExIdx === exIdx) ? '<div class="warmup-note" style="font-size:12px; color:var(--text-sub); margin-top:4px;">Enter your working weight first</div>' : '';
+                return '<button class="btn" style="margin-left:6px; padding:4px 10px; font-size:12px; min-height:44px;" onclick="addWarmupSets(' + exIdx + ')">Warm-up</button>' + note;
+              })()}
             </div>
             </div>
             <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="removeActiveEx(${exIdx})">✕</button>
@@ -5098,6 +5216,7 @@
         `;
         container.appendChild(block);
       });
+      warmupNoteExIdx = null; // the note shows for one render only
       saveActiveSession();
     }
 
@@ -5200,6 +5319,95 @@
       if (t < deletedSetBackup.expiresAt) return;
       deletedSetBackup = null;
       deletedSetTimer = null;
+      if (activeWorkout) renderActiveWorkout();
+    }
+
+    /* ================= P2-14 WARM-UP SET HELPER (UI/action) ================= */
+
+    /* Adds warm-up sets for the exercise at exIdx. Inserts at index 0 of exItem.sets,
+       clears setInputErrors for shifted rows, sets warmupBackup, starts 5s timer. */
+    function addWarmupSets(exIdx) {
+      if (!activeWorkout || !activeWorkout.exercises[exIdx]) return;
+      const exItem = activeWorkout.exercises[exIdx];
+      const exInfo = state.exercises.find(e => e.id === exItem.exId);
+      if (!exInfo) return;
+      // Eligibility: weight_reps only, and specific equipment
+      if (!usesLoadMetrics(exInfo)) return;
+      if (!isBarbellEquipment(exInfo) && !isDumbbellMachineCableEquipment(exInfo)) return;
+      // No duplicate if W sets already exist and no active backup
+      if (warmupBackup || exItem.sets.some(s => normSetType(s.type) === 'W')) return;
+
+      const ps = getPlateSettings();
+      const unit = state.unit || 'KG';
+      const firstWorkingKg = getFirstWorkingWeight(exItem, exIdx);
+      if (firstWorkingKg === null || firstWorkingKg === undefined || !isFinite(firstWorkingKg) || firstWorkingKg <= 0) {
+        // Short inline note under the header, cleared on the next render.
+        warmupNoteExIdx = exIdx;
+        renderActiveWorkout();
+        return;
+      }
+
+      const ramp = buildWarmupRamp(firstWorkingKg, exInfo, unit, ps);
+      if (ramp.length === 0) return;
+
+      // Prepend warm-up sets
+      const count = ramp.length;
+      exItem.sets.unshift(...ramp.map(r => ({ type: 'W', weight: r.weightKg, reps: r.reps, done: false })));
+
+      // Adjust setInputErrors keys (+count offset)
+      const nextErrors = {};
+      Object.keys(setInputErrors).forEach(k => {
+        const parts = String(k).split(':');
+        if (parts[0] !== String(exIdx)) { nextErrors[k] = setInputErrors[k]; return; }
+        const i = Number(parts[1]);
+        nextErrors[exIdx + ':' + (i + count)] = setInputErrors[k];
+      });
+      setInputErrors = nextErrors;
+
+      // Set backup for 5s undo
+      warmupBackup = { exIdx, count, expiresAt: Date.now() + 5000 };
+      try { if (warmupTimer) clearTimeout(warmupTimer); } catch (e) {}
+      try { warmupTimer = setTimeout(function () { expireWarmupBackup(); }, 5000); } catch (e) {}
+
+      renderActiveWorkout();
+      saveActiveSession();
+    }
+
+    /* Undo: removes the first `count` W sets, clears backup, renders, saves. */
+    function undoWarmupSets() {
+      if (!warmupBackup || !activeWorkout) return;
+      const b = warmupBackup;
+      const exItem = activeWorkout.exercises[b.exIdx];
+      if (exItem && Array.isArray(exItem.sets)) {
+        // Remove first `count` sets (they should all be type W)
+        const toRemove = Math.min(b.count, exItem.sets.length);
+        exItem.sets.splice(0, toRemove);
+
+        // Adjust setInputErrors keys (-toRemove offset for this exercise)
+        const nextErrors = {};
+        Object.keys(setInputErrors).forEach(k => {
+          const parts = String(k).split(':');
+          if (parts[0] !== String(b.exIdx)) { nextErrors[k] = setInputErrors[k]; return; }
+          const i = Number(parts[1]);
+          if (i < toRemove) return; // dropped
+          nextErrors[b.exIdx + ':' + (i - toRemove)] = setInputErrors[k];
+        });
+        setInputErrors = nextErrors;
+      }
+      warmupBackup = null;
+      try { if (warmupTimer) clearTimeout(warmupTimer); } catch (e) {}
+      warmupTimer = null;
+      renderActiveWorkout();
+      saveActiveSession();
+    }
+
+    /* Expiry: clears backup after 5s, keeps warm-ups. */
+    function expireWarmupBackup(now) {
+      if (!warmupBackup) return;
+      const t = (typeof now === 'number') ? now : Date.now();
+      if (t < warmupBackup.expiresAt) return;
+      warmupBackup = null;
+      warmupTimer = null;
       if (activeWorkout) renderActiveWorkout();
     }
 
@@ -6206,6 +6414,9 @@
       targetFillBackup = null;
       try { if (targetFillTimer) clearTimeout(targetFillTimer); } catch (e) {}
       targetFillTimer = null;
+      warmupBackup = null;
+      try { if (warmupTimer) clearTimeout(warmupTimer); } catch (e) {}
+      warmupTimer = null;
       clearInterval(workoutInterval);
       clearInterval(restInterval);
       stopSetClockTicker(); // P2-12
