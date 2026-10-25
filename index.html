@@ -10417,7 +10417,8 @@
     }
 
     function photoCompareCardHtml(label, photo) {
-      const url = photoObjectUrl(photo.thumbBlob || photo.blob);
+      // Full picture, not the 240 px thumb: compare cards are ~half the screen wide.
+      const url = photoObjectUrl(photo.blob || photo.thumbBlob);
       return '<div style="min-width:0; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); overflow:hidden;">'
         + '<img src="' + esc(url) + '" alt="' + esc(photoAltText(photo)) + '" style="display:block; width:100%; height:auto; max-height:40vh; object-fit:contain; background:#000;">'
         + '<div style="padding:var(--space-8); min-width:0;">'
