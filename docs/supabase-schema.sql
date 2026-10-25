@@ -15,7 +15,7 @@ create table if not exists plz_state (
 -- 2. State history table: stores up to the last 20 revisions for undo
 create table if not exists plz_state_history (
   id bigint generated always as identity primary key,
-  owner_hash text not null references plz_state(owner_hash) on delete cascade,
+  owner_hash text not null references plz_state(owner_hash) on delete cascade on update cascade,
   rev bigint not null,
   state jsonb not null,
   updated_at timestamptz not null default now(),
@@ -49,3 +49,13 @@ drop trigger if exists trg_prune_plz_state_history on plz_state_history;
 create trigger trg_prune_plz_state_history
 after insert on plz_state_history
 for each row execute function prune_plz_state_history();
+
+-- 5. Token reset changes owner_hash: make sure an older install also cascades.
+alter table plz_state_history drop constraint if exists plz_state_history_owner_hash_fkey;
+alter table plz_state_history add constraint plz_state_history_owner_hash_fkey
+  foreign key (owner_hash) references plz_state(owner_hash) on delete cascade on update cascade;
+
+-- 6. Only the server key may use these tables (new tables are not exposed by default).
+revoke all on plz_state, plz_state_history from anon, authenticated;
+grant select, insert, update, delete on plz_state, plz_state_history to service_role;
+grant usage, select on all sequences in schema public to service_role;

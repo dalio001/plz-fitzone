@@ -1,0 +1,6 @@
+{
+  "name": "plz-train",
+  "private": true,
+  "type": "module",
+  "description": "PLZ Train: static app (index.html) plus zero-dependency Vercel functions in /api. No build step, no npm dependencies."
+}

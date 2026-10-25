@@ -678,10 +678,10 @@ export default async function handler(req, res) {
     if (msg.method === 'initialize') {
       const clientProtocol = (msg.params && typeof msg.params.protocolVersion === 'string')
         ? msg.params.protocolVersion
-        : '2024-11-05';
+        : '2025-06-18';
       const protocolVersion = SUPPORTED_PROTOCOLS.includes(clientProtocol)
         ? clientProtocol
-        : '2024-11-05';
+        : '2025-06-18';
 
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
