@@ -12390,7 +12390,8 @@
         crypto.getRandomValues(bytes);
         return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
       } catch (e) {
-        return Math.random().toString(36).slice(2) + Date.now().toString(36);
+        // Never fall back to Math.random for a secret: refuse instead.
+        throw new Error('This browser cannot make a secure key.');
       }
     }
 
