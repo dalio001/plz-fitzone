@@ -1256,12 +1256,32 @@
           <div class="chips" id="pickerMuscleChips"></div>
           <div class="chips" id="pickerEquipChips"></div>
         </div>
+        <div id="pickerSwapSection" style="display:none; padding-bottom:8px;"></div>
         <div id="pickerRecent"></div>
         <div id="pickerList" style="padding-bottom:8px;"></div>
       </div>
       <div id="pickerFooter" style="display:none; gap:8px; padding:12px 16px; border-top:1px solid var(--border);">
         <button class="btn" style="flex:1; min-height:52px;" onclick="clearPickerSelected()">Clear</button>
         <button class="btn btn-primary" id="pickerAddBtn" style="flex:2; min-height:52px;" onclick="addPickerSelected()">Add (0)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SWAP CONFIRM MODAL (P2-09 personal equipment swap) -->
+  <div class="modal" id="swapConfirmModal">
+    <div class="modal-content sheet" style="max-width:412px;">
+      <div class="modal-header">
+        <span>Swap Exercise</span>
+        <button class="btn" onclick="closeSwapConfirm()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="swapConfirmQuestion" style="font-weight:700; font-size:15px; margin-bottom:8px;"></div>
+        <div id="swapConfirmChanges" style="font-size:13px; color:var(--text-sub); line-height:1.5; margin-bottom:8px;"></div>
+        <div id="swapConfirmReason" style="font-size:13px; color:var(--text-sub); line-height:1.5; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" id="swapConfirmBtn" style="flex:1; min-height:44px;" onclick="confirmSwapActiveEx()">Swap</button>
+          <button class="btn" style="flex:1; min-height:44px;" onclick="closeSwapConfirm()">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2159,6 +2179,92 @@
       return TYPE_LABELS[t] || TYPE_LABELS.weight_reps;
     }
 
+    /* P2-09 equipment swap suggestions (pure). Returns up to 5 exercises:
+       - same primary muscle as exId, different id, equipment not in avoidEquip
+         (default [equipment of exId]), same load family when possible;
+         bodyweight-family options may follow after loaded ones.
+       - ranked by: shared secondary muscles (more first), then same type, then catalogue order.
+       - each item { exId, name, equipment, reason }
+       - unknown exId or no matches -> [] */
+    function getSwapSuggestions(exId, avoidEquip) {
+      if (typeof exId !== 'string' || !exId) return [];
+      const exercises = (typeof state !== 'undefined' && state && Array.isArray(state.exercises) && state.exercises.length)
+        ? state.exercises
+        : (typeof DEFAULT_EXERCISES !== 'undefined' ? DEFAULT_EXERCISES : []);
+      const sourceEx = exercises.find(e => e && e.id === exId);
+      if (!sourceEx) return [];
+
+      const sourcePrimary = (typeof exPrimary === 'function')
+        ? exPrimary(sourceEx)
+        : (sourceEx.primary || sourceEx.muscle || '');
+      const sourceEquip = sourceEx.equipment || 'Other';
+      const avoid = Array.isArray(avoidEquip) ? avoidEquip : [sourceEquip];
+
+      function getLoadFamily(type) {
+        if (type === 'duration') return 'duration';
+        if (type === 'bodyweight_reps') return 'bodyweight';
+        return 'loaded';
+      }
+      const sourceFamily = getLoadFamily(sourceEx.type);
+      const sourceSec = Array.isArray(sourceEx.secondary) ? sourceEx.secondary : [];
+
+      const candidates = [];
+      for (let i = 0; i < exercises.length; i++) {
+        const cand = exercises[i];
+        if (!cand || typeof cand.id !== 'string') continue;
+        if (cand.id === exId) continue;
+        if (cand.hidden) continue;
+        const candPrimary = (typeof exPrimary === 'function')
+          ? exPrimary(cand)
+          : (cand.primary || cand.muscle || '');
+        if (candPrimary !== sourcePrimary) continue;
+        const candEquip = cand.equipment || 'Other';
+        if (avoid.indexOf(candEquip) >= 0) continue;
+
+        const candFamily = getLoadFamily(cand.type);
+        let tier = 2;
+        if (candFamily === sourceFamily) {
+          tier = 0;
+        } else if (sourceFamily === 'loaded' && candFamily === 'bodyweight') {
+          tier = 1;
+        } else if (sourceFamily === 'bodyweight' && candFamily === 'loaded') {
+          tier = 1;
+        }
+
+        const candSec = Array.isArray(cand.secondary) ? cand.secondary : [];
+        const shared = candSec.filter(m => sourceSec.indexOf(m) >= 0);
+
+        candidates.push({
+          item: cand,
+          index: i,
+          tier,
+          shared,
+          sameType: cand.type === sourceEx.type
+        });
+      }
+
+      candidates.sort((a, b) => {
+        if (a.tier !== b.tier) return a.tier - b.tier;
+        if (b.shared.length !== a.shared.length) return b.shared.length - a.shared.length;
+        if (a.sameType !== b.sameType) return a.sameType ? -1 : 1;
+        return a.index - b.index;
+      });
+
+      const top = candidates.slice(0, 5);
+      return top.map(c => {
+        let reason = 'Same muscle: ' + sourcePrimary + ' · ' + sourceEquip + ' → ' + (c.item.equipment || 'Other');
+        if (c.shared.length > 0) {
+          reason += ' · also ' + c.shared.join(', ');
+        }
+        return {
+          exId: c.item.id,
+          name: c.item.name,
+          equipment: c.item.equipment || 'Other',
+          reason: reason
+        };
+      });
+    }
+
     /* Legacy muscle mapping (approved): Arms -> Biceps, or Triceps when the
        name says so; Legs -> Quads. Unknown values default to Chest. */
     function mapLegacyMuscle(muscle, name) {
@@ -2573,6 +2679,8 @@
        target exercise, single-set undo snapshot. */
     let setMenuTarget = null;
     let replaceTargetIdx = null;
+    let swapAvoidEquip = []; // P2-09 equipment swap
+    let pendingSwapExId = null; // P2-09 equipment swap
     let deletedSetBackup = null;
     let deletedSetTimer = null;
     /* P5-05 next-target fill undo (in-memory only): the rows Use touched. */
@@ -2989,6 +3097,8 @@
       finishReviewPending = false;
       setMenuTarget = null;
       replaceTargetIdx = null;
+      swapAvoidEquip = [];
+      pendingSwapExId = null;
       pickerTarget = 'workout';
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
@@ -3062,6 +3172,8 @@
       restPickerTarget = null;
       setMenuTarget = null;
       replaceTargetIdx = null;
+      swapAvoidEquip = [];
+      pendingSwapExId = null;
       pickerTarget = 'workout';
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
@@ -4996,6 +5108,8 @@
       restPickerTarget = null;
       setMenuTarget = null;
       replaceTargetIdx = null;
+      swapAvoidEquip = [];
+      pendingSwapExId = null;
       pickerTarget = 'workout';
       deletedSetBackup = null;
       try { if (deletedSetTimer) clearTimeout(deletedSetTimer); } catch (e) {}
@@ -5233,6 +5347,15 @@
                 if (hasWSets) return '';
                 const note = (warmupNoteExIdx === exIdx) ? '<div class="warmup-note" style="font-size:12px; color:var(--text-sub); margin-top:4px;">Enter your working weight first</div>' : '';
                 return '<button class="btn" style="margin-left:6px; padding:4px 10px; font-size:12px; min-height:44px;" onclick="addWarmupSets(' + exIdx + ')">Warm-up</button>' + note;
+              })()}
+              ${(function() {
+                if (!exItem.swappedFrom) return '';
+                const origEx = (state && Array.isArray(state.exercises)) ? state.exercises.find(e => e.id === exItem.swappedFrom.exId) : null;
+                const origName = origEx ? origEx.name : (exItem.swappedFrom.exId || 'exercise');
+                return '<div class="swapped-from-line" style="margin-top:6px; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-sub); flex-wrap:wrap;">' +
+                  '<span>Swapped from ' + esc(origName) + ' · </span>' +
+                  '<button class="btn" style="padding:4px 10px; min-height:44px; font-size:12px; font-weight:700;" onclick="undoSwapActiveEx(' + exIdx + ')">Undo</button>' +
+                  '</div>';
               })()}
             </div>
             </div>
@@ -5854,14 +5977,79 @@
     }
 
     /* P2-05 replace an exercise (personal part): same set count, fresh
-       empty Normal sets by default; keepValues copies old values per index. */
+       empty Normal sets by default; keepValues copies old values per index.
+       P2-09: pre-selects current exercise equipment in swapAvoidEquip. */
     function openReplacePicker(exIdx) {
       if (!activeWorkout || !activeWorkout.exercises[exIdx]) return;
       pickerTarget = 'replace';
       replaceTargetIdx = exIdx;
+      const currentEx = activeWorkout.exercises[exIdx];
+      const exDef = (state && Array.isArray(state.exercises)) ? state.exercises.find(e => e.id === currentEx.exId) : null;
+      const curEquip = exDef ? (exDef.equipment || 'Other') : 'Other';
+      swapAvoidEquip = [curEquip];
       document.getElementById('pickerSearch').value = '';
       renderPickerList();
       document.getElementById('exPickerModal').classList.add('open');
+    }
+
+    function toggleSwapAvoidEquip(equip) {
+      const idx = swapAvoidEquip.indexOf(equip);
+      if (idx >= 0) {
+        swapAvoidEquip.splice(idx, 1);
+      } else {
+        swapAvoidEquip.push(equip);
+      }
+      renderPickerList();
+    }
+
+    /* P2-09 swap exercise in live workout: preserves sets & rest, wraps
+       replaceActiveEx, stores deep copy in exItem.swappedFrom. */
+    function swapActiveEx(exIdx, newExId) {
+      if (!activeWorkout || !activeWorkout.exercises || !activeWorkout.exercises[exIdx]) return false;
+      if (typeof newExId !== 'string' || !newExId) return false;
+      const orig = activeWorkout.exercises[exIdx];
+      const swappedFrom = {
+        exId: orig.exId,
+        sets: (orig.sets || []).map(s => Object.assign({}, s)),
+        restSec: (typeof orig.restSec === 'number' && isFinite(orig.restSec) && orig.restSec >= 0)
+          ? orig.restSec : (state.defaultRest || 90),
+        note: String(orig.note || '')
+      };
+      if (orig.supersetId) swappedFrom.supersetId = orig.supersetId;
+
+      const ok = replaceActiveEx(exIdx, newExId, false);
+      if (!ok) return false;
+      if (activeWorkout.exercises[exIdx]) {
+        activeWorkout.exercises[exIdx].swappedFrom = swappedFrom;
+      }
+      renderActiveWorkout();
+      saveActiveSession();
+      return true;
+    }
+
+    /* P2-09 undo equipment swap: puts the original object back exactly. */
+    function undoSwapActiveEx(exIdx) {
+      if (!activeWorkout || !activeWorkout.exercises || !activeWorkout.exercises[exIdx]) return false;
+      const current = activeWorkout.exercises[exIdx];
+      if (!current.swappedFrom) return false;
+      const orig = current.swappedFrom;
+      activeWorkout.exercises[exIdx] = {
+        exId: orig.exId,
+        sets: (orig.sets || []).map(s => Object.assign({}, s)),
+        restSec: (typeof orig.restSec === 'number' && isFinite(orig.restSec) && orig.restSec >= 0)
+          ? orig.restSec : (state.defaultRest || 90),
+        note: String(orig.note || '')
+      };
+      if (orig.supersetId) {
+        activeWorkout.exercises[exIdx].supersetId = orig.supersetId;
+      }
+      const prefix = exIdx + ':';
+      Object.keys(setInputErrors).forEach(k => {
+        if (String(k).indexOf(prefix) === 0) delete setInputErrors[k];
+      });
+      renderActiveWorkout();
+      saveActiveSession();
+      return true;
     }
 
     function replaceActiveEx(exIdx, newExId, keepValues) {
@@ -6484,6 +6672,8 @@
        favourites, recent, multi-add; replace stays single-tap). */
     function openExercisePicker(target) {
       pickerTarget = target;
+      if (target !== 'replace') replaceTargetIdx = null;
+      swapAvoidEquip = [];
       pickerSelected = {};
       pickerFilterMuscle = '';
       pickerFilterEquip = '';
@@ -6999,7 +7189,7 @@
 
     function pickerRowHtml(e) {
       if (pickerTarget === 'replace') {
-        return '<div style="padding:12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="selectExercise(\'' + e.id + '\')">' +
+        return '<div style="padding:12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openSwapConfirm(\'' + e.id + '\')">' +
           '<div><div style="font-weight:700;">' + esc(e.name) + '</div><div style="margin-top:4px;">' + exerciseBadgesHtml(e) + '</div></div>' +
           '<span style="color:var(--primary); font-weight:800;">＋</span></div>';
       }
@@ -7033,6 +7223,37 @@
       if (mc) mc.innerHTML = chipRowHtml(MUSCLES, pickerFilterMuscle, 'setPickerFilter', 'muscle');
       const ec = document.getElementById('pickerEquipChips');
       if (ec) ec.innerHTML = chipRowHtml(EQUIPMENT, pickerFilterEquip, 'setPickerFilter', 'equip');
+      const swapSectionEl = document.getElementById('pickerSwapSection');
+      if (swapSectionEl) {
+        if (pickerTarget === 'replace' && activeWorkout && replaceTargetIdx !== null && activeWorkout.exercises[replaceTargetIdx]) {
+          const curItem = activeWorkout.exercises[replaceTargetIdx];
+          const suggestions = getSwapSuggestions(curItem.exId, swapAvoidEquip);
+          let chipsHtml = '<div style="margin-bottom:8px;"><div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:4px;">Can&#39;t use:</div><div class="chips">';
+          EQUIPMENT.forEach(equip => {
+            const isAvoided = swapAvoidEquip.indexOf(equip) >= 0;
+            chipsHtml += '<button class="chip' + (isAvoided ? ' on' : '') + '" onclick="toggleSwapAvoidEquip(\'' + chipVal(equip) + '\')">' + esc(equip) + '</button>';
+          });
+          chipsHtml += '</div></div>';
+
+          let sugsHtml = '';
+          if (suggestions.length > 0) {
+            sugsHtml = suggestions.map(s => {
+              const fullEx = state.exercises.find(e => e.id === s.exId);
+              const badges = fullEx ? exerciseBadgesHtml(fullEx) : '';
+              return '<div style="padding:12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openSwapConfirm(\'' + s.exId + '\')">' +
+                '<div style="min-width:0; padding-right:8px;"><div style="font-weight:700;">' + esc(s.name) + '</div><div style="margin-top:4px;">' + badges + '</div><div style="font-size:12px; color:var(--text-sub); margin-top:2px;">' + esc(s.reason) + '</div></div>' +
+                '<span style="color:var(--primary); font-weight:800; flex:0 0 auto;">＋</span></div>';
+            }).join('');
+          } else {
+            sugsHtml = '<div style="padding:12px; font-size:13px; color:var(--text-sub);">No suggestions match avoided equipment.</div>';
+          }
+          swapSectionEl.innerHTML = '<h3>Same muscle, other equipment</h3>' + chipsHtml + sugsHtml;
+          swapSectionEl.style.display = 'block';
+        } else {
+          swapSectionEl.innerHTML = '';
+          swapSectionEl.style.display = 'none';
+        }
+      }
       const secs = getPickerSections();
       const recentEl = document.getElementById('pickerRecent');
       if (recentEl) {
@@ -7121,7 +7342,7 @@
         pickerTarget = 'workout';
         replaceTargetIdx = null;
         closeModal('exPickerModal');
-        if (idx !== null && idx !== undefined) replaceActiveEx(idx, exId, false);
+        if (idx !== null && idx !== undefined) swapActiveEx(idx, exId);
         return;
       } else if (pickerTarget === 'routine') {
         tempRoutineExercises.push(normalizeRoutineItem({ exId, sets: 3 }));
@@ -7135,6 +7356,85 @@
         }
       }
       closeModal('exPickerModal');
+    }
+
+    /* P2-09 swap confirm modal handlers */
+    function openSwapConfirm(newExId) {
+      if (!activeWorkout || replaceTargetIdx === null || !activeWorkout.exercises[replaceTargetIdx]) return;
+      pendingSwapExId = newExId;
+      const exIdx = replaceTargetIdx;
+      const origItem = activeWorkout.exercises[exIdx];
+      const origDef = (state && Array.isArray(state.exercises)) ? state.exercises.find(e => e.id === origItem.exId) : null;
+      const newDef = (state && Array.isArray(state.exercises)) ? state.exercises.find(e => e.id === newExId) : null;
+      const origName = origDef ? origDef.name : (origItem.exId || 'Exercise');
+      const newName = newDef ? newDef.name : (newExId || 'Exercise');
+
+      const qEl = document.getElementById('swapConfirmQuestion');
+      if (qEl) qEl.textContent = `Swap ${origName} → ${newName}?`;
+
+      const setCount = Math.max(1, (origItem.sets || []).length);
+      const restSec = (typeof origItem.restSec === 'number' && isFinite(origItem.restSec) && origItem.restSec >= 0)
+        ? origItem.restSec : (state.defaultRest || 90);
+      const origEquip = origDef ? (origDef.equipment || 'Other') : 'Other';
+      const newEquip = newDef ? (newDef.equipment || 'Other') : 'Other';
+      const diffEquip = origEquip !== newEquip;
+
+      let changesText = `Keeps ${setCount} set${setCount === 1 ? '' : 's'} and ${restSec} s rest · weights start empty` + (diffEquip ? ' (different equipment)' : '');
+
+      const doneCount = (origItem.sets || []).filter(s => s && s.done).length;
+      if (doneCount > 0) {
+        const shortOrig = origName.replace(/\s*\([^)]*\)$/, '');
+        changesText += ` · ${doneCount} done set${doneCount === 1 ? '' : 's'} stay${doneCount === 1 ? 's' : ''} with ${shortOrig} in Undo only`;
+      }
+
+      const cEl = document.getElementById('swapConfirmChanges');
+      if (cEl) cEl.textContent = changesText;
+
+      const rEl = document.getElementById('swapConfirmReason');
+      let reasonText = '';
+      if (origDef && newDef) {
+        const origPrimary = exPrimary(origDef);
+        const newPrimary = exPrimary(newDef);
+        if (origPrimary === newPrimary) {
+          reasonText = `Same muscle: ${origPrimary} · ${origEquip} → ${newEquip}`;
+          const origSec = Array.isArray(origDef.secondary) ? origDef.secondary : [];
+          const newSec = Array.isArray(newDef.secondary) ? newDef.secondary : [];
+          const shared = newSec.filter(m => origSec.indexOf(m) >= 0);
+          if (shared.length > 0) {
+            reasonText += ' · also ' + shared.join(', ');
+          }
+        } else {
+          reasonText = `${origEquip} → ${newEquip}`;
+        }
+      }
+      if (rEl) {
+        rEl.textContent = reasonText;
+        rEl.style.display = reasonText ? 'block' : 'none';
+      }
+
+      const modal = document.getElementById('swapConfirmModal');
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeSwapConfirm() {
+      pendingSwapExId = null;
+      const modal = document.getElementById('swapConfirmModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function confirmSwapActiveEx() {
+      if (replaceTargetIdx === null || !pendingSwapExId) {
+        closeSwapConfirm();
+        return;
+      }
+      const idx = replaceTargetIdx;
+      const newExId = pendingSwapExId;
+      closeSwapConfirm();
+      closeModal('exPickerModal');
+      pickerTarget = 'workout';
+      replaceTargetIdx = null;
+      swapAvoidEquip = [];
+      swapActiveEx(idx, newExId);
     }
 
     function onExSearchInput() {

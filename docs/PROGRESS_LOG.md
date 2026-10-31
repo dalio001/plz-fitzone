@@ -2,6 +2,16 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-10-31 — Equipment swap in the live workout (P2-09 personal part), awaiting owner phone check
+
+- Built personal equipment swap for live workouts following `docs/pillars/plans/P2-09-swap/PLAN.md` on branch `codex/p2-09-equipment-swap` (no npm dependencies, no build step, no schema bump).
+- **Suggestions engine (`getSwapSuggestions`):** pure function returning up to 5 exercises matching the source exercise's primary muscle with different equipment, avoiding `swapAvoidEquip` (default source equipment); ranked by shared secondary muscles (more first), same type, then catalogue order; loaded family preferred for loaded movements with bodyweight options following; plain reason line (`Same muscle: <Primary> · <OldEquip> → <NewEquip> · also <SharedSecondaries>`).
+- **Picker in replace mode (`openReplacePicker`):** renders `Same muscle, other equipment` section above Recent with suggestion rows and small reason lines; row of interactive chips (`Can't use: Barbell · Dumbbell · Machine · Cable · …`) with source equipment pre-selected; toggling chips dynamically re-ranks suggestions; section hidden outside replace mode.
+- **Confirm sheet (`swapConfirmModal`):** tapping a suggestion or any exercise in replace mode opens a modal previewing `"Swap <Old> → <New>?"`, what changes (`Keeps N sets and M s rest · weights start empty (different equipment)`), reason line, and if any sets were ticked: `N done sets stay with <Old> in Undo only`; Swap and Cancel buttons.
+- **Swap & Undo (`swapActiveEx`, `undoSwapActiveEx`):** preserves set count and rest timer while starting with empty Normal sets; stores deep copy snapshot in `exItem.swappedFrom`; renders a persistent header notice `Swapped from <Old> · Undo` in `renderActiveWorkout`; Undo restores the original exercise, notes, rest, and all done sets.
+- **Persistence & Integrity:** `saveActiveSession` retains `swappedFrom` across page reload/session resume; finishing a workout strips `swappedFrom` so history records only performed work; saved routine definitions in `state.routines` remain completely untouched.
+- **Verification:** added `tests/p2-09-swap.test.mjs` (15 tests: getSwapSuggestions unknown id/default avoid/custom avoid/ranking/reason/load family, swapActiveEx sets & rest preservation, undoSwapActiveEx exact restoration, reload persistence, history stripping & routine untouched, picker avoid chips & confirm sheet, handlers compile, 44 px touch targets); all **421 tests pass** (406 existing + 15 new, 0 fail).
+
 ## 2026-10-25 — Remote MCP server & Supabase cloud sync for personal AI control (P4-11)
 
 - Built and verified full remote AI control on branch `codex/p4-11-sync` (never pushed, zero npm dependencies).
