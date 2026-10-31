@@ -6016,11 +6016,13 @@
         note: String(orig.note || '')
       };
       if (orig.supersetId) swappedFrom.supersetId = orig.supersetId;
+      // A second swap keeps the very first original, so Undo always goes home.
+      const keep = orig.swappedFrom || swappedFrom;
 
       const ok = replaceActiveEx(exIdx, newExId, false);
       if (!ok) return false;
       if (activeWorkout.exercises[exIdx]) {
-        activeWorkout.exercises[exIdx].swappedFrom = swappedFrom;
+        activeWorkout.exercises[exIdx].swappedFrom = keep;
       }
       renderActiveWorkout();
       saveActiveSession();

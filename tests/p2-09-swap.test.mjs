@@ -137,6 +137,16 @@ describe('P2-09 equipment swap — swapActiveEx and undoSwapActiveEx', () => {
     assert.equal(app.api.undoSwapActiveEx(0), false, 'cannot undo twice');
   });
 
+  it('a second swap still undoes back to the first original', () => {
+    const app = createApp();
+    app.api.startRoutineWorkout('rt1');
+    app.api.swapActiveEx(0, 'ex16');
+    app.api.swapActiveEx(0, 'ex2');
+    assert.equal(app.api.activeWorkout.exercises[0].swappedFrom.exId, 'ex1', 'first original kept');
+    assert.equal(app.api.undoSwapActiveEx(0), true);
+    assert.equal(app.api.activeWorkout.exercises[0].exId, 'ex1', 'back to the first original');
+  });
+
   it('renderActiveWorkout displays swapped from line with Undo button', () => {
     const app = createApp();
     app.api.startRoutineWorkout('rt1');
