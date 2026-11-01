@@ -1326,6 +1326,7 @@
         <select id="newExSecondary2" class="input-field"></select>
         <label style="font-size:13px; color:var(--text-sub);">Type (label only)</label>
         <select id="newExType" class="input-field"></select>
+        <div id="newExTypeNote" style="display:none; font-size:12px; color:var(--text-sub); margin:-4px 0 12px;"></div>
         <button class="btn btn-primary btn-block" onclick="saveCustomExercise()">Save Exercise</button>
       </div>
     </div>
@@ -2761,6 +2762,8 @@
       // P2-08: idempotent history-id backfill (no version bump); old entries
       // without ids get one, existing ids are untouched.
       ensureHistoryIds(state.history);
+      // P0-07: stored totals and PR flags always match the sets.
+      rebuildHistoryDerived(state.history);
       // P5-04: idempotent body-log normalisation (no version bump).
       state.body = normalizeBodyEntries(state.body);
       if (hadSavedState) saveState();
@@ -7776,6 +7779,14 @@
       document.getElementById('newExSecondary1').value = (ex && ex.secondary && ex.secondary[0]) || '';
       document.getElementById('newExSecondary2').value = (ex && ex.secondary && ex.secondary[1]) || '';
       document.getElementById('newExType').value = (ex && ex.type) || 'weight_reps';
+      // P0-07: the type decides how old sets are read, so it is locked once used.
+      const used = ex ? historyUseCount(ex.id) : 0;
+      const typeNote = document.getElementById('newExTypeNote');
+      document.getElementById('newExType').disabled = used > 0;
+      typeNote.style.display = used > 0 ? 'block' : 'none';
+      typeNote.textContent = used > 0
+        ? 'Type is locked: used in ' + used + (used === 1 ? ' workout' : ' workouts') + '. Make a new exercise for a different type. A new name also shows in old workouts.'
+        : '';
       document.getElementById('customExModal').classList.add('open');
     }
 
@@ -7794,6 +7805,8 @@
       if (editingExId) {
         const ex = state.exercises.find(e => e.id === editingExId);
         if (!ex) return false;
+        // P0-07: never change how saved sets are read.
+        if (type !== ex.type && historyUseCount(ex.id) > 0) type = ex.type;
         ex.name = name;
         ex.equipment = equipment;
         ex.primary = primary;
@@ -8431,6 +8444,58 @@
       };
     }
 
+    /* P0-07: rebuild every workout's stored totals and PR flags from its sets,
+       oldest first, so a PR always means "beat every EARLIER workout". Runs
+       after load, restore, sync, history edit, delete and undo; the same
+       history always gives the same result. Returns true when anything changed. */
+    function rebuildHistoryDerived(history) {
+      if (!Array.isArray(history)) return false;
+      // history is newest-first; reverse + stable sort keeps same-date order.
+      const order = history.filter(w => w && Array.isArray(w.exercises)).reverse()
+        .sort((a, b) => (Number(a.date) || 0) - (Number(b.date) || 0));
+      const best = {};
+      let changed = false;
+      order.forEach(w => {
+        let totalVolume = 0;
+        let totalSets = 0;
+        let prCount = 0;
+        const sessionBest = {};
+        w.exercises.forEach(ex => {
+          if (!ex || !Array.isArray(ex.sets)) return;
+          const durEx = isDurationEx((state.exercises || []).find(e => e.id === ex.exId));
+          let exBest = 0;
+          ex.sets.forEach(s => {
+            totalSets++;
+            if (durEx) return;
+            const wt = Math.max(0, Number(s && s.weight) || 0);
+            const r = Math.max(0, Number(s && s.reps) || 0);
+            totalVolume += wt * r;
+            const est1RM = wt * (1 + r / 30);
+            if (est1RM > exBest) exBest = est1RM;
+          });
+          const prev = best[ex.exId] || 0;
+          const isPR = !durEx && exBest > prev && prev > 0;
+          if (isPR !== (ex.isPR === true)) changed = true;
+          if (isPR) { ex.isPR = true; prCount++; } else delete ex.isPR;
+          if (exBest > (sessionBest[ex.exId] || 0)) sessionBest[ex.exId] = exBest;
+        });
+        Object.keys(sessionBest).forEach(id => {
+          if (sessionBest[id] > (best[id] || 0)) best[id] = sessionBest[id];
+        });
+        totalVolume = Math.max(0, Math.round(totalVolume * 100) / 100);
+        if (w.totalVolume !== totalVolume || w.totalSets !== totalSets || w.prCount !== prCount) changed = true;
+        w.totalVolume = totalVolume;
+        w.totalSets = totalSets;
+        w.prCount = prCount;
+      });
+      return changed;
+    }
+
+    /* P0-07: number of saved workouts that use an exercise. */
+    function historyUseCount(exId) {
+      return (state.history || []).filter(w => w && (w.exercises || []).some(item => item && item.exId === exId)).length;
+    }
+
     /* ---- Detail sheet ---- */
 
     function openHistDetail(id) {
@@ -8870,10 +8935,8 @@
             : { type: normSetType(s.type), weight: Number(s.weight), reps: Number(s.reps), done: true })
         };
       });
-      const score = scoreHistExercises(w.exercises, w.id);
-      w.totalVolume = score.totalVolume;
-      w.totalSets = score.totalSets;
-      w.prCount = score.prCount;
+      // P0-07: an edit can move PRs in later workouts too, so rebuild them all.
+      rebuildHistoryDerived(state.history);
       editingHistId = null;
       editingHistDraft = null;
       histEditErrors = {};
@@ -8909,6 +8972,7 @@
       const idx = state.history.findIndex(w => w && String(w.id) === String(id));
       if (idx < 0) return false;
       const removed = state.history.splice(idx, 1)[0];
+      rebuildHistoryDerived(state.history); // P0-07
       deletedHistBackup = {
         workout: removed,
         index: Math.min(idx, state.history.length),
@@ -8929,6 +8993,7 @@
     function undoDeleteHist() {
       if (!deletedHistBackup) return false;
       state.history.splice(Math.min(deletedHistBackup.index, state.history.length), 0, deletedHistBackup.workout);
+      rebuildHistoryDerived(state.history); // P0-07
       deletedHistBackup = null;
       try { if (deletedHistTimer) clearTimeout(deletedHistTimer); } catch (e) {}
       deletedHistTimer = null;
@@ -12572,6 +12637,7 @@
 
       normalizeExercises(state);
       ensureHistoryIds(state.history);
+      rebuildHistoryDerived(state.history); // P0-07
       if (Array.isArray(state.routines)) {
         state.routines.forEach(rt => {
           if (Array.isArray(rt.exercises)) rt.exercises = rt.exercises.map(normalizeRoutineItem);
@@ -13207,6 +13273,7 @@
         (newState.history || []).forEach(function(w) { if (w.id && !seen.has(w.id)) { seen.add(w.id); merged.push(w); } });
         (state.history || []).forEach(function(w) { if (w.id && !seen.has(w.id)) { seen.add(w.id); merged.push(w); } });
         state.history = merged;
+        rebuildHistoryDerived(state.history); // P0-07
       }
       if (Array.isArray(newState.body)) state.body = normalizeBodyEntries(newState.body);
 

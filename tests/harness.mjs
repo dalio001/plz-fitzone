@@ -397,7 +397,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   get targetFillBackup(){ return targetFillBackup; }, set targetFillBackup(v){ targetFillBackup = v; },
   get warmupBackup(){ return warmupBackup; }, set warmupBackup(v){ warmupBackup = v; },
   get warmupTimer(){ return warmupTimer; }, set warmupTimer(v){ warmupTimer = v; },
-  ensureHistoryIds, scoreHistExercises, findHistEntry,
+  ensureHistoryIds, scoreHistExercises, findHistEntry, rebuildHistoryDerived, historyUseCount,
   openHistDetail, closeHistDetail, renderHistDetail,
   openHistEdit, renderHistEdit, cancelHistEdit, saveHistEdit,
   updateHistTitle, updateHistDate, updateHistDuration, updateHistNote,

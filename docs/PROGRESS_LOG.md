@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-01 — P0-07 history rebuild (personal part)
+
+- `rebuildHistoryDerived()` recomputes every saved workout's volume, set count and PR flags oldest-first; wired into load, restore, sync pull, history edit, delete and undo. Fixes stale PR counts in later workouts after an edit or delete, and edits of old workouts being compared with later ones.
+- Custom exercise type is locked (with a note) once saved workouts use it; renames still allowed.
+- Tests: `tests/p0-07-history-rebuild.test.mjs` (10); full suite 445 pass. Awaiting owner phone check.
+
 ## 2026-11-01 — Rest timer on the locked screen (P4-03 personal part), awaiting owner phone check
 
 - Built locked-screen rest timer following `docs/pillars/plans/P4-03-lock-timer/PLAN.md` on branch `codex/p4-03-lock-timer` (no npm dependencies, no build step, no schema bump).
