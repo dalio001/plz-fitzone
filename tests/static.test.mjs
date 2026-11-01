@@ -59,9 +59,18 @@ describe('static delivery checks', () => {
     assert.ok(html.includes('<span>Restore this backup?</span>'), 'title kept in modal header');
   });
 
-  it('sw.js CACHE_VERSION is bumped to v6', () => {
+  it('sw.js CACHE_VERSION is bumped to v7', () => {
     const sw = readFileSync(SW_PATH, 'utf8');
-    assert.ok(sw.includes("var CACHE_VERSION = 'plz-fitzone-v6';"), 'v6 cache version');
+    assert.ok(sw.includes("var CACHE_VERSION = 'plz-fitzone-v7';"), 'v7 cache version');
+  });
+
+  it('sw.js never stores an error reply (404/500) as the offline page or an asset', () => {
+    const sw = readFileSync(SW_PATH, 'utf8');
+    const page = sw.slice(sw.indexOf('if (isPageRequest(request))'));
+    const pageOk = page.indexOf('if (!response.ok) return response;');
+    assert.ok(pageOk > 0 && pageOk < page.indexOf("cache.put('./index.html'"), 'page branch checks ok before caching');
+    const asset = page.slice(page.indexOf('} else {'));
+    assert.ok(asset.indexOf('if (!response.ok) return response;') < asset.indexOf('cache.put(request, copy)'), 'asset branch checks ok before caching');
   });
 
   it('sw.js precaches every local asset referenced by index.html', () => {

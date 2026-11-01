@@ -127,24 +127,22 @@ export async function saveStateWithHistory(ownerHash, newState, newRev, updatedB
   const current = await getOwnerRow(ownerHash);
   if (!current) throw new Error('Owner not found');
 
-  // 1. Insert history snapshot if rev > 0
+  // 1. Keep the current version for undo. If that copy cannot be stored, do not
+  //    overwrite the state: a save without its undo copy could lose data for good.
   if (current.rev !== undefined && current.state) {
-    try {
-      await supabaseFetch('/plz_state_history', {
-        method: 'POST',
-        headers: { 'Prefer': 'return=minimal' },
-        body: JSON.stringify({
-          owner_hash: ownerHash,
-          rev: current.rev,
-          state: current.state,
-          updated_at: current.updated_at || new Date().toISOString(),
-          updated_by: current.updated_by || 'app',
-          summary: current.summary || ''
-        })
-      });
-    } catch (e) {
-      // History insert failure should not completely abort state save
-    }
+    const hist = await supabaseFetch('/plz_state_history', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        owner_hash: ownerHash,
+        rev: current.rev,
+        state: current.state,
+        updated_at: current.updated_at || new Date().toISOString(),
+        updated_by: current.updated_by || 'app',
+        summary: current.summary || ''
+      })
+    });
+    if (!hist.ok) throw new Error(`Failed to keep undo copy: ${hist.status}`);
   }
 
   // 2. Update plz_state

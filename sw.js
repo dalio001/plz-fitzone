@@ -1,7 +1,7 @@
 /* PLZ Train service worker: offline support for the installable app. */
 /* P2-13: v5 adds the exercise-picture cache (runtime cache-first, below). */
 /* P4-03: v6 adds lock-screen rest timer notificationclick handler. */
-var CACHE_VERSION = 'plz-fitzone-v6';
+var CACHE_VERSION = 'plz-fitzone-v7';
 var CACHE_NAME = CACHE_VERSION;
 
 /* P0-01: the onboarding mascot is a page asset too — precached so the first
@@ -111,6 +111,8 @@ self.addEventListener('fetch', function(event) {
     // next open when online; the cache keeps the app usable offline.
     event.respondWith(
       fetchWithTimeout(request, NETWORK_TIMEOUT_MS).then(function(response) {
+        // Never keep an error page (404/500) as the offline copy.
+        if (!response.ok) return response;
         var copyIndex = response.clone();
         var copyRoot = response.clone();
         caches.open(CACHE_NAME).then(function(cache) {
@@ -131,6 +133,7 @@ self.addEventListener('fetch', function(event) {
       caches.match(request).then(function(cached) {
         if (cached) return cached;
         return fetch(request).then(function(response) {
+          if (!response.ok) return response;
           var copy = response.clone();
           caches.open(CACHE_NAME).then(function(cache) {
             cache.put(request, copy);

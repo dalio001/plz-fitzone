@@ -57,8 +57,6 @@ export default async function handler(req, res) {
   const action = body.action || 'pair';
 
   try {
-    const ownerExists = await hasAnyOwner();
-
     // Disconnect action
     if (action === 'disconnect') {
       if (!oldHash) {
@@ -88,6 +86,8 @@ export default async function handler(req, res) {
       return;
     }
 
+    // Asked only here: disconnect never needs it.
+    const ownerExists = await hasAnyOwner();
     if (!ownerExists) {
       // First-time pairing
       const initialState = sanitizeStateForSync(body.state || {});

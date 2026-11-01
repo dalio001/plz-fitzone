@@ -644,4 +644,25 @@ describe('P4-11 App Sync & Conflict Resolution (/api/sync)', () => {
     assert.equal(uRes.body.ok, true);
     assert.equal(uRes.body.state.routines[0].name, 'Original', 'reverted to original routine');
   });
+
+  it('a failed undo-copy insert stops the save instead of silently losing undo', async () => {
+    const ownerHash = hashToken(token);
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async (url, options = {}) => {
+      if (String(url).includes('/plz_state_history') && (options.method || 'GET').toUpperCase() === 'POST') {
+        return { ok: false, status: 500, json: async () => ({}), text: async () => 'boom' };
+      }
+      return realFetch(url, options);
+    };
+    const { req, res } = mockReqRes({
+      method: 'POST',
+      url: '/api/sync',
+      headers: { authorization: `Bearer ${token}` },
+      body: { state: { routines: [{ id: 'rt_x', name: 'Lost?' }] }, clientRev: 1 }
+    });
+    await syncHandler(req, res);
+    globalThis.fetch = realFetch;
+    assert.notEqual(res.statusCode, 200, 'save refused');
+    assert.equal(db.plz_state.get(ownerHash).state.routines[0].name, 'Original', 'server state untouched');
+  });
 });
