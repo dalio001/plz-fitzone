@@ -5,8 +5,7 @@ var CACHE_VERSION = 'plz-fitzone-v7';
 var CACHE_NAME = CACHE_VERSION;
 
 /* P0-01: the onboarding mascot is a page asset too — precached so the first
-   run looks identical offline. `plz-fitzone-logo-wide.jpg` is not referenced
-   by index.html, so it is deliberately not listed. */
+   run looks identical offline. */
 var CORE_ASSETS = [
   './',
   './index.html',

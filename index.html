@@ -141,12 +141,6 @@
     .section-group {
       margin-bottom: var(--space-24);
     }
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--space-8);
-      flex-wrap: wrap;
-    }
 
     /* SHARED EMPTY STATE (P1-03) */
     .empty-state {
@@ -163,7 +157,7 @@
       font-weight: 700;
       color: var(--text);
     }
-    .empty-state-help, .empty-state-sub {
+    .empty-state-help {
       font-size: var(--font-14);
       color: var(--text-sub);
     }
@@ -767,14 +761,6 @@
     }
     .ob-footer .btn { flex: 1; min-height: 52px; }
     .ob-footer .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .ob-slide-nav {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin-top: 4px;
-    }
-    .ob-slide-nav .btn { min-height: 44px; min-width: 52px; }
   </style>
 </head>
 <body>
@@ -2587,13 +2573,6 @@
             if (s && 'weight' in s) s.weight = convertOldWeightToKg(s.weight, savedUnit);
           });
         });
-        let vol = 0;
-        w.exercises.forEach(item => {
-          (item.sets || []).forEach(s => {
-            vol += (Number(s.weight) || 0) * (Number(s.reps) || 0);
-          });
-        });
-        w.totalVolume = Math.round(vol * 100) / 100;
       });
       return history;
     }
@@ -5301,7 +5280,7 @@
             } else {
               setsHtml += `
                 <div class="drop-chip-row" style="display:flex; justify-content:flex-end; align-items:center; gap:6px; margin:2px 0 6px;">
-                  <span class="drop-step-label" style="font-size:12px; color:var(--text-sub); cursor:pointer;" onclick="openDropStepPicker(${exIdx}, ${sIdx})">−${state.dropStepPct || 20}%</span>
+                  <span class="drop-step-label" style="font-size:12px; color:var(--text-sub); cursor:pointer;" onclick="openDropStepPicker()">−${state.dropStepPct || 20}%</span>
                   <button class="btn drop-chip" style="min-height:40px; padding:6px 14px; font-size:13px; font-weight:700;" onclick="addDropSet(${exIdx}, ${sIdx})">⬇ Drop</button>
                 </div>
               `;
@@ -5805,9 +5784,7 @@
       return true;
     }
 
-    let dropPickerTarget = null;
-    function openDropStepPicker(exIdx, sIdx) {
-      dropPickerTarget = (exIdx !== undefined && sIdx !== undefined) ? { exIdx, sIdx } : null;
+    function openDropStepPicker() {
       document.getElementById('dropStepModal').classList.add('open');
     }
 
@@ -5855,10 +5832,7 @@
       });
     }
 
-    let supersetPickerTarget = null;
-
     function openSupersetPicker(exIdx, context = 'workout') {
-      supersetPickerTarget = { idx: exIdx, context };
       const list = context === 'routine' ? tempRoutineExercises : (activeWorkout ? activeWorkout.exercises : []);
       const container = document.getElementById('supersetPickerList');
       if (!container) return;
@@ -6810,11 +6784,6 @@
       activeWorkout.finishing = true;
 
       const durationSec = Math.floor((Date.now() - activeWorkout.startTime) / 1000);
-      // P2-08: totals + PR flags via the shared scorer (also used by edit-save).
-      const score = scoreHistExercises(completedExercises, null);
-      const totalVolume = score.totalVolume;
-      const totalSets = score.totalSets;
-      const prCount = score.prCount;
 
       /* P2-08: workout ids are unique even for two saves in one millisecond. */
       const saveStamp = Date.now();
@@ -6829,11 +6798,13 @@
         routineId: finishedRoutineId,
         date: Date.now(),
         durationSec,
-        totalVolume: Math.max(0, Math.round(totalVolume * 100) / 100),
-        totalSets,
-        prCount,
+        totalVolume: 0,
+        totalSets: 0,
+        prCount: 0,
         exercises: completedExercises
       });
+      // P0-07: totals and PR flags come from the one shared rebuild.
+      rebuildHistoryDerived(state.history);
 
       saveState();
       clearActiveSessionStorage();
@@ -6896,11 +6867,10 @@
 
     /* Best Epley estimate in canonical kg; display converts via toDisplay.
        excludeId skips one history entry (P2-08 edit-save PR check). */
-    function getBest1RM(exId, excludeId) {
+    function getBest1RM(exId) {
       let best = 0;
       if (isDurationEx((state.exercises || []).find(e => e.id === exId))) return 0; // P2-12: no 1RM from a hold
       state.history.forEach(w => {
-        if (excludeId != null && w && String(w.id) === String(excludeId)) return;
         const found = w.exercises.find(e => e.exId === exId);
         if (found) {
           found.sets.forEach(s => {
@@ -8388,37 +8358,6 @@
     /* Shared totals + PR scorer. excludeHistId skips one entry so an edited
        workout is never compared against itself. Mutates isPR on the passed
        exercise objects (fresh or rewritten), nothing else. */
-    function scoreHistExercises(exercises, excludeHistId) {
-      let totalVolume = 0;
-      let totalSets = 0;
-      let prCount = 0;
-      (exercises || []).forEach(ex => {
-        const durEx = isDurationEx((state.exercises || []).find(e => e.id === ex.exId));
-        const prevBest1RM = durEx ? 0 : getBest1RM(ex.exId, excludeHistId);
-        let sessionBest1RM = 0;
-        (ex.sets || []).forEach(s => {
-          totalSets++;
-          if (durEx) return; // P2-12: holds are sets, never volume or a 1RM
-          const w = Math.max(0, Number(s.weight) || 0);
-          const r = Math.max(0, Number(s.reps) || 0);
-          totalVolume += w * r;
-          const est1RM = w * (1 + r / 30);
-          if (est1RM > sessionBest1RM) sessionBest1RM = est1RM;
-        });
-        if (!durEx && sessionBest1RM > prevBest1RM && prevBest1RM > 0) {
-          ex.isPR = true;
-          prCount++;
-        } else {
-          delete ex.isPR;
-        }
-      });
-      return {
-        totalVolume: Math.max(0, Math.round(totalVolume * 100) / 100),
-        totalSets,
-        prCount
-      };
-    }
-
     /* P0-07: rebuild every workout's stored totals and PR flags from its sets,
        oldest first, so a PR always means "beat every EARLIER workout". Runs
        after load, restore, sync, history edit, delete and undo; the same
