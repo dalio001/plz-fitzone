@@ -97,8 +97,10 @@ Then commit the updated `mcp/catalogue.json`. The test
 
 - It does not read your workout history, records or body data.
 - It does not write into the app, `localStorage` or the backup.
-- It has no sync, accounts, authorisation, remote/HTTP transport or rate limits.
+- It has no sync, accounts, authorisation, remote/HTTP transport or rate limits
+  (the remote connector in `api/mcp/` has those; see P4-11).
 - It gives no medical or progressive-overload advice; it only builds a routine
   you review.
 
-Those are later phases (see `docs/pillars/04_TRUST_INTEGRATIONS.md`, P4-11).
+The remote connector (`api/mcp/[token].js`, P4-11 in
+`docs/pillars/04_TRUST_INTEGRATIONS.md`) covers reading and writing the app.

@@ -56,7 +56,7 @@ Every agent working on this project must follow this protocol:
    - When neither supplied video demonstrates a feature, say **Not demonstrated in V1/V2**, identify the relevant audit/specification/official source, and explain the remaining design decision. Do not invent a timestamp, imply a listed setting was exercised, or claim a reviewer opinion is the owner's preference.
    - **Owner-supplied local videos** (screen recordings, files he sends) are copied to `assets/videos/<V#>-<topic>-<date>.mp4` in this folder (git-ignored: never published) and their full path is written in the owning pillar's Video references & Assets section and in the video index. Never cite a temporary path (Downloads, Snipping Tool TempState).
    - Keep both supplied video references, evidence limits and relevant assets in the pillar's Video references & Assets section. Update task references when new videos or requirements arrive; keep personal-first priorities unless the user changes them.
-5. Keep a concrete **Next Immediate Action** at the bottom of the pillar. Respect the current planning-only authorization.
+5. Keep a concrete **Next Immediate Action** at the bottom of the pillar. Respect the current authorization (top of this file).
 6. Keep pillar ownership isolated. Update another pillar only when the task changes its dependencies, shared contracts, or UI components, and cross-reference both.
 7. Update [docs/PROGRESS_LOG.md](docs/PROGRESS_LOG.md), newest first, with the date and a short account of the completed work and evidence.
 8. Update the master plan when sequencing, release scope, success criteria, or decisions change. It is the source for phase order; pillar files own task details.
@@ -64,9 +64,9 @@ Every agent working on this project must follow this protocol:
 ## Engineering rules and detected environment
 
 - **Audited branch:** `main`, with a clean working tree before the documentation session. Publish the documentation through a `codex/<topic>` branch and pull request into `main`. Future implementation should also use a `codex/<topic>` branch unless the user specifies another branch; keep stable branches clean.
-- **Current runtime:** one self-contained `index.html`, vanilla HTML/CSS/JavaScript, browser `localStorage`. Open the file in a browser; there is no package manager or build step.
+- **Current runtime:** one self-contained `index.html`, vanilla HTML/CSS/JavaScript, browser `localStorage`, plus `sw.js` (offline) and zero-dependency Vercel functions in `api/` (sync and the remote AI connector, backed by Supabase). Vercel deploys `main`. `package.json` only sets the module type: no dependencies, no build step.
 - **Lint:** not applicable (no dependencies, no build step). Do not claim `npm run lint` exists.
-- **Automated tests:** `node --test "tests/*.test.mjs"` — zero-dependency suite (Node built-in runner, `node:assert`, `node:vm` only) that runs the REAL `<script>` from `index.html` via `tests/harness.mjs`, plus `sw.js` syntax and manifest checks. No `package.json`, no install, no framework. Every code change must keep `node --test "tests/*.test.mjs"` green and add a test for new logic. Do not claim `npm test` exists.
+- **Automated tests:** `node --test "tests/*.test.mjs"` — zero-dependency suite (Node built-in runner, `node:assert`, `node:vm` only) that runs the REAL `<script>` from `index.html` via `tests/harness.mjs`, plus `sw.js`, manifest and `api/` checks. No npm install, no framework. Every code change must keep `node --test "tests/*.test.mjs"` green and add a test for new logic. Do not claim `npm test` exists.
 - **Build:** not applicable to the current static file (served as-is; do not add a build step). Do not claim a build passed.
 - Before future code work, record any additional real lint/typecheck commands through P0-06 here. Once established, all applicable commands must pass for a code-changing session.
 - Until then, future code changes require targeted browser checks of affected workflows and meaningful regression checks for persistence, units, timers, imports, or metrics when affected. Document exactly what was checked.

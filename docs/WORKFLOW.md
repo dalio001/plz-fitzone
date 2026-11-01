@@ -4,7 +4,7 @@ Read [../AGENTS.md](../AGENTS.md) at startup, then the phase context in [MASTER_
 
 ## Current session
 
-This is a planning-only setup. Source code and the existing README are unchanged. No new application, framework, backend, account system, test suite, or deployment was created. The user subsequently authorized publishing/merging these documents to GitHub and clarified that personal use is the active scope. Use section 0 of the master plan; public-product work is deferred.
+Implementation is authorized for personal use (see `AGENTS.md`, Current authorization). The app is `index.html` plus `sw.js` and the `api/` functions, deployed by Vercel from `main`, with the `tests/` suite. Use section 0 of the master plan; public-product work is deferred.
 
 ## Choose a focused task
 
