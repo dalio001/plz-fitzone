@@ -243,7 +243,10 @@ describe('P2-09 equipment swap — picker and confirm modal', () => {
     app.api.openReplacePicker(0);
     assert.equal(swapSec.style.display, 'block', 'visible in replace mode');
     assert.ok(swapSec.innerHTML.includes('Same muscle, other equipment'), 'title present');
-    assert.ok(swapSec.innerHTML.includes('Can&#39;t use:'), 'avoid label present');
+    assert.ok(swapSec.innerHTML.includes('Can&#39;t use right now'), 'avoid label present');
+    assert.ok(swapSec.innerHTML.includes('also train Quads'), 'muscle named in the box');
+    const listEl = app.document.getElementById('pickerList');
+    assert.ok(listEl.innerHTML.includes('All other exercises (any muscle)'), 'full list has its own title');
     assert.ok(app.api.swapAvoidEquip.includes('Barbell'), 'current equipment Barbell pre-selected');
 
     // Toggle avoid chip

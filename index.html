@@ -6007,6 +6007,8 @@
       document.getElementById('pickerSearch').value = '';
       renderPickerList();
       document.getElementById('exPickerModal').classList.add('open');
+      const pb = document.getElementById('pickerBody');
+      if (pb) pb.scrollTop = 0; // start at the suggestions
     }
 
     function toggleSwapAvoidEquip(equip) {
@@ -7492,7 +7494,7 @@
         if (pickerTarget === 'replace' && activeWorkout && replaceTargetIdx !== null && activeWorkout.exercises[replaceTargetIdx]) {
           const curItem = activeWorkout.exercises[replaceTargetIdx];
           const suggestions = getSwapSuggestions(curItem.exId, swapAvoidEquip);
-          let chipsHtml = '<div style="margin-bottom:8px;"><div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:4px;">Can&#39;t use:</div><div class="chips">';
+          let chipsHtml = '<div style="margin-bottom:8px;"><div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:4px;">Can&#39;t use right now (tap to change):</div><div class="chips">';
           EQUIPMENT.forEach(equip => {
             const isAvoided = swapAvoidEquip.indexOf(equip) >= 0;
             chipsHtml += '<button class="chip' + (isAvoided ? ' on' : '') + '" onclick="toggleSwapAvoidEquip(\'' + chipVal(equip) + '\')">' + esc(equip) + '</button>';
@@ -7511,7 +7513,13 @@
           } else {
             sugsHtml = '<div style="padding:12px; font-size:13px; color:var(--text-sub);">No suggestions match avoided equipment.</div>';
           }
-          swapSectionEl.innerHTML = '<h3>Same muscle, other equipment</h3>' + chipsHtml + sugsHtml;
+          // Framed box so the suggestions never blend into the full list below.
+          const curDef = state.exercises.find(e => e.id === curItem.exId);
+          const curMuscle = curDef ? exPrimary(curDef) : '';
+          swapSectionEl.innerHTML = '<div style="border:2px solid var(--primary); border-radius:12px; padding:10px 10px 4px; margin:4px 0 12px; background:rgba(59,130,246,0.08);">' +
+            '<h3 style="margin-top:0;">Same muscle, other equipment</h3>' +
+            (curMuscle ? '<div style="font-size:13px; color:var(--text-sub); margin:-4px 0 8px;">Suggested swaps that also train ' + esc(curMuscle) + '</div>' : '') +
+            chipsHtml + sugsHtml + '</div>';
           swapSectionEl.style.display = 'block';
         } else {
           swapSectionEl.innerHTML = '';
@@ -7526,7 +7534,9 @@
           : '';
       }
       const list = document.getElementById('pickerList');
-      list.innerHTML = (secs.recent.length ? '<h3>All exercises</h3>' : '') + secs.list.map(pickerRowHtml).join('');
+      // P2-09: in replace mode the full list always gets its own title.
+      const listTitle = pickerTarget === 'replace' ? '<h3>All other exercises (any muscle)</h3>' : (secs.recent.length ? '<h3>All exercises</h3>' : '');
+      list.innerHTML = listTitle + secs.list.map(pickerRowHtml).join('');
       /* P2-06 sticky footer: a flex sibling of the scrolling body, so it is
          always visible; shown only when at least one exercise is ticked
          (never in single-tap replace mode). Nothing overlaps the list. */
