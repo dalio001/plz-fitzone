@@ -9,7 +9,8 @@ From `docs/reviews/2026-11-01-cleanup-review.md`, no visible change:
 - **One state clean-up:** `normalizeStateShape()` replaces 5 drifted copies (load, restore, undo-restore, sync, AI undo). Undo-restore now also fixes plate settings, drop step and superset advance; sync now drops broken plans; AI undo now rebuilds history. Routine items are deliberately not rewritten (would freeze the Profile rest default).
 - **Removed:** `scoreHistExercises` (finish now uses `rebuildHistoryDerived`), `getBest1RM`'s unused `excludeId`, the volume recount in the v1→v2 migration, `dropPickerTarget`/`supersetPickerTarget`, 3 unused CSS rules, `tools/make_icons.py`, `tools/capture.mjs`, `assets/brand/plz-fitzone-logo-wide.jpg` (all in git history).
 - **Tests:** shared helpers moved into `tests/harness.mjs` (18 copies gone); new tests for the sw guard, the failed undo copy and the shared clean-up. 450 pass. Stale lines in `AGENTS.md`, `docs/WORKFLOW.md`, `mcp/README.md` fixed. Live on Vercel (v7 confirmed).
-- **Still open:** B2/B3 one 1RM and volume rule (owner decision), API clean-up, local MCP server.
+- **Local MCP server removed** (owner: "Delete"): `mcp/plz-train-mcp.mjs` and its test; `mcp/README.md` now describes the shared files. 448 tests pass.
+- **Still open:** B2/B3 one 1RM and volume rule (owner decision), API clean-up.
 
 ## 2026-11-01 — P0-07 history rebuild (personal part)
 
