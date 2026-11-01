@@ -4,7 +4,7 @@
 //    finish and after discard.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, DRAFT_KEY, STATE_KEY } from './harness.mjs';
+import { createApp, DRAFT_KEY, STATE_KEY, finishWithDrop } from './harness.mjs';
 
 function startAndTickTwo(app) {
   app.api.startRoutineWorkout('rt1');
@@ -14,13 +14,6 @@ function startAndTickTwo(app) {
   app.api.updateSetVal(0, 1, 'weight', '100');
   app.api.updateSetVal(0, 1, 'reps', '5');
   app.api.toggleSetDone(0, 1);
-}
-
-// P2-01 finish review: unticked placeholder sets open a modal before saving;
-// existing flows confirm "Drop them" so only ticked sets are saved.
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
 }
 
 describe('live workout survives reload', () => {

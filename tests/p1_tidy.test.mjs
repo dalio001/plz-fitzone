@@ -3,21 +3,7 @@
 // Runs against the REAL <script> in index.html via tests/harness.mjs.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml, STATE_KEY, DRAFT_KEY } from './harness.mjs';
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
-
-function plain(v) {
-  return JSON.parse(JSON.stringify(v));
-}
+import { createApp, loadIndexHtml, STATE_KEY, DRAFT_KEY, decodeHtmlEntities, plain } from './harness.mjs';
 
 describe('P1 tidy-up (P1-03 / P1-04 / P1-06)', () => {
   it('profile-sections-switch-and-remember', () => {

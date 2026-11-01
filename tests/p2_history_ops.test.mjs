@@ -4,13 +4,8 @@
 // month groups, id backfill, restore compatibility.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, DRAFT_KEY } from './harness.mjs';
+import { createApp, DRAFT_KEY, finishWithDrop } from './harness.mjs';
 import { loadIndexHtml } from './harness.mjs';
-
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
-}
 
 // One finished workout: single exercise, given [type, weight, reps] rows.
 function finishWorkoutWith(app, opts) {

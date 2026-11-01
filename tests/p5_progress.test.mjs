@@ -1,9 +1,7 @@
 // tests/p5_progress.test.mjs — P5-01 metric dictionary + P5-02 progress page.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, STATE_KEY } from './harness.mjs';
-
-function plain(v) { return JSON.parse(JSON.stringify(v)); }
+import { createApp, STATE_KEY, plain } from './harness.mjs';
 
 describe('P5-01 metric dictionary', () => {
   it('METRICS_VERSION is 1 and pure functions exist', () => {

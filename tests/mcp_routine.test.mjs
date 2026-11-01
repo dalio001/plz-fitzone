@@ -4,7 +4,7 @@
 // against mcp/routine-format.mjs, handler compilation and the 412 px frame.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml, STATE_KEY } from './harness.mjs';
+import { createApp, loadIndexHtml, STATE_KEY, decodeHtmlEntities } from './harness.mjs';
 import {
   validateRoutinePayload,
   buildRoutinePayload
@@ -23,16 +23,6 @@ function validPayload(name = 'Push Day') {
       { exId: 'ex7', sets: 4, reps: '5', note: 'Brace hard' }
     ]
   };
-}
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
 }
 
 function builtinIds(app) {

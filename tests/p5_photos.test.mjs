@@ -7,7 +7,7 @@
 // so it never goes stale.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, makeFakeIndexedDB, loadIndexHtml } from './harness.mjs';
+import { createApp, makeFakeIndexedDB, loadIndexHtml, decodeHtmlEntities } from './harness.mjs';
 
 const DB = 'plz_train_photos';
 const STORE = 'photos';
@@ -60,16 +60,6 @@ function fakeFile(name, type, width, height) {
 function photoIdsInGrid(app) {
   const html = app.el('photoGrid').innerHTML;
   return [...html.matchAll(/openPhotoViewer\('([^']+)'\)/g)].map((m) => m[1]);
-}
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
 }
 
 describe('P5-04 private progress photos', () => {

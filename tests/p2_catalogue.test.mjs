@@ -8,11 +8,7 @@
 // 8. Restore accepts backups with and without the new fields.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, STATE_KEY, loadIndexHtml } from './harness.mjs';
-
-function plain(v) {
-  return JSON.parse(JSON.stringify(v));
-}
+import { createApp, STATE_KEY, loadIndexHtml, plain } from './harness.mjs';
 
 function finishDone(app) {
   app.api.finishWorkout();

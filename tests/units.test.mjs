@@ -3,14 +3,7 @@
 //    10 toggles leave stored values identical; volume and best set in kg.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml } from './harness.mjs';
-
-// P2-01 finish review: unticked placeholder sets open a modal before saving;
-// existing flows confirm "Drop them" so only ticked sets are saved.
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
-}
+import { createApp, loadIndexHtml, finishWithDrop } from './harness.mjs';
 
 describe('units (canonical kg)', () => {
   it('100 kg shows as 220.5 lb', () => {

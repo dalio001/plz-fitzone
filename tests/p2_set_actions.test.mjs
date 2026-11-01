@@ -5,7 +5,7 @@
 // 3. Exercise reorder / replace / per-exercise note / plate calculator (KG+LBS).
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, DRAFT_KEY, loadIndexHtml } from './harness.mjs';
+import { createApp, DRAFT_KEY, loadIndexHtml, finishWithDrop } from './harness.mjs';
 
 function start(app, rtId = 'rt1') {
   app.api.startRoutineWorkout(rtId);
@@ -19,11 +19,6 @@ function sentinelBox(app) {
   const box = app.el('activeExercisesContainer');
   box.innerHTML = 'SENTINEL';
   return box;
-}
-
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
 }
 
 describe('P2-05 multi-digit input fix', () => {

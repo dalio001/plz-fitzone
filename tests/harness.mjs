@@ -715,3 +715,25 @@ export function createApp(options = {}) {
     },
   };
 }
+
+// Shared test helpers (were copy-pasted into many test files).
+// Finish the active workout; if the review asks, drop unfinished sets.
+export function finishWithDrop(app) {
+  app.api.finishWorkout();
+  if (app.api.finishReviewPending) app.api.finishReviewDrop();
+}
+
+export function decodeHtmlEntities(str) {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+// Copy a value out of the app's sandbox so deepEqual compares plain data.
+export function plain(v) {
+  return JSON.parse(JSON.stringify(v));
+}

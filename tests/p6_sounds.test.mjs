@@ -1,21 +1,7 @@
 // tests/p6_sounds.test.mjs — P6-08 Web Audio sounds in Profile > Settings and workout events.
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml } from './harness.mjs';
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
-
-function plain(v) {
-  return JSON.parse(JSON.stringify(v));
-}
+import { createApp, loadIndexHtml, decodeHtmlEntities, plain } from './harness.mjs';
 
 function makeFakeAudioContext() {
   class FakeGainNode {

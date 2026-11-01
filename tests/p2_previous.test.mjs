@@ -3,7 +3,7 @@
 // same-routine scope preference, target-wins prefill, tap-to-copy, units.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp } from './harness.mjs';
+import { createApp, finishWithDrop } from './harness.mjs';
 
 function assertPrevEqual(got, w, r, msg) {
   // Field-wise: objects come from the vm realm, so reference checks are off.
@@ -14,11 +14,6 @@ function assertPrevEqual(got, w, r, msg) {
 
 function assertPrevNull(got, msg) {
   assert.equal(got, null, msg || 'no previous set');
-}
-
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
 }
 
 // Fill ex-0 sets with [type, weight, reps], tick them all, save via drop.

@@ -9,22 +9,7 @@
 // undone for 5 s. Nothing is stored except the two preferences.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml, STATE_KEY } from './harness.mjs';
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
-
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
-}
+import { createApp, loadIndexHtml, STATE_KEY, finishWithDrop, decodeHtmlEntities } from './harness.mjs';
 
 // One session of rt1's first exercise (ex1, weight_reps), rows [type, w, r].
 function saveRoutineSession(app, rows) {

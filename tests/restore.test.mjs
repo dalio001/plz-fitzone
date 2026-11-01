@@ -5,9 +5,7 @@
 //    stay empty; true first run seeds defaults.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  createApp, STATE_KEY, DRAFT_KEY, BEFORE_RESTORE_KEY,
-} from './harness.mjs';
+import { createApp, STATE_KEY, DRAFT_KEY, BEFORE_RESTORE_KEY, finishWithDrop } from './harness.mjs';
 
 function baseBackup() {
   return {
@@ -30,13 +28,6 @@ function workoutBackup() {  const d1 = Date.UTC(2026, 8, 1, 10, 0, 0);
     { id: 'wk2', title: 'B', date: d1, durationSec: 1800, totalVolume: 1500, totalSets: 3, exercises: [{ exId: 'ex7', sets: [{ weight: 120, reps: 5 }] }] },
   ];
   return { b, d1, d2 };
-}
-
-// P2-01 finish review: unticked placeholder sets open a modal before saving;
-// existing flows confirm "Drop them" so only ticked sets are saved.
-function finishWithDrop(app) {
-  app.api.finishWorkout();
-  if (app.api.finishReviewPending) app.api.finishReviewDrop();
 }
 
 function withBadSet(mut) {

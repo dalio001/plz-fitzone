@@ -4,17 +4,7 @@
 // dropping the lock when the page hides) and a reject mode.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml, STATE_KEY } from './harness.mjs';
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
+import { createApp, loadIndexHtml, STATE_KEY, decodeHtmlEntities } from './harness.mjs';
 
 // Minimal Screen Wake Lock stand-in.
 function makeFakeWakeLock() {

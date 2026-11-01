@@ -3,9 +3,7 @@
 // tests/harness.mjs; dates are clock-relative so the suite never goes stale.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp, loadIndexHtml } from './harness.mjs';
-
-function plain(v) { return JSON.parse(JSON.stringify(v)); }
+import { createApp, loadIndexHtml, decodeHtmlEntities, plain } from './harness.mjs';
 
 // Local-day key for a day offset from today (the app's day boundary is local).
 function dk(offset) {
@@ -25,16 +23,6 @@ function baseBackup() {
     routines: [],
     history: [],
   };
-}
-
-function decodeHtmlEntities(str) {
-  return str
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
 }
 
 describe('P5-04 body entry and history (UI)', () => {
