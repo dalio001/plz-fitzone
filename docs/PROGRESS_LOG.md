@@ -2,6 +2,15 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-01 — Cleanup step 1 (owner said "go")
+
+From `docs/reviews/2026-11-01-cleanup-review.md`, no visible change:
+- **Bugs:** `sw.js` (now `plz-fitzone-v7`) never stores a 404/500 reply as the offline page or an asset; `saveStateWithHistory` refuses the save when the undo copy cannot be stored (was silently ignored); `api/pair.js` skips the owner lookup on disconnect.
+- **One state clean-up:** `normalizeStateShape()` replaces 5 drifted copies (load, restore, undo-restore, sync, AI undo). Undo-restore now also fixes plate settings, drop step and superset advance; sync now drops broken plans; AI undo now rebuilds history. Routine items are deliberately not rewritten (would freeze the Profile rest default).
+- **Removed:** `scoreHistExercises` (finish now uses `rebuildHistoryDerived`), `getBest1RM`'s unused `excludeId`, the volume recount in the v1→v2 migration, `dropPickerTarget`/`supersetPickerTarget`, 3 unused CSS rules, `tools/make_icons.py`, `tools/capture.mjs`, `assets/brand/plz-fitzone-logo-wide.jpg` (all in git history).
+- **Tests:** shared helpers moved into `tests/harness.mjs` (18 copies gone); new tests for the sw guard, the failed undo copy and the shared clean-up. 450 pass. Stale lines in `AGENTS.md`, `docs/WORKFLOW.md`, `mcp/README.md` fixed. Live on Vercel (v7 confirmed).
+- **Still open:** B2/B3 one 1RM and volume rule (owner decision), API clean-up, local MCP server.
+
 ## 2026-11-01 — P0-07 history rebuild (personal part)
 
 - `rebuildHistoryDerived()` recomputes every saved workout's volume, set count and PR flags oldest-first; wired into load, restore, sync pull, history edit, delete and undo. Fixes stale PR counts in later workouts after an edit or delete, and edits of old workouts being compared with later ones.
