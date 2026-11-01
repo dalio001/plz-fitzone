@@ -791,6 +791,7 @@
   <!-- P0-01: offline indicator: normal flow UNDER the header, at most 36 px
        high, so it can never cover the Continue or bottom-nav buttons. -->
   <div id="offlinePill" role="status" aria-live="polite" style="display:none; max-height:36px; overflow:hidden; padding:8px 12px; background:#0f172a; color:#e2e8f0; border-bottom:1px solid rgba(148,163,184,0.35); font-size:13px; font-weight:700; line-height:1.2; text-align:center; pointer-events:none;">Offline — your workouts are saved on this phone</div>
+  <div id="restToast" role="status" aria-live="polite" style="display:none; position:fixed; left:12px; right:12px; bottom:24px; z-index:1100; max-width:412px; margin:0 auto; padding:12px 16px; border-radius:10px; background:#1e293b; color:#f8fafc; font-size:14px; font-weight:700; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,0.5); pointer-events:none;"></div>
   <!-- P4-11: AI update banner: appears when the remote AI modified routines/plan, with Undo -->
   <div id="aiUpdateBanner" class="card" style="display:none; max-width:412px; margin:8px auto; padding:10px 14px; background:var(--bg-card); border:1px solid var(--primary); border-radius:10px;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -1074,6 +1075,14 @@
               <div id="keepAwakeNote" style="display:none; font-size:var(--font-12); color:var(--text-sub);">Not supported on this browser</div>
             </div>
             <input type="checkbox" id="keepAwakeCheck" onchange="setKeepAwake(this.checked)">
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; margin-bottom:12px;">
+            <div style="min-width:0;">
+              <div style="font-size:14px;">Rest alerts on the lock screen</div>
+              <div id="restAlertsHelp" style="font-size:var(--font-12); color:var(--text-sub);">Shows rest end time on your lock screen while the app is in the background.</div>
+              <div id="restAlertsNote" style="display:none; font-size:var(--font-12); color:var(--text-sub);">Not supported on this browser</div>
+            </div>
+            <input type="checkbox" id="restAlertsCheck" onchange="setRestAlerts(this.checked)">
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; margin-bottom:12px;">
             <div style="min-width:0;">
@@ -2375,6 +2384,7 @@
       dropStepPct: 20,
       supersetAdvance: true,
       keepAwake: false,
+      restAlerts: false,
       showTargets: true,
       sounds: { restSound: 'beep', restVolume: 'high', setVolume: 'off', prVolume: 'medium' },
       exercises: [],
@@ -2760,6 +2770,8 @@
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       // P4-10: optional keep-awake preference; old saves/backups land on false.
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false;
+      // P4-03: rest alerts on lock screen; old saves/backups land on false.
+      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false;
       // P5-05: next-target hints are on unless the owner turned them off.
       if (typeof state.showTargets !== 'boolean') state.showTargets = true;
       state.sounds = normalizeSounds(state.sounds);
@@ -3188,6 +3200,11 @@
       clearInterval(restInterval);
       stopSetClockTicker(); // P2-12
       const bar = document.getElementById('restTimerBar');
+      if (restAlertTimer !== null) {
+        clearTimeout(restAlertTimer);
+        restAlertTimer = null;
+      }
+      closeRestNotification();
       if (bar) bar.classList.remove('active');
       document.getElementById('activeWorkoutDrawer').classList.remove('open');
       document.getElementById('minimizedWorkoutBar').style.display = 'none';
@@ -6109,11 +6126,11 @@
       saveActiveSession();
     }
 
-    function tickRestTimer() {
+    function tickRestTimer(suppressSound) {
       if (restDeadline == null) { stopRestTimer(); return; }
       restRemaining = Math.max(0, Math.ceil((restDeadline - Date.now()) / 1000));
       if (restRemaining <= 0) {
-        playRestEndSound();
+        if (!suppressSound) playRestEndSound();
         stopRestTimer();
         saveActiveSession();
       } else {
@@ -6131,6 +6148,11 @@
     }
 
     function stopRestTimer() {
+      if (restAlertTimer !== null) {
+        clearTimeout(restAlertTimer);
+        restAlertTimer = null;
+      }
+      closeRestNotification();
       clearInterval(restInterval);
       restDeadline = null;
       restRemaining = 0;
@@ -6141,8 +6163,239 @@
     function updateRestDisplay() {
       const m = String(Math.floor(restRemaining / 60)).padStart(2, '0');
       const s = String(restRemaining % 60).padStart(2, '0');
-      document.getElementById('restCountdown').innerText = `${m}:${s}`;
+      const cdEl = document.getElementById('restCountdown');
+      if (cdEl) { cdEl.innerText = `${m}:${s}`; cdEl.textContent = `${m}:${s}`; }
     }
+    /* P4-03 LOCKED-SCREEN REST TIMER & NOTIFICATIONS */
+    let restAlertTimer = null;
+    let swRegistration = null;
+    let restToastTimer = null;
+
+    function restAlertsSupported() {
+      try {
+        return typeof Notification !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function restAlertsReady() {
+      try {
+        if (!state || state.restAlerts !== true) return false;
+        if (typeof Notification === 'undefined') return false;
+        if (Notification.permission !== 'granted') return false;
+        if (typeof navigator === 'undefined' || !navigator.serviceWorker) return false;
+        if (swRegistration) return true;
+        if (typeof navigator.serviceWorker.showNotification === 'function') return true;
+        if (navigator.serviceWorker.ready) return true;
+        if (typeof navigator.serviceWorker.getRegistration === 'function') return true;
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function paintRestAlertsUi() {
+      const check = document.getElementById('restAlertsCheck');
+      const note = document.getElementById('restAlertsNote');
+      const supported = restAlertsSupported();
+      const denied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+      if (check) {
+        if (!supported || denied) {
+          check.checked = false;
+          state.restAlerts = false;
+        } else {
+          check.checked = state.restAlerts === true;
+        }
+      }
+      if (note) {
+        if (!supported) {
+          note.style.display = 'block';
+          note.textContent = 'Not supported on this browser';
+        } else if (denied) {
+          note.style.display = 'block';
+          note.textContent = 'Notifications are blocked for this app';
+        } else {
+          note.style.display = 'none';
+          note.textContent = '';
+        }
+      }
+    }
+
+    function setRestAlerts(on) {
+      const check = document.getElementById('restAlertsCheck');
+      const note = document.getElementById('restAlertsNote');
+      if (!on) {
+        state.restAlerts = false;
+        saveState();
+        paintRestAlertsUi();
+        closeRestNotification();
+        if (restAlertTimer !== null) {
+          clearTimeout(restAlertTimer);
+          restAlertTimer = null;
+        }
+        return Promise.resolve(false);
+      }
+
+      if (!restAlertsSupported()) {
+        state.restAlerts = false;
+        saveState();
+        paintRestAlertsUi();
+        return Promise.resolve(false);
+      }
+
+      function requestPerm() {
+        try {
+          const res = Notification.requestPermission();
+          if (res && typeof res.then === 'function') return res;
+          return new Promise(function(resolve) {
+            Notification.requestPermission(resolve);
+          });
+        } catch (e) {
+          return Promise.resolve('denied');
+        }
+      }
+
+      return requestPerm().then(function(perm) {
+        if (perm === 'granted') {
+          state.restAlerts = true;
+          saveState();
+          paintRestAlertsUi();
+          return true;
+        } else {
+          state.restAlerts = false;
+          saveState();
+          if (check) check.checked = false;
+          if (note) {
+            note.style.display = 'block';
+            note.textContent = 'Notifications are blocked for this app';
+          }
+          return false;
+        }
+      }).catch(function() {
+        state.restAlerts = false;
+        saveState();
+        if (check) check.checked = false;
+        if (note) {
+          note.style.display = 'block';
+          note.textContent = 'Notifications are blocked for this app';
+        }
+        return false;
+      });
+    }
+
+    function getSwRegistration() {
+      try {
+        if (swRegistration) return Promise.resolve(swRegistration);
+        if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+          if (typeof navigator.serviceWorker.showNotification === 'function') {
+            return Promise.resolve(navigator.serviceWorker);
+          }
+          if (navigator.serviceWorker.ready) {
+            return Promise.resolve(navigator.serviceWorker.ready).then(function(reg) {
+              if (reg) swRegistration = reg;
+              return reg;
+            });
+          }
+          if (typeof navigator.serviceWorker.getRegistration === 'function') {
+            return Promise.resolve(navigator.serviceWorker.getRegistration()).then(function(reg) {
+              if (reg) swRegistration = reg;
+              return reg;
+            });
+          }
+        }
+      } catch (e) {}
+      return Promise.resolve(null);
+    }
+
+    function getNextRestExerciseName() {
+      if (!activeWorkout || !Array.isArray(activeWorkout.exercises)) return '';
+      for (let e = 0; e < activeWorkout.exercises.length; e++) {
+        const exItem = activeWorkout.exercises[e];
+        if (!exItem) continue;
+        const sets = exItem.sets || [];
+        if (sets.some(function(s) { return !s.done; })) {
+          const exInfo = (state.exercises || []).find(function(x) { return x.id === exItem.exId; });
+          return (exInfo && exInfo.name) ? exInfo.name : (exItem.name || '');
+        }
+      }
+      return '';
+    }
+
+    function showRestNotification(kind) {
+      try {
+        if (!restAlertsReady()) return Promise.resolve(null);
+        let title = '';
+        const options = { tag: 'plz-rest' };
+        if (kind === 'running') {
+          if (typeof restDeadline !== 'number' || !isFinite(restDeadline)) return Promise.resolve(null);
+          const d = new Date(restDeadline);
+          const hh = String(d.getHours()).padStart(2, '0');
+          const mm = String(d.getMinutes()).padStart(2, '0');
+          title = 'Resting \u2014 next set at ' + hh + ':' + mm;
+          const nextName = getNextRestExerciseName();
+          if (nextName) options.body = nextName;
+          options.silent = true;
+          options.renotify = false;
+        } else if (kind === 'done') {
+          title = 'Rest over \u2014 time for your next set';
+          options.vibrate = [200, 100, 200];
+          options.renotify = true;
+          options.requireInteraction = false;
+        } else {
+          return Promise.resolve(null);
+        }
+
+        return getSwRegistration().then(function(reg) {
+          if (reg && typeof reg.showNotification === 'function') {
+            return reg.showNotification(title, options);
+          }
+          return null;
+        }).catch(function() {
+          return null;
+        });
+      } catch (e) {
+        return Promise.resolve(null);
+      }
+    }
+
+    function closeRestNotification() {
+      try {
+        return getSwRegistration().then(function(reg) {
+          if (!reg || typeof reg.getNotifications !== 'function') return null;
+          return reg.getNotifications({ tag: 'plz-rest' }).then(function(notifications) {
+            if (Array.isArray(notifications)) {
+              notifications.forEach(function(n) {
+                try { if (n && typeof n.close === 'function') n.close(); } catch (e) {}
+              });
+            }
+          });
+        }).catch(function() {
+          return null;
+        });
+      } catch (e) {
+        return Promise.resolve(null);
+      }
+    }
+
+    function showRestToast(message) {
+      let toast = document.getElementById('restToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'restToast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('style', 'display:none; position:fixed; left:12px; right:12px; bottom:24px; z-index:1100; max-width:412px; margin:0 auto; padding:12px 16px; border-radius:10px; background:#1e293b; color:#f8fafc; font-size:14px; font-weight:700; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,0.5); pointer-events:none;');
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.style.display = 'block';
+      if (restToastTimer) clearTimeout(restToastTimer);
+      restToastTimer = setTimeout(function() {
+        if (toast) toast.style.display = 'none';
+        restToastTimer = null;
+      }, 4000);
+    }
+
 
     /* P6-08 WEB AUDIO SYSTEM & SOUNDS */
     let sharedAudioCtx = null;
@@ -6645,6 +6898,11 @@
       clearInterval(workoutInterval);
       clearInterval(restInterval);
       stopSetClockTicker(); // P2-12
+      if (restAlertTimer !== null) {
+        clearTimeout(restAlertTimer);
+        restAlertTimer = null;
+      }
+      closeRestNotification();
       if (bar) bar.classList.remove('active');
       clearActiveSessionStorage();
       document.getElementById('activeWorkoutDrawer').classList.remove('open');
@@ -9590,6 +9848,7 @@
       const advCheck = document.getElementById('supersetAdvanceCheck');
       if (advCheck) advCheck.checked = state.supersetAdvance !== false;
       paintKeepAwakeUi(); // P4-10: checkbox + unsupported note
+      paintRestAlertsUi(); // P4-03: lock-screen alerts checkbox + notes
       const snd = normalizeSounds(state.sounds);
       state.sounds = snd;
       const sRestChoice = document.getElementById('soundRestChoiceSelect');
@@ -12085,6 +12344,7 @@
       if (data.dropStepPct !== 10 && data.dropStepPct !== 20 && data.dropStepPct !== 30) data.dropStepPct = 20;
       if (typeof data.supersetAdvance !== 'boolean') data.supersetAdvance = true;
       if (typeof data.keepAwake !== 'boolean') data.keepAwake = false; // P4-10
+      if (typeof data.restAlerts !== 'boolean') data.restAlerts = false; // P4-03
       if (typeof data.showTargets !== 'boolean') data.showTargets = true; // P5-05
       data.sounds = normalizeSounds(data.sounds);
       if (typeof data.lastBackupAt === 'number' && isFinite(data.lastBackupAt) && data.lastBackupAt > 0) {
@@ -12314,6 +12574,7 @@
       if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
+      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
       if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
       state.sounds = normalizeSounds(state.sounds);
       saveState();
@@ -12360,6 +12621,7 @@
       state.plans = normalizePlans(state.plans);
       state.body = normalizeBodyEntries(state.body);
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
+      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
       if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
       state.sounds = normalizeSounds(state.sounds);
       if (typeof state.lastBackupAt !== 'number' || !isFinite(state.lastBackupAt) || state.lastBackupAt <= 0) {
@@ -12609,7 +12871,23 @@
       window.addEventListener('offline', updateOfflinePill);
       window.addEventListener('pagehide', flushDurableState);
       document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'hidden') flushDurableState();
+        if (document.visibilityState === 'hidden') {
+          flushDurableState();
+          if (restDeadline != null && restAlertsReady()) {
+            showRestNotification('running');
+            if (restAlertTimer !== null) {
+              clearTimeout(restAlertTimer);
+              restAlertTimer = null;
+            }
+            const delay = Math.max(0, restDeadline - Date.now());
+            restAlertTimer = setTimeout(function() {
+              restAlertTimer = null;
+              if (restAlertsReady()) {
+                showRestNotification('done');
+              }
+            }, delay);
+          }
+        }
       });
     } catch (e) {}
     updateOfflinePill();
@@ -12622,9 +12900,21 @@
         window.addEventListener('load', function() {
           try {
             var swReg = navigator.serviceWorker.register('./sw.js');
-            if (swReg && swReg.catch) swReg.catch(function() {});
+            if (swReg && typeof swReg.then === 'function') {
+              swReg.then(function(reg) { swRegistration = reg; }).catch(function() {});
+            } else if (swReg && swReg.catch) {
+              swReg.catch(function() {});
+            }
           } catch (e) {}
         });
+      }
+    } catch (e) {}
+
+    try {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+        Promise.resolve(navigator.serviceWorker.ready).then(function(reg) {
+          swRegistration = reg;
+        }).catch(function() {});
       }
     } catch (e) {}
 
@@ -12658,6 +12948,26 @@
       checkForUpdate();
       document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
+          // P4-03: clear background alert timer, close lock-screen notification,
+          // and check rest deadline.
+          try {
+            if (restAlertTimer !== null) {
+              clearTimeout(restAlertTimer);
+              restAlertTimer = null;
+            }
+            closeRestNotification();
+            if (restDeadline != null) {
+              if (Date.now() >= restDeadline) {
+                const overdueSec = Math.max(0, Math.round((Date.now() - restDeadline) / 1000));
+                const m = Math.floor(overdueSec / 60);
+                const s = String(overdueSec % 60).padStart(2, '0');
+                showRestToast('Rest ended ' + m + ':' + s + ' ago');
+                tickRestTimer(true); // suppress sound: no late beep!
+              } else {
+                tickRestTimer();
+              }
+            }
+          } catch (e) {}
           // P2-12: the clock may be stale after a background spell; repaint it
           // (and let a target that passed meanwhile fire its one vibration).
           try { paintRunningSetClocks(); } catch (e) {}

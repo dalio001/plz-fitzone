@@ -1,6 +1,7 @@
 /* PLZ Train service worker: offline support for the installable app. */
 /* P2-13: v5 adds the exercise-picture cache (runtime cache-first, below). */
-var CACHE_VERSION = 'plz-fitzone-v5';
+/* P4-03: v6 adds lock-screen rest timer notificationclick handler. */
+var CACHE_VERSION = 'plz-fitzone-v6';
 var CACHE_NAME = CACHE_VERSION;
 
 /* P0-01: the onboarding mascot is a page asset too — precached so the first
@@ -139,4 +140,22 @@ self.addEventListener('fetch', function(event) {
       })
     );
   }
+});
+
+/* P4-03: tap on the rest notification focuses an open app window or opens the app. */
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow('./');
+      }
+    })
+  );
 });

@@ -2,6 +2,16 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-01 — Rest timer on the locked screen (P4-03 personal part), awaiting owner phone check
+
+- Built locked-screen rest timer following `docs/pillars/plans/P4-03-lock-timer/PLAN.md` on branch `codex/p4-03-lock-timer` (no npm dependencies, no build step, no schema bump).
+- **Settings UI (`state.restAlerts`):** added "Rest alerts on the lock screen" preference under keep-awake in Profile > Settings (default false, normalized across load, backup validation, confirmRestore, undoLastRestore). Turning ON asks `Notification.requestPermission()`; refusal or unsupported environments turn the toggle off with clear explanatory note ("Notifications are blocked for this app" / "Not supported on this browser"). Logging and workouts never depend on notification permissions.
+- **Lock-screen Notifications (`showRestNotification`, `closeRestNotification`):** pure check `restAlertsReady()`. When page becomes hidden during a rest, posts a single tagged notification (`plz-rest`) showing `"Resting — next set at HH:MM"` with next exercise name, `silent: true`, `renotify: false`. Schedules best-effort timer for `"Rest over — time for your next set"` with vibration `[200, 100, 200]`.
+- **Return to Foreground & Stale Clock Guard:** on return to visible, clears background alert timer and closes notification. If `restDeadline` passed while away, immediately closes the rest bar, suppresses late audio beeps, and displays a toast `"Rest ended M:SS ago"`. If time remains, updates the countdown to the exact remaining seconds.
+- **Service Worker (`sw.js`):** added `notificationclick` handler to close notification and focus an existing window or open `./`. Bumped `CACHE_VERSION` to `plz-fitzone-v6`.
+- **Capability Matrix:** authored `docs/pillars/plans/P4-03-lock-timer/MATRIX.md` detailing lifecycle states (foreground, background, locked, killed, offline) across Android Chrome PWA, Desktop Chrome, and iOS Safari.
+- **Verification:** added `tests/p4-03-lock-timer.test.mjs` (12 tests: setting default & normalization, permission refusal/denial/unsupported notes, `restAlertsReady` pure check, hidden with running rest HH:MM notification, visibility return expired toast with no beep, visibility return remaining seconds, `stopRestTimer` and `discardWorkout` notification cleanup, set logging unaffected by permission denial, sw.js notificationclick client focus/open, handlers compile, 412 px touch/layout compliance); updated `static.test.mjs` and `p2_13_pictures.test.mjs` for v6 cache; all **434 tests pass** (422 existing + 12 new, 0 fail).
+
 ## 2026-10-31 — Equipment swap in the live workout (P2-09 personal part), awaiting owner phone check
 
 - Built personal equipment swap for live workouts following `docs/pillars/plans/P2-09-swap/PLAN.md` on branch `codex/p2-09-equipment-swap` (no npm dependencies, no build step, no schema bump).

@@ -335,7 +335,7 @@ describe('P2-13 service worker (pictures cached at runtime)', () => {
     const core = sw.context.CORE_ASSETS;
     assert.ok(Array.isArray(core) && core.length > 0, 'precache list present');
     assert.ok(!core.some((a) => String(a).includes('assets/exercises')), 'pictures are not precached');
-    assert.ok(readFileSync(SW_PATH, 'utf8').includes("var CACHE_VERSION = 'plz-fitzone-v5';"), 'cache bumped to v5');
+    assert.ok(/var CACHE_VERSION = 'plz-fitzone-v[56]';/.test(readFileSync(SW_PATH, 'utf8')), 'cache bumped to v5+');
     assert.equal(typeof sw.listeners.fetch, 'function', 'fetch handler registered');
 
     const pic = 'https://app.test/assets/exercises/ex1.webp';

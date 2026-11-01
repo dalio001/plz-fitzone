@@ -331,6 +331,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   setElapsedSec, startSetTimer, stopSetTimer, toggleSetTimer, runningSetTimer,
   stopAllSetTimers, paintRunningSetClocks, updateSetDuration, handleSetDurationChange,
   getExerciseRestSec, setExerciseRest, openRestPicker, pickRestOption, formatRestLabel,
+  startRestTimer, stopRestTimer, adjustRest, tickRestTimer,
   countUntickedSets, countDoneValidSets,
   finishReviewTickAll, finishReviewDrop, finishReviewBack, doFinishSave,
   startRoutineWorkout, doStartRoutineWorkout, startEmptyWorkout,
@@ -359,6 +360,10 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   setDropStepPct, setSupersetAdvance, calcDropWeight, addDropSet,
   keepAwakeEnabled, setKeepAwake, wakeLockSupported, requestWakeLock, releaseWakeLock,
   syncWakeLock, paintKeepAwakeUi,
+  restAlertsReady, showRestNotification, closeRestNotification,
+  setRestAlerts, paintRestAlertsUi, restAlertsSupported, showRestToast,
+  get restAlertTimer(){ return restAlertTimer; }, set restAlertTimer(v){ restAlertTimer = v; },
+  get swRegistration(){ return swRegistration; }, set swRegistration(v){ swRegistration = v; },
   get wakeLockOp(){ return wakeLockOp; },
   get wakeLockSentinel(){ return wakeLockSentinel; },
   openDropStepPicker, pickDropStep,
@@ -679,6 +684,10 @@ export function createApp(options = {}) {
     sandbox.webkitAudioContext = options.AudioContext;
     sandbox.window.AudioContext = options.AudioContext;
     sandbox.window.webkitAudioContext = options.AudioContext;
+  }
+  if (options.Notification) {
+    sandbox.Notification = options.Notification;
+    sandbox.window.Notification = options.Notification;
   }
   vm.createContext(sandbox);
   const src = options.scriptSrc || loadAppScript();
