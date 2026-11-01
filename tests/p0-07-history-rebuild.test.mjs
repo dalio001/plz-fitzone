@@ -130,3 +130,34 @@ describe('P0-07 exercise edits keep history meaning', () => {
     assert.equal(app.api.state.history[0].title, 'Push A');
   });
 });
+
+describe('one state clean-up for every way a state arrives', () => {
+  it('undo-restore fixes the settings it used to skip', () => {
+    const store = new Map();
+    const app = createApp({ store });
+    store.set('hevy_clone_state_before_restore', JSON.stringify({
+      exercises: app.api.state.exercises, routines: [], history: [wk('b', 1, [[100, 5]], { prCount: 9 }), wk('a', 2, [[80, 5]])],
+      dropStepPct: 7, supersetAdvance: 'yes', plateSettings: 'bad'
+    }));
+    app.api.undoLastRestore();
+    assert.equal(app.api.state.dropStepPct, 20);
+    assert.equal(app.api.state.supersetAdvance, true);
+    assert.equal(typeof app.api.state.plateSettings, 'object');
+    assert.equal(byId(app, 'b').prCount, 1, 'history rebuilt too');
+  });
+
+  it('sync drops broken plans and rebuilds history', () => {
+    const app = createApp();
+    app.api.applyPulledState({ plans: { notADay: { routineId: 'rt1' } }, history: [wk('b', 1, [[100, 5]], { prCount: 4 }), wk('a', 2, [[80, 5]])] }, 'app', '');
+    assert.equal(Object.keys(app.api.state.plans).length, 0, 'invalid day key dropped');
+    assert.equal(byId(app, 'b').prCount, 1);
+  });
+
+  it('running it twice changes nothing', () => {
+    const app = appWith(three());
+    app.api.normalizeStateShape();
+    const once = JSON.stringify(app.api.state);
+    app.api.normalizeStateShape();
+    assert.equal(JSON.stringify(app.api.state), once);
+  });
+});

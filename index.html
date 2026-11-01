@@ -2757,33 +2757,8 @@
       } else if (state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)) {
         state.profile = normalizeProfile(state.profile);
       }
-      // P2-06: idempotent exercise normalisation on every load (no version bump).
-      normalizeExercises(state);
-      // P2-08: idempotent history-id backfill (no version bump); old entries
-      // without ids get one, existing ids are untouched.
-      ensureHistoryIds(state.history);
-      // P0-07: stored totals and PR flags always match the sets.
-      rebuildHistoryDerived(state.history);
-      // P5-04: idempotent body-log normalisation (no version bump).
-      state.body = normalizeBodyEntries(state.body);
+      normalizeStateShape();
       if (hadSavedState) saveState();
-      if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
-      state.plateSettings = normalizePlateSettings(state.plateSettings);
-      if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
-      if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
-      // P4-10: optional keep-awake preference; old saves/backups land on false.
-      if (typeof state.keepAwake !== 'boolean') state.keepAwake = false;
-      // P4-03: rest alerts on lock screen; old saves/backups land on false.
-      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false;
-      // P5-05: next-target hints are on unless the owner turned them off.
-      if (typeof state.showTargets !== 'boolean') state.showTargets = true;
-      state.sounds = normalizeSounds(state.sounds);
-      if (typeof state.lastBackupAt !== 'number' || !isFinite(state.lastBackupAt) || state.lastBackupAt <= 0) {
-        delete state.lastBackupAt;
-      }
-      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
-        delete state.backupSnoozeUntil;
-      }
 
       hydrateSettingsControls();
       paintKeepAwakeUi(); // P4-10: note/checkbox reflect this browser
@@ -8496,6 +8471,37 @@
       return (state.history || []).filter(w => w && (w.exercises || []).some(item => item && item.exId === exId)).length;
     }
 
+    /* One clean-up for every way a whole state arrives (load, restore, undo
+       restore, sync, AI undo). Idempotent: running it twice changes nothing. */
+    function normalizeStateShape() {
+      // P2-06 exercises, P2-08 history ids, P0-07 totals and PR flags.
+      normalizeExercises(state);
+      ensureHistoryIds(state.history);
+      rebuildHistoryDerived(state.history);
+      // Routine items are NOT rewritten here: normalizeRoutineItem runs on every
+      // read, and baking it in would freeze today's Profile rest default.
+      state.plans = normalizePlans(state.plans); // P2-10
+      state.body = normalizeBodyEntries(state.body); // P5-04
+      if (state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)) {
+        state.profile = normalizeProfile(state.profile);
+      }
+      if (!state.unit) state.unit = 'KG';
+      if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
+      state.plateSettings = normalizePlateSettings(state.plateSettings); // P2-05
+      if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
+      if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
+      if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
+      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
+      if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
+      state.sounds = normalizeSounds(state.sounds);
+      if (typeof state.lastBackupAt !== 'number' || !isFinite(state.lastBackupAt) || state.lastBackupAt <= 0) {
+        delete state.lastBackupAt;
+      }
+      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
+        delete state.backupSnoozeUntil;
+      }
+    }
+
     /* ---- Detail sheet ---- */
 
     function openHistDetail(id) {
@@ -12631,32 +12637,7 @@
       if (mergedLastBackup > 0) state.lastBackupAt = mergedLastBackup;
       else delete state.lastBackupAt;
 
-      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
-        delete state.backupSnoozeUntil;
-      }
-
-      normalizeExercises(state);
-      ensureHistoryIds(state.history);
-      rebuildHistoryDerived(state.history); // P0-07
-      if (Array.isArray(state.routines)) {
-        state.routines.forEach(rt => {
-          if (Array.isArray(rt.exercises)) rt.exercises = rt.exercises.map(normalizeRoutineItem);
-        });
-      }
-      // P2-10: keep the plans that came with the backup (invalid dropped).
-      state.plans = normalizePlans(state.plans);
-      state.body = normalizeBodyEntries(state.body);
-      if (!state.unit) state.unit = 'KG';
-      if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
-      if (state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)) {
-        state.profile = normalizeProfile(state.profile);
-      }
-      if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
-      if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
-      if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
-      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
-      if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
-      state.sounds = normalizeSounds(state.sounds);
+      normalizeStateShape();
       saveState();
       closeModal('restoreModal');
       hydrateSettingsControls();
@@ -12694,22 +12675,8 @@
         return;
       }
       state = saved;
-      normalizeExercises(state);
-      if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
-      // P2-10: the snapshot was taken from a normalised state, so this is a
-      // no-op safety net for plans written by older code.
-      state.plans = normalizePlans(state.plans);
-      state.body = normalizeBodyEntries(state.body);
-      if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
-      if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
-      if (typeof state.showTargets !== 'boolean') state.showTargets = true; // P5-05
-      state.sounds = normalizeSounds(state.sounds);
-      if (typeof state.lastBackupAt !== 'number' || !isFinite(state.lastBackupAt) || state.lastBackupAt <= 0) {
-        delete state.lastBackupAt;
-      }
-      if (typeof state.backupSnoozeUntil !== 'number' || !isFinite(state.backupSnoozeUntil) || state.backupSnoozeUntil <= 0) {
-        delete state.backupSnoozeUntil;
-      }
+      // The snapshot came from a normalised state; this is a safety net for older code.
+      normalizeStateShape();
       try {
         // Write back the exact snapshot string so undo restores data byte-for-byte.
         localStorage.setItem('hevy_clone_state', raw);
@@ -13273,9 +13240,9 @@
         (newState.history || []).forEach(function(w) { if (w.id && !seen.has(w.id)) { seen.add(w.id); merged.push(w); } });
         (state.history || []).forEach(function(w) { if (w.id && !seen.has(w.id)) { seen.add(w.id); merged.push(w); } });
         state.history = merged;
-        rebuildHistoryDerived(state.history); // P0-07
       }
-      if (Array.isArray(newState.body)) state.body = normalizeBodyEntries(newState.body);
+      if (Array.isArray(newState.body)) state.body = newState.body;
+      normalizeStateShape();
 
       saveState();
 
@@ -13315,6 +13282,7 @@
               const data = await res.json();
               if (data.state) {
                 state = data.state;
+                normalizeStateShape();
                 if (data.rev) localStorage.setItem(AI_REV_KEY, String(data.rev));
                 saveState();
                 hideAiUpdateBanner();
@@ -13335,6 +13303,7 @@
         const parsed = JSON.parse(raw);
         if (parsed && parsed.state) {
           state = parsed.state;
+          normalizeStateShape();
           if (parsed.rev) localStorage.setItem(AI_REV_KEY, String(parsed.rev));
           localStorage.removeItem(AI_UNDO_KEY);
           saveState();
