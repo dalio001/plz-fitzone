@@ -207,6 +207,26 @@ describe('P4-03 hidden with running rest timer', () => {
     assert.equal(notif.options.renotify, false, 'renotify is false');
   });
 
+  it('rest ends while hidden (page alive) -> note becomes Rest over and stays open', async () => {
+    const { app, fakeReg } = makeLockApp();
+    await app.api.setRestAlerts(true);
+    app.api.startRoutineWorkout('rt1');
+    app.api.startRestTimer(90);
+    app.document.visibilityState = 'hidden';
+    app.fire('visibilitychange');
+    await new Promise((r) => setTimeout(r, 0));
+
+    app.api.restDeadline = Date.now() - 10;
+    app.api.tickRestTimer();
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+
+    const open = fakeReg.notifications.filter((n) => !n.closed);
+    assert.equal(open.length, 1, 'one note left on the lock screen');
+    assert.ok(open[0].title.includes('Rest over'), 'it says Rest over');
+    assert.equal(app.api.restDeadline, null, 'rest stopped');
+  });
+
   it('not shown when setting is off or permission denied', async () => {
     const { app, fakeReg } = makeLockApp();
     app.api.state.restAlerts = false; // off

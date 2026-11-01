@@ -6131,7 +6131,11 @@
       restRemaining = Math.max(0, Math.ceil((restDeadline - Date.now()) / 1000));
       if (restRemaining <= 0) {
         if (!suppressSound) playRestEndSound();
-        stopRestTimer();
+        // P4-03: ended while hidden (page still alive): swap the lock-screen
+        // note to "Rest over" instead of closing it.
+        const hiddenEnd = typeof document !== 'undefined' && document.visibilityState === 'hidden' && restAlertsReady();
+        stopRestTimer(hiddenEnd);
+        if (hiddenEnd) showRestNotification('done');
         saveActiveSession();
       } else {
         updateRestDisplay();
@@ -6147,12 +6151,12 @@
       saveActiveSession();
     }
 
-    function stopRestTimer() {
+    function stopRestTimer(keepNotification) {
       if (restAlertTimer !== null) {
         clearTimeout(restAlertTimer);
         restAlertTimer = null;
       }
-      closeRestNotification();
+      if (!keepNotification) closeRestNotification();
       clearInterval(restInterval);
       restDeadline = null;
       restRemaining = 0;
@@ -12882,9 +12886,8 @@
             const delay = Math.max(0, restDeadline - Date.now());
             restAlertTimer = setTimeout(function() {
               restAlertTimer = null;
-              if (restAlertsReady()) {
-                showRestNotification('done');
-              }
+              // One path for the end: tickRestTimer swaps the note to "Rest over".
+              tickRestTimer();
             }, delay);
           }
         }
