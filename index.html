@@ -6866,16 +6866,16 @@
     }
 
     /* Best Epley estimate in canonical kg; display converts via toDisplay.
-       excludeId skips one history entry (P2-08 edit-save PR check). */
+       Same rule as Records: no warm-ups, 1-12 reps (epley1RMKg). */
     function getBest1RM(exId) {
       let best = 0;
       if (isDurationEx((state.exercises || []).find(e => e.id === exId))) return 0; // P2-12: no 1RM from a hold
       state.history.forEach(w => {
         const found = w.exercises.find(e => e.exId === exId);
         if (found) {
-          found.sets.forEach(s => {
-            const rm = (Number(s.weight) || 0) * (1 + (Number(s.reps) || 0) / 30);
-            if (rm > best) best = rm;
+          metricCountingSets(found.sets).forEach(cs => {
+            const rm = epley1RMKg(cs.weight, cs.reps);
+            if (rm !== null && rm > best) best = rm;
           });
         }
       });
@@ -8378,15 +8378,16 @@
           if (!ex || !Array.isArray(ex.sets)) return;
           const durEx = isDurationEx((state.exercises || []).find(e => e.id === ex.exId));
           let exBest = 0;
-          ex.sets.forEach(s => {
-            totalSets++;
-            if (durEx) return;
-            const wt = Math.max(0, Number(s && s.weight) || 0);
-            const r = Math.max(0, Number(s && s.reps) || 0);
-            totalVolume += wt * r;
-            const est1RM = wt * (1 + r / 30);
-            if (est1RM > exBest) exBest = est1RM;
-          });
+          totalSets += ex.sets.length;
+          // B2/B3: one rule with Records and the week summary: warm-ups never
+          // count, and the 1RM estimate uses 1-12 reps only.
+          if (!durEx) {
+            metricCountingSets(ex.sets).forEach(cs => {
+              totalVolume += cs.weight * cs.reps;
+              const est1RM = epley1RMKg(cs.weight, cs.reps);
+              if (est1RM !== null && est1RM > exBest) exBest = est1RM;
+            });
+          }
           const prev = best[ex.exId] || 0;
           const isPR = !durEx && exBest > prev && prev > 0;
           if (isPR !== (ex.isPR === true)) changed = true;

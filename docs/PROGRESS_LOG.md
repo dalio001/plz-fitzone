@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-02 — B2/B3 one rule for 1RM, PRs and volume (owner: "Do what you think is best")
+
+- `rebuildHistoryDerived` and `getBest1RM` now use the Records rule (`metricCountingSets` + `epley1RMKg`): warm-ups never count, the 1RM estimate uses 1-12 reps only. Saved 🏆 flags, history-card volume, the exercise list and detail now agree with Records, Progress and the week summary. The set count still shows every set.
+- Some old saved 🏆 and volumes change once, on the next load (the rebuild already runs then).
+- Fixed a test that failed only on the first day of the week (it put a body weight on "tomorrow"). 451 tests pass.
+
 ## 2026-11-01 — Cleanup step 1 (owner said "go")
 
 From `docs/reviews/2026-11-01-cleanup-review.md`, no visible change:
@@ -10,7 +16,7 @@ From `docs/reviews/2026-11-01-cleanup-review.md`, no visible change:
 - **Removed:** `scoreHistExercises` (finish now uses `rebuildHistoryDerived`), `getBest1RM`'s unused `excludeId`, the volume recount in the v1→v2 migration, `dropPickerTarget`/`supersetPickerTarget`, 3 unused CSS rules, `tools/make_icons.py`, `tools/capture.mjs`, `assets/brand/plz-fitzone-logo-wide.jpg` (all in git history).
 - **Tests:** shared helpers moved into `tests/harness.mjs` (18 copies gone); new tests for the sw guard, the failed undo copy and the shared clean-up. 450 pass. Stale lines in `AGENTS.md`, `docs/WORKFLOW.md`, `mcp/README.md` fixed. Live on Vercel (v7 confirmed).
 - **Local MCP server removed** (owner: "Delete"): `mcp/plz-train-mcp.mjs` and its test; `mcp/README.md` now describes the shared files. 448 tests pass.
-- **Still open:** B2/B3 one 1RM and volume rule (owner decision), API clean-up.
+- **Still open:** API clean-up (B2/B3 done 2026-11-02).
 
 ## 2026-11-01 — P0-07 history rebuild (personal part)
 

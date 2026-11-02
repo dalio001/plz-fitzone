@@ -160,8 +160,10 @@ describe('P5 Weekly Summary — computeWeekSummary', () => {
     const now = Date.now();
     const ws = app.api.startOfWeekMs(now, app.api.getWeekStartDayNum());
     const prevWs = ws - 7 * 86400000;
-    const thisWeekKey = app.api.dayKeyLocal(ws + 86400000);
-    const prevWeekKey = app.api.dayKeyLocal(prevWs + 86400000);
+    // Week start, not the day after: on the first day of the week "the day
+    // after" is tomorrow, and a future body entry is refused.
+    const thisWeekKey = app.api.dayKeyLocal(ws);
+    const prevWeekKey = app.api.dayKeyLocal(prevWs);
 
     // No body data
     let sum = app.api.computeWeekSummary(ws);

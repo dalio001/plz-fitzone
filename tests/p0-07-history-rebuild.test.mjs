@@ -161,3 +161,30 @@ describe('one state clean-up for every way a state arrives', () => {
     assert.equal(JSON.stringify(app.api.state), once);
   });
 });
+
+describe('B2/B3: one rule for 1RM, PRs and volume (same as Records)', () => {
+  it('warm-up sets never add volume or earn a PR', () => {
+    const later = wk('b', 1, [[60, 5]]);
+    later.exercises[0].sets.unshift({ type: 'W', weight: 200, reps: 5, done: true });
+    const app = appWith([later, wk('a', 2, [[100, 5]])]);
+    assert.equal(byId(app, 'b').totalVolume, 300, 'only the 60x5 working set counts');
+    assert.equal(byId(app, 'b').totalSets, 2, 'the set count still shows every set');
+    assert.equal(byId(app, 'b').prCount, 0, 'a heavy warm-up is not a PR');
+    assert.ok(Math.abs(app.api.getBest1RM('ex1') - 100 * (1 + 5 / 30)) < 1e-9, 'best 1RM ignores the warm-up');
+  });
+
+  it('a set over 12 reps adds volume but never a 1RM or PR', () => {
+    const app = appWith([wk('b', 1, [[80, 20]]), wk('a', 2, [[90, 5]])]);
+    assert.equal(byId(app, 'b').totalVolume, 1600);
+    assert.equal(byId(app, 'b').prCount, 0, '80x20 is not compared as a 1RM');
+    assert.ok(Math.abs(app.api.getBest1RM('ex1') - 90 * (1 + 5 / 30)) < 1e-9);
+  });
+
+  it('the saved PR flag agrees with the Records best 1RM', () => {
+    const app = appWith([wk('c', 1, [[95, 5]]), wk('b', 2, [[80, 20]]), wk('a', 3, [[90, 5]])]);
+    const rec = app.api.exerciseRecords('ex1');
+    assert.equal(rec.bestE1RM.histId, 'c');
+    assert.equal(byId(app, 'c').prCount, 1);
+    assert.ok(Math.abs(app.api.getBest1RM('ex1') - rec.bestE1RM.valueKg) < 1e-9);
+  });
+});
