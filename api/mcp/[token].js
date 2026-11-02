@@ -14,6 +14,7 @@ import {
   validateRoutinePayload,
   formatRoutineErrors
 } from '../../mcp/routine-format.mjs';
+import { setCors, handlePreflight, sendJson, readJsonBody } from '../_http.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const cataloguePath = path.resolve(here, '../../mcp/catalogue.json');
@@ -212,13 +213,6 @@ const TOOLS = [
   }
 ];
 
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-mcp-version');
-  res.setHeader('Access-Control-Max-Age', '86400');
-}
-
 function extractToken(req) {
   if (req.query && req.query.token) return String(req.query.token).trim();
   const rawUrl = String(req.url || '');
@@ -229,8 +223,28 @@ function extractToken(req) {
   return '';
 }
 
+// Routine items as the app stores them (validated payload -> app shape).
+function toAppRoutineItems(items) {
+  return items.map(item => ({
+    exId: item.exId,
+    sets: item.sets,
+    targetReps: item.reps,
+    restSec: item.restSec,
+    note: item.note || ''
+  }));
+}
+
+// Every AI write: bump the revision and save with an undo copy of the row
+// that was read for this request. Returns the new revision.
+async function saveAiChange(owner, ownerHash, st, summary) {
+  const newRev = Number(owner.rev || 0) + 1;
+  await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary, owner);
+  return newRev;
+}
+
 async function executeTool(toolName, args, owner, ownerHash) {
-  const st = owner.state || {};
+  // A copy: the loaded row must stay unchanged, it becomes the undo copy.
+  const st = JSON.parse(JSON.stringify(owner.state || {}));
   const cat = getCatalogue();
   const validIds = cat.exercises.map(ex => ex.id);
 
@@ -418,21 +432,13 @@ async function executeTool(toolName, args, owner, ownerHash) {
     const newRoutine = {
       id: 'rt_' + Date.now(),
       name: val.routine.name,
-      exercises: val.routine.exercises.map(item => ({
-        exId: item.exId,
-        sets: item.sets,
-        targetReps: item.reps,
-        restSec: item.restSec,
-        note: item.note || ''
-      }))
+      exercises: toAppRoutineItems(val.routine.exercises)
     };
 
     if (!Array.isArray(st.routines)) st.routines = [];
     st.routines.unshift(newRoutine);
 
-    const newRev = Number(owner.rev || 0) + 1;
-    const summary = `Created routine "${newRoutine.name}"`;
-    await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary);
+    const newRev = await saveAiChange(owner, ownerHash, st, `Created routine "${newRoutine.name}"`);
 
     return { text: `Routine "${newRoutine.name}" created (ID: ${newRoutine.id}). Synced at rev ${newRev}.` };
   }
@@ -449,18 +455,10 @@ async function executeTool(toolName, args, owner, ownerHash) {
       if (!val.ok) {
         return { isError: true, text: 'Routine update rejected:\n' + formatRoutineErrors(val.errors) };
       }
-      rt.exercises = val.routine.exercises.map(item => ({
-        exId: item.exId,
-        sets: item.sets,
-        targetReps: item.reps,
-        restSec: item.restSec,
-        note: item.note || ''
-      }));
+      rt.exercises = toAppRoutineItems(val.routine.exercises);
     }
 
-    const newRev = Number(owner.rev || 0) + 1;
-    const summary = `Updated routine "${rt.name}"`;
-    await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary);
+    const newRev = await saveAiChange(owner, ownerHash, st, `Updated routine "${rt.name}"`);
 
     return { text: `Routine "${rt.name}" updated. Synced at rev ${newRev}.` };
   }
@@ -473,9 +471,7 @@ async function executeTool(toolName, args, owner, ownerHash) {
     const name = st.routines[idx].name;
     st.routines.splice(idx, 1);
 
-    const newRev = Number(owner.rev || 0) + 1;
-    const summary = `Deleted routine "${name}"`;
-    await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary);
+    const newRev = await saveAiChange(owner, ownerHash, st, `Deleted routine "${name}"`);
 
     return { text: `Routine "${name}" deleted. Synced at rev ${newRev}.` };
   }
@@ -486,9 +482,7 @@ async function executeTool(toolName, args, owner, ownerHash) {
     }
     st.plans = Object.assign({}, st.plans || {}, args.days);
 
-    const newRev = Number(owner.rev || 0) + 1;
-    const summary = 'Updated weekly workout plan';
-    await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary);
+    const newRev = await saveAiChange(owner, ownerHash, st, 'Updated weekly workout plan');
 
     return { text: `Weekly plan updated. Synced at rev ${newRev}.` };
   }
@@ -517,9 +511,7 @@ async function executeTool(toolName, args, owner, ownerHash) {
     else st.body.push(entry);
     st.body.sort((a, b) => a.date.localeCompare(b.date));
 
-    const newRev = Number(owner.rev || 0) + 1;
-    const summary = `Logged body weight ${entry.weightKg} kg on ${date}`;
-    await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary);
+    const newRev = await saveAiChange(owner, ownerHash, st, `Logged body weight ${entry.weightKg} kg on ${date}`);
 
     return { text: `Body entry for ${date} (${entry.weightKg} kg) saved. Synced at rev ${newRev}.` };
   }
@@ -574,9 +566,7 @@ async function executeTool(toolName, args, owner, ownerHash) {
     if (!Array.isArray(st.history)) st.history = [];
     st.history.unshift(newWorkout);
 
-    const newRev = Number(owner.rev || 0) + 1;
-    const summary = `Logged workout "${name}"`;
-    await saveStateWithHistory(ownerHash, st, newRev, 'ai', summary);
+    const newRev = await saveAiChange(owner, ownerHash, st, `Logged workout "${name}"`);
 
     return { text: `Workout "${name}" logged (ID: ${newWorkout.id}, Volume: ${newWorkout.totalVolume} kg). Synced at rev ${newRev}.` };
   }
@@ -584,94 +574,58 @@ async function executeTool(toolName, args, owner, ownerHash) {
   return { isError: true, text: `Unknown tool: ${toolName}` };
 }
 
-export default async function handler(req, res) {
-  setCors(res);
+// JSON-RPC error reply.
+function rpcError(res, status, id, code, message, headers) {
+  sendJson(res, status, { jsonrpc: '2.0', id: id, error: { code, message } }, headers);
+}
 
-  if (req.method === 'OPTIONS') {
-    res.statusCode = 204;
-    res.end();
-    return;
-  }
+export default async function handler(req, res) {
+  setCors(res, 'GET, POST, OPTIONS', 'Content-Type, Authorization, x-mcp-version', 86400);
+  if (handlePreflight(req, res)) return;
 
   if (req.method === 'GET') {
-    res.statusCode = 405;
-    res.setHeader('Allow', 'POST, OPTIONS');
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Method Not Allowed. MCP uses POST for JSON-RPC 2.0.' }));
+    sendJson(res, 405, { error: 'Method Not Allowed. MCP uses POST for JSON-RPC 2.0.' }, { Allow: 'POST, OPTIONS' });
     return;
   }
 
   if (req.method !== 'POST') {
-    res.statusCode = 405;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+    sendJson(res, 405, { error: 'Method Not Allowed' });
     return;
   }
 
   const token = extractToken(req);
   const ownerHash = hashToken(token);
   if (!ownerHash) {
-    res.statusCode = 401;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      jsonrpc: '2.0',
-      id: null,
-      error: { code: -32001, message: 'Unauthorized: missing connector token' }
-    }));
+    rpcError(res, 401, null, -32001, 'Unauthorized: missing connector token');
     return;
   }
 
   // Rate limiting per token (60 req / min)
   const rl = checkRateLimit('mcp:' + ownerHash, 60, 60000);
   if (!rl.allowed) {
-    res.statusCode = 429;
-    res.setHeader('Retry-After', String(rl.retryAfter));
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      jsonrpc: '2.0',
-      id: null,
-      error: { code: -32029, message: 'Rate limit exceeded. Please wait a moment.' }
-    }));
+    rpcError(res, 429, null, -32029, 'Rate limit exceeded. Please wait a moment.', { 'Retry-After': String(rl.retryAfter) });
     return;
   }
 
-  let body = req.body;
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: null,
-        error: { code: -32700, message: 'Parse error' }
-      }));
-      return;
-    }
+  const parsed = readJsonBody(req);
+  if (!parsed.ok) {
+    rpcError(res, 400, null, -32700, 'Parse error');
+    return;
   }
 
-  const msg = body || {};
+  const msg = parsed.body;
   const hasId = msg.id !== undefined && msg.id !== null;
 
   // Handle notification initialized (accept with 202)
   if (msg.method === 'notifications/initialized') {
-    res.statusCode = 202;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ ok: true }));
+    sendJson(res, 202, { ok: true });
     return;
   }
 
   try {
     const owner = await getOwnerRow(ownerHash);
     if (!owner) {
-      res.statusCode = 401;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: hasId ? msg.id : null,
-        error: { code: -32001, message: 'Unauthorized: invalid or unknown connector token' }
-      }));
+      rpcError(res, 401, hasId ? msg.id : null, -32001, 'Unauthorized: invalid or unknown connector token');
       return;
     }
 
@@ -683,9 +637,7 @@ export default async function handler(req, res) {
         ? clientProtocol
         : '2025-06-18';
 
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
+      sendJson(res, 200, {
         jsonrpc: '2.0',
         id: msg.id,
         result: {
@@ -693,25 +645,17 @@ export default async function handler(req, res) {
           capabilities: { tools: {} },
           serverInfo: SERVER_INFO
         }
-      }));
+      });
       return;
     }
 
     if (msg.method === 'ping') {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ jsonrpc: '2.0', id: msg.id, result: {} }));
+      sendJson(res, 200, { jsonrpc: '2.0', id: msg.id, result: {} });
       return;
     }
 
     if (msg.method === 'tools/list') {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        id: msg.id,
-        result: { tools: TOOLS }
-      }));
+      sendJson(res, 200, { jsonrpc: '2.0', id: msg.id, result: { tools: TOOLS } });
       return;
     }
 
@@ -721,16 +665,14 @@ export default async function handler(req, res) {
       const toolArgs = (p.arguments && typeof p.arguments === 'object') ? p.arguments : {};
       const r = await executeTool(toolName, toolArgs, owner, ownerHash);
 
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
+      sendJson(res, 200, {
         jsonrpc: '2.0',
         id: msg.id,
         result: {
           content: [{ type: 'text', text: r.text }],
           isError: !!r.isError
         }
-      }));
+      });
       return;
     }
 
@@ -740,20 +682,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      jsonrpc: '2.0',
-      id: msg.id,
-      error: { code: -32601, message: 'Method not found: ' + msg.method }
-    }));
+    rpcError(res, 200, msg.id, -32601, 'Method not found: ' + msg.method);
   } catch (err) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      jsonrpc: '2.0',
-      id: hasId ? msg.id : null,
-      error: { code: -32603, message: 'Internal error: ' + (err.message || 'unknown') }
-    }));
+    rpcError(res, 500, hasId ? msg.id : null, -32603, 'Internal error: ' + (err.message || 'unknown'));
   }
 }

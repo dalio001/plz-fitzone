@@ -13017,7 +13017,7 @@
 
         if (!res.ok) {
           const err = await res.json().catch(function() { return {}; });
-          alert(err.error || 'Pairing failed. If already paired, reset with existing token.');
+          alert(err.error || 'Pairing failed. If already paired, disconnect on the paired phone first.');
           if (btn) btn.disabled = false;
           return;
         }

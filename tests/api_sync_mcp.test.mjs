@@ -246,7 +246,7 @@ describe('P4-11 Pairing & Authentication (/api/pair)', () => {
     await pairHandler(req2, res2);
     assert.equal(res2.statusCode, 409, 'pairing is closed once an owner exists');
 
-    // Resetting with correct old token succeeds
+    // No token swap any more, even with the current token: the app never offered it.
     const newToken = 'new-shiny-token-abcdef1234567890';
     const { req: req3, res: res3 } = mockReqRes({
       method: 'POST',
@@ -254,10 +254,26 @@ describe('P4-11 Pairing & Authentication (/api/pair)', () => {
       body: { token: newToken, oldToken: token }
     });
     await pairHandler(req3, res3);
-    assert.equal(res3.statusCode, 200, 'reset succeeds with current token');
-    const newHash = hashToken(newToken);
-    assert.ok(db.plz_state.has(newHash), 'new token hash active');
-    assert.ok(!db.plz_state.has(hash), 'old token hash removed');
+    assert.equal(res3.statusCode, 409, 'token swap refused');
+    assert.ok(db.plz_state.has(hash), 'old token still active');
+
+    // Disconnect, then pairing again works (the app's way to get a new link).
+    const { req: req4, res: res4 } = mockReqRes({
+      method: 'POST',
+      url: '/api/pair',
+      body: { action: 'disconnect', oldTokenHash: hash }
+    });
+    await pairHandler(req4, res4);
+    assert.equal(res4.statusCode, 200);
+    const { req: req5, res: res5 } = mockReqRes({
+      method: 'POST',
+      url: '/api/pair',
+      body: { tokenHash: hashToken(newToken) }
+    });
+    await pairHandler(req5, res5);
+    assert.equal(res5.statusCode, 200, 'pairs again after disconnect');
+    assert.ok(db.plz_state.has(hashToken(newToken)));
+    assert.ok(!db.plz_state.has(hash));
   });
 
   it('wrong-token-401: rejected when unauthorized', async () => {
@@ -528,6 +544,8 @@ describe('P4-11 All 13 MCP Tools & Validation Errors', () => {
     // State history contains snapshot
     assert.equal(db.plz_state_history.length, 1, 'prior version saved in plz_state_history');
     assert.equal(db.plz_state_history[0].rev, initialRev);
+    assert.ok(!(db.plz_state_history[0].state.routines || []).some(r => r.name === 'Shoulders Day'),
+      'the undo copy is the state BEFORE the AI change');
   });
 });
 
@@ -664,5 +682,42 @@ describe('P4-11 App Sync & Conflict Resolution (/api/sync)', () => {
     globalThis.fetch = realFetch;
     assert.notEqual(res.statusCode, 200, 'save refused');
     assert.equal(db.plz_state.get(ownerHash).state.routines[0].name, 'Original', 'server state untouched');
+  });
+});
+
+describe('API clean-up: fewer calls, one way to send the token', () => {
+  const token = 'cleanup-token-1234567890abcdef';
+
+  beforeEach(async () => {
+    setupFakeSupabase();
+    const { req, res } = mockReqRes({ method: 'POST', url: '/api/pair', body: { token, state: { routines: [] }, rev: 1 } });
+    await pairHandler(req, res);
+  });
+
+  it('an app save costs 3 database calls (read, undo copy, update)', async () => {
+    const realFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = async (url, options) => { calls++; return realFetch(url, options); };
+    const { req, res } = mockReqRes({
+      method: 'POST',
+      url: '/api/sync',
+      headers: { authorization: `Bearer ${token}` },
+      body: { state: { routines: [] }, clientRev: 1 }
+    });
+    await syncHandler(req, res);
+    globalThis.fetch = realFetch;
+    assert.equal(res.statusCode, 200);
+    assert.equal(calls, 3);
+  });
+
+  it('sync only accepts the token in the Authorization header', async () => {
+    for (const opts of [
+      { url: `/api/sync?token=${token}`, query: { token } },
+      { url: '/api/sync', headers: { 'x-plz-token': token } }
+    ]) {
+      const { req, res } = mockReqRes(Object.assign({ method: 'GET' }, opts));
+      await syncHandler(req, res);
+      assert.equal(res.statusCode, 401);
+    }
   });
 });

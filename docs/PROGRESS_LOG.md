@@ -2,6 +2,13 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-02 — Cleanup step 3: API tidy-up (owner: "go on to the next step")
+
+- New `api/_http.js` (CORS, preflight, JSON replies, body parsing, Bearer token); `sync.js`, `pair.js` and the connector use it. About 130 lines fewer.
+- A save now costs 3 database calls instead of 4 (the row already read is passed on); undo uses the row already read too. The connector edits a copy, so the undo copy is always the state before the AI change (test proves it).
+- Removed token ways the app never used: `/api/sync` takes the token only in the `Authorization` header (no `x-plz-token`, no `?token=`), and `/api/pair` no longer swaps tokens (disconnect, then pair again). The connector link itself is unchanged.
+- 453 tests pass. Still open from the review: the database trigger (needs the schema re-run in Supabase), `vercel.json` packing, small leftovers.
+
 ## 2026-11-02 — B2/B3 one rule for 1RM, PRs and volume (owner: "Do what you think is best")
 
 - `rebuildHistoryDerived` and `getBest1RM` now use the Records rule (`metricCountingSets` + `epley1RMKg`): warm-ups never count, the 1RM estimate uses 1-12 reps only. Saved 🏆 flags, history-card volume, the exercise list and detail now agree with Records, Progress and the week summary. The set count still shows every set.

@@ -8,51 +8,23 @@ import {
   undoLastVersion,
   sanitizeStateForSync
 } from './_supabase.js';
-
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-plz-token');
-}
-
-function extractToken(req) {
-  const auth = req.headers['authorization'] || req.headers['Authorization'] || '';
-  if (auth.startsWith('Bearer ')) return auth.slice(7).trim();
-  const custom = req.headers['x-plz-token'] || '';
-  if (custom) return String(custom).trim();
-  if (req.query && req.query.token) return String(req.query.token).trim();
-  try {
-    const url = new URL(req.url, 'http://localhost');
-    const t = url.searchParams.get('token');
-    if (t) return t.trim();
-  } catch (e) {}
-  return '';
-}
+import { setCors, handlePreflight, sendJson, readJsonBody, bearerToken } from './_http.js';
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(res, 'GET, POST, OPTIONS', 'Content-Type, Authorization');
+  if (handlePreflight(req, res)) return;
 
-  if (req.method === 'OPTIONS') {
-    res.statusCode = 204;
-    res.end();
-    return;
-  }
-
-  const token = extractToken(req);
-  const ownerHash = hashToken(token);
+  // Header only: a token in the URL would end up in request logs.
+  const ownerHash = hashToken(bearerToken(req));
   if (!ownerHash) {
-    res.statusCode = 401;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Unauthorized: missing connector token' }));
+    sendJson(res, 401, { error: 'Unauthorized: missing connector token' });
     return;
   }
 
   try {
     const owner = await getOwnerRow(ownerHash);
     if (!owner) {
-      res.statusCode = 401;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Unauthorized: unknown or revoked token' }));
+      sendJson(res, 401, { error: 'Unauthorized: unknown or revoked token' });
       return;
     }
 
@@ -61,45 +33,33 @@ export default async function handler(req, res) {
         (req.url && req.url.includes('undo=1'));
 
       if (isUndo) {
-        const undone = await undoLastVersion(ownerHash);
+        const undone = await undoLastVersion(ownerHash, owner);
         if (!undone) {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'No previous version available to undo' }));
+          sendJson(res, 400, { error: 'No previous version available to undo' });
           return;
         }
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ ok: true, state: undone.state, rev: undone.rev, updated_by: 'app-undo' }));
+        sendJson(res, 200, { ok: true, state: undone.state, rev: undone.rev, updated_by: 'app-undo' });
         return;
       }
 
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
+      sendJson(res, 200, {
         ok: true,
         state: owner.state,
         rev: Number(owner.rev || 0),
         updated_at: owner.updated_at,
         updated_by: owner.updated_by,
         summary: owner.summary || ''
-      }));
+      });
       return;
     }
 
     if (req.method === 'POST') {
-      let body = req.body;
-      if (typeof body === 'string') {
-        try {
-          body = JSON.parse(body);
-        } catch (e) {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Invalid JSON body' }));
-          return;
-        }
+      const parsed = readJsonBody(req);
+      if (!parsed.ok) {
+        sendJson(res, 400, { error: 'Invalid JSON body' });
+        return;
       }
-      body = body || {};
+      const body = parsed.body;
 
       const serverRev = Number(owner.rev || 0);
       const clientRev = Number(body.clientRev !== undefined ? body.clientRev : (body.rev !== undefined ? body.rev : 0));
@@ -107,16 +67,14 @@ export default async function handler(req, res) {
 
       // Conflict detection: server advanced ahead of client's base knowledge
       if (serverRev > baseRev && owner.updated_by !== 'app') {
-        res.statusCode = 409;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({
+        sendJson(res, 409, {
           ok: false,
           conflict: true,
           serverRev: serverRev,
           serverState: owner.state,
           updated_by: owner.updated_by,
           summary: owner.summary || ''
-        }));
+        });
         return;
       }
 
@@ -124,20 +82,13 @@ export default async function handler(req, res) {
       const newRev = Math.max(serverRev, clientRev) + 1;
       const summary = typeof body.summary === 'string' ? body.summary : 'Synced from app';
 
-      await saveStateWithHistory(ownerHash, clean, newRev, 'app', summary);
-
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ ok: true, rev: newRev }));
+      await saveStateWithHistory(ownerHash, clean, newRev, 'app', summary, owner);
+      sendJson(res, 200, { ok: true, rev: newRev });
       return;
     }
 
-    res.statusCode = 405;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+    sendJson(res, 405, { error: 'Method Not Allowed' });
   } catch (err) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+    sendJson(res, 500, { error: err.message || 'Internal server error' });
   }
 }

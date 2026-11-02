@@ -95,26 +95,6 @@ export async function createOwner(ownerHash, initialState = {}, rev = 0, updated
   return Array.isArray(data) ? data[0] : data;
 }
 
-export async function resetOwner(oldOwnerHash, newOwnerHash) {
-  // Update owner_hash on plz_state
-  const res = await supabaseFetch(`/plz_state?owner_hash=eq.${encodeURIComponent(oldOwnerHash)}`, {
-    method: 'PATCH',
-    headers: { 'Prefer': 'return=representation' },
-    body: JSON.stringify({
-      owner_hash: newOwnerHash,
-      updated_at: new Date().toISOString(),
-      updated_by: 'reset',
-      summary: 'Owner token reset'
-    })
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Failed to reset owner: ${res.status} ${errText}`);
-  }
-  const data = await res.json();
-  return Array.isArray(data) ? data[0] : data;
-}
-
 export async function deleteOwner(ownerHash) {
   const res = await supabaseFetch(`/plz_state?owner_hash=eq.${encodeURIComponent(ownerHash)}`, {
     method: 'DELETE',
@@ -123,8 +103,10 @@ export async function deleteOwner(ownerHash) {
   return res.ok;
 }
 
-export async function saveStateWithHistory(ownerHash, newState, newRev, updatedBy, summary) {
-  const current = await getOwnerRow(ownerHash);
+// `loaded` is the owner row the caller already read, so a save costs 3
+// database calls (read, undo copy, update) instead of 4.
+export async function saveStateWithHistory(ownerHash, newState, newRev, updatedBy, summary, loaded) {
+  const current = loaded || await getOwnerRow(ownerHash);
   if (!current) throw new Error('Owner not found');
 
   // 1. Keep the current version for undo. If that copy cannot be stored, do not
@@ -166,7 +148,7 @@ export async function saveStateWithHistory(ownerHash, newState, newRev, updatedB
   return Array.isArray(data) ? data[0] : data;
 }
 
-export async function undoLastVersion(ownerHash) {
+export async function undoLastVersion(ownerHash, loaded) {
   // Query newest history version
   const res = await supabaseFetch(`/plz_state_history?owner_hash=eq.${encodeURIComponent(ownerHash)}&order=rev.desc&limit=1`);
   if (!res.ok) throw new Error('Failed to query history');
@@ -174,7 +156,7 @@ export async function undoLastVersion(ownerHash) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
   const previous = items[0];
-  const current = await getOwnerRow(ownerHash);
+  const current = loaded || await getOwnerRow(ownerHash);
   const nextRev = (current ? Number(current.rev || 0) : 0) + 1;
 
   // Restore state to previous version

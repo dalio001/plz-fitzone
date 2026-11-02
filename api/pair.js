@@ -1,50 +1,31 @@
-// api/pair.js — One-time pairing and token reset.
-// Once an owner exists, pairing is closed; reset only with the current token.
+// api/pair.js — One-time pairing and disconnect.
+// Once an owner exists, pairing is closed until that owner disconnects.
 
 import {
   hashToken,
   hasAnyOwner,
   getOwnerRow,
   createOwner,
-  resetOwner,
   deleteOwner,
   sanitizeStateForSync
 } from './_supabase.js';
-
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-}
+import { setCors, handlePreflight, sendJson, readJsonBody } from './_http.js';
 
 export default async function handler(req, res) {
-  setCors(res);
-
-  if (req.method === 'OPTIONS') {
-    res.statusCode = 204;
-    res.end();
-    return;
-  }
+  setCors(res, 'POST, OPTIONS', 'Content-Type, Authorization');
+  if (handlePreflight(req, res)) return;
 
   if (req.method !== 'POST') {
-    res.statusCode = 405;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Method Not Allowed. Use POST.' }));
+    sendJson(res, 405, { error: 'Method Not Allowed. Use POST.' });
     return;
   }
 
-  let body = req.body;
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Invalid JSON body.' }));
-      return;
-    }
+  const parsed = readJsonBody(req);
+  if (!parsed.ok) {
+    sendJson(res, 400, { error: 'Invalid JSON body.' });
+    return;
   }
-  body = body || {};
+  const body = parsed.body;
 
   const token = typeof body.token === 'string' ? body.token.trim() : '';
   const tokenHash = typeof body.tokenHash === 'string' ? body.tokenHash.trim() : '';
@@ -57,73 +38,40 @@ export default async function handler(req, res) {
   const action = body.action || 'pair';
 
   try {
-    // Disconnect action
     if (action === 'disconnect') {
       if (!oldHash) {
-        res.statusCode = 401;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'Disconnect requires the current token.' }));
+        sendJson(res, 401, { error: 'Disconnect requires the current token.' });
         return;
       }
       const existing = await getOwnerRow(oldHash);
       if (!existing) {
-        res.statusCode = 403;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'Invalid token for disconnect.' }));
+        sendJson(res, 403, { error: 'Invalid token for disconnect.' });
         return;
       }
       await deleteOwner(oldHash);
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ ok: true, message: 'Disconnected successfully.' }));
+      sendJson(res, 200, { ok: true, message: 'Disconnected successfully.' });
       return;
     }
 
     if (!newHash) {
-      res.statusCode = 400;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Missing new token or tokenHash.' }));
+      sendJson(res, 400, { error: 'Missing new token or tokenHash.' });
       return;
     }
 
     // Asked only here: disconnect never needs it.
-    const ownerExists = await hasAnyOwner();
-    if (!ownerExists) {
-      // First-time pairing
-      const initialState = sanitizeStateForSync(body.state || {});
-      const rev = Number(body.rev || 0);
-      await createOwner(newHash, initialState, rev, 'pair', 'Paired');
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ ok: true, message: 'Paired successfully.' }));
+    if (await hasAnyOwner()) {
+      // No token swap: the app never offered one. Disconnect, then pair again.
+      sendJson(res, 409, {
+        error: 'Pairing closed: an AI connection already exists. Disconnect it on the paired phone first.'
+      });
       return;
     }
 
-    // Owner already exists: pairing is closed unless valid old token is provided
-    if (!oldHash) {
-      res.statusCode = 409;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({
-        error: 'Pairing closed: an owner is already registered. To change or reset your token, provide the current token.'
-      }));
-      return;
-    }
-
-    const currentOwner = await getOwnerRow(oldHash);
-    if (!currentOwner) {
-      res.statusCode = 403;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Invalid current token. Token reset refused.' }));
-      return;
-    }
-
-    await resetOwner(oldHash, newHash);
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ ok: true, message: 'Owner token reset successfully.' }));
+    const initialState = sanitizeStateForSync(body.state || {});
+    const rev = Number(body.rev || 0);
+    await createOwner(newHash, initialState, rev, 'pair', 'Paired');
+    sendJson(res, 200, { ok: true, message: 'Paired successfully.' });
   } catch (err) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+    sendJson(res, 500, { error: err.message || 'Internal server error' });
   }
 }
