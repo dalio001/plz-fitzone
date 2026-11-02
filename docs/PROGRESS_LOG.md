@@ -2,6 +2,10 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-02 — Rest timer Off and safe limits for the default rest (P6-01 personal part), awaiting owner phone check
+
+- Default rest now takes 0–600 seconds; **0 switches the rest timer off** (before, 0 turned back into 90 and any number, even negative, was stored). Refused entries show the kept value. New help line under the setting. Details in the P6-01 status in `docs/pillars/06_SETTINGS_BILLING.md`. 459 tests pass.
+
 ## 2026-11-02 — Cleanup step 3: API tidy-up (owner: "go on to the next step")
 
 - New `api/_http.js` (CORS, preflight, JSON replies, body parsing, Bearer token); `sync.js`, `pair.js` and the connector use it. About 130 lines fewer.

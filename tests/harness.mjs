@@ -459,6 +459,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   get calWorkloadRange(){ return calWorkloadRange; },
   get obWelcomeIdx(){ return obWelcomeIdx; }, get obIsFirstRun(){ return obIsFirstRun; },
   PROFILE_SECTION_KEY, getProfileSection, setProfileSection, saveRestPreference, hydrateSettingsControls,
+  normalizeDefaultRest, profileRestSec,
   get activeProfileSection(){ return activeProfileSection; },
   emptyStateHtml, renderExercisesList, onExSearchInput,
   EXERCISE_PICTURES, exercisePictureHtml, exerciseThumbHtml, exerciseHowtoHtml, EXERCISE_HOWTO, muscleChartHtml, muscleChartLevels,

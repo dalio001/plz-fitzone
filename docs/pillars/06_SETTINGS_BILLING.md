@@ -46,6 +46,10 @@ Settings row, preference selector, account linking/recovery, consent/audience co
 
 - [ ] in progress, awaiting owner phone check — canonical-kg unit fix implemented in `index.html` on branch `codex/units-preserve-load`: all weights stored in kilograms (`state.schemaVersion = 2`, 1 kg = 2.20462 lb); the KG/LBS button only changes presentation via `toDisplayWeight` and input interpretation via `fromInputWeight` (kg display ≤2 decimals, lb display ≤1 decimal); active inputs, PREVIOUS column, history volume/best set, exercise est. 1RM, profile stats, PR detection and plate calculator (bar 20 kg / 45 lb) all route through the same helpers; legacy weights migrated once from the saved `state.unit` (default KG) with the untouched copy kept at `hevy_clone_state_backup_v1` (never overwritten); export includes `schemaVersion`, old imports run the same migration. Owner to verify on phone: log 100 kg, switch to LBS (shows 220.5 lb), switch back (shows 100 kg, stored values identical).
 
+### P6-01 rest-default status (2026-11-02)
+
+- [ ] in progress, awaiting owner phone check: Profile › Settings › Default Rest Timer accepts whole seconds 0–600, and **0 = Off** (no rest timer after a ticked set; before, 0 silently became 90). Blank, negative, decimal or too-long entries are refused and the box shows the kept value; a broken saved value is fixed on load (`normalizeStateShape`). One helper `profileRestSec()` replaces 23 copies of `state.defaultRest || 90`. Tests: `tests/p6_01_rest_default.test.mjs`. Still open in P6-01: theme, large text.
+
 ### Proposed packaging, still unvalidated
 
 | Layer | Proposed value | Evidence needed |

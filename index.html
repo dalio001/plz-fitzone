@@ -1024,9 +1024,12 @@
             <span style="font-size:14px;">Units</span>
             <span id="settingsUnitDisplay" style="color:var(--text-sub); font-size:14px;">KG (change with the KG button at the top)</span>
           </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <span style="font-size:14px;">Default Rest Timer (sec)</span>
-            <input type="number" id="defaultRestInput" class="set-input" style="width:80px;" value="90" onchange="saveRestPreference()">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
+            <div style="min-width:0;">
+              <div style="font-size:14px;">Default Rest Timer (sec)</div>
+              <div id="defaultRestHelp" style="font-size:var(--font-12); color:var(--text-sub);">0 = no rest timer. Up to 600 (10 min).</div>
+            </div>
+            <input type="number" id="defaultRestInput" class="set-input" style="width:80px;" value="90" min="0" max="600" step="5" inputmode="numeric" onchange="saveRestPreference()">
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <span style="font-size:14px;">Previous values from</span>
@@ -3308,7 +3311,7 @@
         const wn = Number(src.targetWeightKg);
         if (isFinite(wn) && wn >= 0 && wn <= SET_MAX_WEIGHT_KG) w = wn;
       }
-      let rest = state.defaultRest || 90;
+      let rest = profileRestSec();
       if (typeof src.restSec === 'number' && isFinite(src.restSec) && src.restSec >= 0) rest = src.restSec;
       /* P2-12: duration exercises carry a target hold time (1..86400 s). */
       let tds = null;
@@ -3556,7 +3559,7 @@
       restPickerMode = 'routine';
       const list = document.getElementById('restPickerList');
       const item = tempRoutineExercises[idx];
-      const cur = (typeof item.restSec === 'number') ? item.restSec : (state.defaultRest || 90);
+      const cur = (typeof item.restSec === 'number') ? item.restSec : profileRestSec();
       list.innerHTML = '';
       REST_OPTIONS.forEach(sec => {
         const b = document.createElement('button');
@@ -4864,7 +4867,7 @@
     function getExerciseRestSec(exIdx) {
       const ex = activeWorkout && activeWorkout.exercises && activeWorkout.exercises[exIdx];
       if (ex && typeof ex.restSec === 'number' && isFinite(ex.restSec) && ex.restSec >= 0) return ex.restSec;
-      return state.defaultRest || 90;
+      return profileRestSec();
     }
 
     function formatRestLabel(sec) {
@@ -5061,7 +5064,7 @@
           }
           // P2-03: inherit per-exercise rest; old routines without restSec use the Profile default.
           const restSec = (typeof item.restSec === 'number' && isFinite(item.restSec) && item.restSec >= 0)
-            ? item.restSec : (state.defaultRest || 90);
+            ? item.restSec : profileRestSec();
           // P2-04: prescription hints carried into the session (never auto-ticked).
           return {
             exId: item.exId,
@@ -5983,7 +5986,7 @@
         exId: orig.exId,
         sets: (orig.sets || []).map(s => Object.assign({}, s)),
         restSec: (typeof orig.restSec === 'number' && isFinite(orig.restSec) && orig.restSec >= 0)
-          ? orig.restSec : (state.defaultRest || 90),
+          ? orig.restSec : profileRestSec(),
         note: String(orig.note || '')
       };
       if (orig.supersetId) swappedFrom.supersetId = orig.supersetId;
@@ -6010,7 +6013,7 @@
         exId: orig.exId,
         sets: (orig.sets || []).map(s => Object.assign({}, s)),
         restSec: (typeof orig.restSec === 'number' && isFinite(orig.restSec) && orig.restSec >= 0)
-          ? orig.restSec : (state.defaultRest || 90),
+          ? orig.restSec : profileRestSec(),
         note: String(orig.note || '')
       };
       if (orig.supersetId) {
@@ -6047,7 +6050,7 @@
         exId: newExId,
         sets,
         restSec: (typeof ex.restSec === 'number' && isFinite(ex.restSec) && ex.restSec >= 0)
-          ? ex.restSec : (state.defaultRest || 90),
+          ? ex.restSec : profileRestSec(),
         note: ''
       };
       const prefix = exIdx + ':';
@@ -6754,7 +6757,7 @@
           if (doneSets.length === 0) return null;
           const last = doneSets[doneSets.length - 1];
           const restSec = (typeof ex.restSec === 'number' && isFinite(ex.restSec) && ex.restSec >= 0)
-            ? ex.restSec : (state.defaultRest || 90);
+            ? ex.restSec : profileRestSec();
           if (setUsesDuration(last, exType)) {
             return {
               exId: ex.exId,
@@ -7517,7 +7520,7 @@
         : { type: 'N', weight: prev ? prev.weight : '', reps: prev ? prev.reps : '', done: false };
       activeWorkout.exercises.push({
         exId,
-        restSec: (state.defaultRest || 90),
+        restSec: profileRestSec(),
         note: '',
         sets: [firstSet]
       });
@@ -7596,7 +7599,7 @@
 
       const setCount = Math.max(1, (origItem.sets || []).length);
       const restSec = (typeof origItem.restSec === 'number' && isFinite(origItem.restSec) && origItem.restSec >= 0)
-        ? origItem.restSec : (state.defaultRest || 90);
+        ? origItem.restSec : profileRestSec();
       const origEquip = origDef ? (origDef.equipment || 'Other') : 'Other';
       const newEquip = newDef ? (newDef.equipment || 'Other') : 'Other';
       const diffEquip = origEquip !== newEquip;
@@ -8429,6 +8432,7 @@
       if (state.prevScope !== 'same' && state.prevScope !== 'any') state.prevScope = 'any';
       state.plateSettings = normalizePlateSettings(state.plateSettings); // P2-05
       if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
+      state.defaultRest = normalizeDefaultRest(state.defaultRest); // P6-01
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
       if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
@@ -9002,7 +9006,7 @@
             return { type: t, weight: prev ? prev.weight : '', reps: prev ? prev.reps : '', done: false };
           });
           // History stores no per-exercise rest; fall back to the default.
-          return { exId: item.exId, supersetId: item.supersetId || null, sets, restSec: (state.defaultRest || 90), note: String(item.note || '').slice(0, 140) };
+          return { exId: item.exId, supersetId: item.supersetId || null, sets, restSec: profileRestSec(), note: String(item.note || '').slice(0, 140) };
         })
       };
       openWorkoutDrawer();
@@ -9026,7 +9030,7 @@
           sets: Math.max(1, (item.sets || []).length),
           // P2-08: save-as-routine keeps each set's type as well as the count.
           setTypes: (item.sets || []).map(s => normSetType(s && s.type)),
-          restSec: (state.defaultRest || 90),
+          restSec: profileRestSec(),
           note: item.note || ''
         }))
       });
@@ -9866,7 +9870,7 @@
       const wsSel = document.getElementById('weekStartSelect');
       if (wsSel) wsSel.value = getWeekStart();
       const rEl = document.getElementById('defaultRestInput');
-      if (rEl) rEl.value = state.defaultRest || 90;
+      if (rEl) rEl.value = profileRestSec();
       const dropSelect = document.getElementById('dropStepPctSelect');
       if (dropSelect) dropSelect.value = state.dropStepPct || 20;
       paintAiConnectUi();
@@ -11624,8 +11628,25 @@
         + '<div id="photoCompareDelta" style="text-align:center; font-size:var(--font-16); font-weight:800; margin-top:var(--space-12);">' + esc(photoDeltaText(a.date, b.date)) + '</div>';
     }
 
+    /* P6-01: Profile default rest. Whole seconds 0..600, 0 = Off (no timer).
+       Anything else (blank, negative, text, too long) falls back to 90. */
+    const DEFAULT_REST_SEC = 90;
+    const MAX_REST_SEC = 600;
+    function normalizeDefaultRest(v) {
+      if (v === '' || v === null || v === undefined) return DEFAULT_REST_SEC;
+      const n = Number(v);
+      if (!isFinite(n) || Math.floor(n) !== n || n < 0 || n > MAX_REST_SEC) return DEFAULT_REST_SEC;
+      return n;
+    }
+    function profileRestSec() {
+      return normalizeDefaultRest(state.defaultRest);
+    }
+
     function saveRestPreference() {
-      state.defaultRest = parseInt(document.getElementById('defaultRestInput').value) || 90;
+      const el = document.getElementById('defaultRestInput');
+      const typed = String(el.value).trim();
+      state.defaultRest = normalizeDefaultRest(typed);
+      if (typed !== String(state.defaultRest)) el.value = String(state.defaultRest); // entry refused: show what was kept
       saveState();
     }
 
