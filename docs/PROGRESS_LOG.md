@@ -2,6 +2,10 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-02 — Light look and larger text (P6-01 personal part), awaiting owner phone check
+
+- Settings now has **Look** (Dark / Light / Same as phone) and **Text size** (Normal / Large / Extra large). Text and buttons grow together; the bottom bar and pop-ups still fit a 375 px phone at Extra large (checked in the browser). Dark and Normal stay the default, so nothing changes until he picks them. 464 tests pass.
+
 ## 2026-11-02 — Rest timer Off and safe limits for the default rest (P6-01 personal part), awaiting owner phone check
 
 - Default rest now takes 0–600 seconds; **0 switches the rest timer off** (before, 0 turned back into 90 and any number, even negative, was stored). Refused entries show the kept value. New help line under the setting. Details in the P6-01 status in `docs/pillars/06_SETTINGS_BILLING.md`. 459 tests pass.

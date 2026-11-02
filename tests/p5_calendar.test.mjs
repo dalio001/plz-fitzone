@@ -241,7 +241,7 @@ describe('P5-03 calendar and consistency', () => {
     assert.ok(today && grid.includes('data-key="' + today + '"'), 'today cell present');
     assert.ok(grid.includes('cal-day-filled'), 'trained day filled');
     assert.ok(grid.includes('cal-day-today'), 'today outlined');
-    assert.ok(grid.includes('box-shadow:0 0 0 3px #a3e635 inset'), 'today ring style');
+    assert.ok(grid.includes('box-shadow:0 0 0 3px var(--lime-text) inset'), 'today ring style');
     assert.ok(grid.includes('openCalendarDay(\'' + today + '\')'), 'today is tappable');
   });
 

@@ -136,7 +136,7 @@ describe('P1 tidy-up (P1-03 / P1-04 / P1-06)', () => {
     const html = loadIndexHtml();
     const settingsIdx = html.indexOf('id="profileSettings"');
     assert.ok(settingsIdx > 0, 'profileSettings exists in index.html');
-    const settingsHtml = html.slice(settingsIdx, settingsIdx + 12000);
+    const settingsHtml = html.slice(settingsIdx, settingsIdx + 16000);
 
     // Profile summary & rerun onboarding containers
     assert.ok(settingsHtml.includes('id="myProfileCard"'), 'myProfileCard in settings');

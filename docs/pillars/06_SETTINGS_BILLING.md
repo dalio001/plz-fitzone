@@ -48,7 +48,11 @@ Settings row, preference selector, account linking/recovery, consent/audience co
 
 ### P6-01 rest-default status (2026-11-02)
 
-- [ ] in progress, awaiting owner phone check: Profile › Settings › Default Rest Timer accepts whole seconds 0–600, and **0 = Off** (no rest timer after a ticked set; before, 0 silently became 90). Blank, negative, decimal or too-long entries are refused and the box shows the kept value; a broken saved value is fixed on load (`normalizeStateShape`). One helper `profileRestSec()` replaces 23 copies of `state.defaultRest || 90`. Tests: `tests/p6_01_rest_default.test.mjs`. Still open in P6-01: theme, large text.
+- [ ] in progress, awaiting owner phone check: Profile › Settings › Default Rest Timer accepts whole seconds 0–600, and **0 = Off** (no rest timer after a ticked set; before, 0 silently became 90). Blank, negative, decimal or too-long entries are refused and the box shows the kept value; a broken saved value is fixed on load (`normalizeStateShape`). One helper `profileRestSec()` replaces 23 copies of `state.defaultRest || 90`. Tests: `tests/p6_01_rest_default.test.mjs`. Theme and text size added the same day (below).
+
+### P6-01 look and text size status (2026-11-02)
+
+- [ ] in progress, awaiting owner phone check: Profile › Settings › **Look** (Dark default / Light / Same as phone) and **Text size** (Normal / Large 1.12× / Extra large 1.25×). The light look only swaps the colour variables (plus four dark-only colours moved to variables: lime text, error text, rest bar, chart dot ring); text size uses CSS `zoom` on `body` so text and buttons grow together, and every screen-height size divides by `--zoom` so the bottom bar and pop-ups stay on screen. A small `hevy_clone_display_prefs` copy lets a tiny `<head>` script apply the choice before the first paint (no dark flash). Presentation only; normalised on every load/restore/sync. Tests: `tests/p6_01_look_size.test.mjs`. Not done: haptics, per-locale decimals.
 
 ### Proposed packaging, still unvalidated
 

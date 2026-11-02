@@ -11,6 +11,15 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="48x48" href="./icons/favicon-48.png">
   <title>PLZ Train - Workout Tracker</title>
+  <script id="displayPrefsBoot">
+    /* P6-01: apply the saved look and size before the first paint.
+       It has an id so the test kit still sees one plain app script. */
+    try {
+      var plzDisp = JSON.parse(localStorage.getItem('hevy_clone_display_prefs') || '{}');
+      if (plzDisp.theme === 'light' || plzDisp.theme === 'device') document.documentElement.setAttribute('data-theme', plzDisp.theme);
+      if (plzDisp.textSize === 'large' || plzDisp.textSize === 'xlarge') document.documentElement.setAttribute('data-text-size', plzDisp.textSize);
+    } catch (e) {}
+  </script>
   <style>
     :root {
       --bg-main: #0b0f19;
@@ -48,7 +57,49 @@
 
       --control-min-height: 44px;
       --brand-lime: #a3e635;
+      --lime-text: #a3e635;   /* lime used as text: darker in the light look */
+      --error-text: #fca5a5;
+      --rest-bar-bg: #1e3a8a;
+      color-scheme: dark;
+      --zoom: 1; /* P6-01 text size; screen-height sizes divide by it */
     }
+
+    /* P6-01 light look: same layout, light colours. "device" follows the phone. */
+    html[data-theme="light"] {
+      --bg-main: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-elevated: #e2e8f0;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-sub: #475569;
+      --success-bg: rgba(16, 185, 129, 0.14);
+      --lime-bg: rgba(101, 163, 13, 0.16);
+      --lime-text: #4d7c0f;
+      --error-text: #b91c1c;
+      --rest-bar-bg: #bfdbfe;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: light) {
+      html[data-theme="device"] {
+      --bg-main: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-elevated: #e2e8f0;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-sub: #475569;
+      --success-bg: rgba(16, 185, 129, 0.14);
+      --lime-bg: rgba(101, 163, 13, 0.16);
+      --lime-text: #4d7c0f;
+      --error-text: #b91c1c;
+      --rest-bar-bg: #bfdbfe;
+      color-scheme: light;
+      }
+    }
+    /* P6-01 larger text: scales text AND buttons together, so nothing clips.
+       The page height is divided by the same factor to keep the bottom bar on screen. */
+    html[data-text-size="large"] { --zoom: 1.12; }
+    html[data-text-size="xlarge"] { --zoom: 1.25; }
+    html[data-text-size] body { zoom: var(--zoom); height: calc(100dvh / var(--zoom)); }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -84,7 +135,7 @@
       gap: 6px;
     }
     .logo span { color: var(--text); }
-    .logo-plz { color: #a3e635; font-weight: 900; }
+    .logo-plz { color: var(--lime-text); font-weight: 900; }
     .logo-mascot { width: 40px; height: 40px; border-radius: 12px; display: block; }
 
     /* FOCUS & ACCESSIBILITY (P1-03) */
@@ -321,7 +372,7 @@
 
     /* REST TIMER BANNER */
     #restTimerBar {
-      background: #1e3a8a;
+      background: var(--rest-bar-bg);
       padding: 8px 16px;
       display: none;
       align-items: center;
@@ -479,7 +530,7 @@
     .set-error {
       grid-column: 1 / -1;
       font-size: 12px;
-      color: #fca5a5;
+      color: var(--error-text);
       text-align: left;
       padding: 0 4px 4px 4px;
     }
@@ -547,7 +598,7 @@
       border-radius: var(--radius-16);
       width: 100%;
       max-width: 412px;
-      max-height: 82vh;
+      max-height: calc(82vh / var(--zoom));
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -1046,6 +1097,22 @@
             </select>
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Look</span>
+            <select id="themeSelect" class="set-input" style="width:170px;" onchange="setTheme(this.value)">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="device">Same as phone</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:14px;">Text size</span>
+            <select id="textSizeSelect" class="set-input" style="width:170px;" onchange="setTextSize(this.value)">
+              <option value="normal">Normal</option>
+              <option value="large">Large</option>
+              <option value="xlarge">Extra large</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <span style="font-size:14px;">Drop set percentage</span>
             <select id="dropStepPctSelect" class="set-input" style="width:170px;" onchange="setDropStepPct(this.value)">
               <option value="10">−10%</option>
@@ -1232,7 +1299,7 @@
 
     <div class="workout-scroll">
       <span id="keepAwakePill" class="awake-pill" style="display:none;" role="status">☀ Awake</span>
-      <div id="draftSaveWarning" style="display:none; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.5); color:#fca5a5; font-size:13px; font-weight:700; padding:8px 12px; border-radius:10px; margin-bottom:10px;">⚠️ Could not save draft — storage full or blocked. Keep this screen open until you finish.</div>
+      <div id="draftSaveWarning" style="display:none; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.5); color:var(--error-text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:10px; margin-bottom:10px;">⚠️ Could not save draft — storage full or blocked. Keep this screen open until you finish.</div>
       <input type="text" id="activeWorkoutTitle" class="input-field" style="font-size:18px; font-weight:800;" placeholder="Workout Name" oninput="onWorkoutTitleInput(this.value)">
       <div id="activeExercisesContainer"></div>
 
@@ -2376,6 +2443,8 @@
       keepAwake: false,
       restAlerts: false,
       showTargets: true,
+      theme: 'dark', // P6-01: 'dark' | 'light' | 'device'
+      textSize: 'normal', // P6-01: 'normal' | 'large' | 'xlarge'
       sounds: { restSound: 'beep', restVolume: 'high', setVolume: 'off', prVolume: 'medium' },
       exercises: [],
       routines: [],
@@ -8030,7 +8099,7 @@
 
         let polylinePoints = chartPoints.map((p, i) => (xScale(i) || 0) + ',' + (yScale(p.y || 0) || 0)).join(' ');
         let dotsHtml = chartPoints.map((p, i) => {
-          return '<circle cx="' + (xScale(i) || 0) + '" cy="' + (yScale(p.y || 0) || 0) + '" r="3.5" fill="#3b82f6" stroke="#151c2c" stroke-width="1.5"/>';
+          return '<circle cx="' + (xScale(i) || 0) + '" cy="' + (yScale(p.y || 0) || 0) + '" r="3.5" fill="#3b82f6" style="stroke:var(--bg-card)" stroke-width="1.5"/>';
         }).join('');
 
         // Min/max labels
@@ -8433,6 +8502,9 @@
       state.plateSettings = normalizePlateSettings(state.plateSettings); // P2-05
       if (state.dropStepPct !== 10 && state.dropStepPct !== 20 && state.dropStepPct !== 30) state.dropStepPct = 20;
       state.defaultRest = normalizeDefaultRest(state.defaultRest); // P6-01
+      state.theme = normalizeTheme(state.theme); // P6-01
+      state.textSize = normalizeTextSize(state.textSize);
+      applyDisplayPrefs();
       if (typeof state.supersetAdvance !== 'boolean') state.supersetAdvance = true;
       if (typeof state.keepAwake !== 'boolean') state.keepAwake = false; // P4-10
       if (typeof state.restAlerts !== 'boolean') state.restAlerts = false; // P4-03
@@ -9067,6 +9139,36 @@
       return getWeekStart() === 'sun' ? 0 : 1;
     }
 
+    /* P6-01 look and text size. Presentation only: nothing else changes.
+       A small copy is kept so <head> can apply it before the first paint. */
+    const THEMES = ['dark', 'light', 'device'];
+    const TEXT_SIZES = ['normal', 'large', 'xlarge'];
+    function normalizeTheme(v) { return THEMES.indexOf(v) >= 0 ? v : 'dark'; }
+    function normalizeTextSize(v) { return TEXT_SIZES.indexOf(v) >= 0 ? v : 'normal'; }
+
+    function applyDisplayPrefs() {
+      const theme = normalizeTheme(state.theme);
+      const size = normalizeTextSize(state.textSize);
+      const root = document.documentElement;
+      if (root) {
+        if (theme === 'dark') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme);
+        if (size === 'normal') root.removeAttribute('data-text-size'); else root.setAttribute('data-text-size', size);
+      }
+      try { localStorage.setItem('hevy_clone_display_prefs', JSON.stringify({ theme: theme, textSize: size })); } catch (e) {}
+    }
+
+    function setTheme(v) {
+      state.theme = normalizeTheme(v);
+      applyDisplayPrefs();
+      saveState();
+    }
+
+    function setTextSize(v) {
+      state.textSize = normalizeTextSize(v);
+      applyDisplayPrefs();
+      saveState();
+    }
+
     function setWeekStart(v) {
       // Preference only; stored sessions are never modified.
       state.weekStart = (v === 'sun') ? 'sun' : 'mon';
@@ -9426,7 +9528,7 @@
           else if (status === 'missed') cellStyle += ' background:var(--bg-elevated); color:var(--text-sub); border:1px dashed var(--border); cursor:pointer;';
           else cellStyle += ' background:var(--bg-elevated); color:var(--text);' + (c.inMonth ? ' cursor:pointer;' : '');
           /* Today keeps a lime ring, also on a trained (blue) day. */
-          if (c.isToday) cellStyle += ' box-shadow:0 0 0 3px #a3e635 inset;' + (filled ? '' : ' font-weight:800; color:#a3e635;');
+          if (c.isToday) cellStyle += ' box-shadow:0 0 0 3px var(--lime-text) inset;' + (filled ? '' : ' font-weight:800; color:var(--lime-text);');
           let click = '';
           if (c.inMonth && c.key) {
             click = filled
@@ -9434,7 +9536,7 @@
               : ' onclick="openPlanDay(\'' + esc(c.key) + '\')" role="button" tabindex="0"';
           }
           const badge = (filled && c.count > 1) ? '<div style="font-size:9px; font-weight:700; opacity:0.9;">' + c.count + '×</div>' : '';
-          const doneBadge = (status === 'done') ? '<div style="font-size:9px; font-weight:800; color:#a3e635;">✓</div>' : '';
+          const doneBadge = (status === 'done') ? '<div style="font-size:9px; font-weight:800; color:var(--lime-text);">✓</div>' : '';
           /* Planned/missed day: the routine's first word ("Push"), or "Rest". */
           const planShort = plan ? (plan.kind === 'rest' ? 'Rest' : String(planLabel(plan, state.routines)).split(/[\s(]/)[0].slice(0, 6)) : '';
           const planDot = (!filled && status !== 'none') ? '<div style="font-size:9px; font-weight:700; max-width:100%; overflow:hidden; white-space:nowrap; color:' + (status === 'missed' ? 'var(--text-sub)' : '#a3e635') + ';">' + esc(status === 'missed' ? 'missed' : planShort) + '</div>' : '';
@@ -9869,6 +9971,10 @@
       if (plEl) plEl.value = ps.platesLb.join(', ');
       const wsSel = document.getElementById('weekStartSelect');
       if (wsSel) wsSel.value = getWeekStart();
+      const thSel = document.getElementById('themeSelect');
+      if (thSel) thSel.value = normalizeTheme(state.theme);
+      const tsSel = document.getElementById('textSizeSelect');
+      if (tsSel) tsSel.value = normalizeTextSize(state.textSize);
       const rEl = document.getElementById('defaultRestInput');
       if (rEl) rEl.value = profileRestSec();
       const dropSelect = document.getElementById('dropStepPctSelect');
@@ -10549,7 +10655,7 @@
       }).join(' ');
       const dotsHtml = points.map(function (p, i) {
         return '<circle cx="' + (xScale(i) || 0) + '" cy="' + (yScale(ys[i]) || 0)
-          + '" r="3.5" fill="#3b82f6" stroke="#151c2c" stroke-width="1.5"/>';
+          + '" r="3.5" fill="#3b82f6" style="stroke:var(--bg-card)" stroke-width="1.5"/>';
       }).join('');
       const maxLabelY = yScale(maxVal);
       const minLabelY = yScale(minVal);
@@ -11459,7 +11565,7 @@
       }
       const url = photoObjectUrl(photo.blob || photo.thumbBlob);
       const alt = photoAltText(photo);
-      el.innerHTML = '<img src="' + esc(url) + '" alt="' + esc(alt) + '" style="display:block; width:100%; height:auto; max-height:55vh; object-fit:contain; background:#000; border-radius:var(--radius-12);">'
+      el.innerHTML = '<img src="' + esc(url) + '" alt="' + esc(alt) + '" style="display:block; width:100%; height:auto; max-height:calc(55vh / var(--zoom)); object-fit:contain; background:#000; border-radius:var(--radius-12);">'
         + '<div style="display:flex; align-items:center; gap:var(--space-8); flex-wrap:wrap; margin-top:var(--space-12);">'
         + '<span style="font-weight:700; font-size:var(--font-14);">' + esc(photoDateText(photo.date)) + '</span>'
         + '<span class="badge">' + esc(photo.pose) + '</span>'
@@ -11596,7 +11702,7 @@
       // Full picture, not the 240 px thumb: compare cards are ~half the screen wide.
       const url = photoObjectUrl(photo.blob || photo.thumbBlob);
       return '<div style="min-width:0; background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-12); overflow:hidden;">'
-        + '<img src="' + esc(url) + '" alt="' + esc(photoAltText(photo)) + '" style="display:block; width:100%; height:auto; max-height:40vh; object-fit:contain; background:#000;">'
+        + '<img src="' + esc(url) + '" alt="' + esc(photoAltText(photo)) + '" style="display:block; width:100%; height:auto; max-height:calc(40vh / var(--zoom)); object-fit:contain; background:#000;">'
         + '<div style="padding:var(--space-8); min-width:0;">'
         + '<div style="font-size:var(--font-12); color:var(--text-sub);">Photo ' + esc(label) + '</div>'
         + '<div style="font-weight:700; font-size:var(--font-14);">' + esc(photoDateText(photo.date)) + '</div>'
