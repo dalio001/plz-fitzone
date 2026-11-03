@@ -112,6 +112,35 @@ describe('P2-15 program cycle', () => {
     assert.ok(text().includes('Day 3 of 8'));
     assert.ok(text().includes('⏭ Skip'));
     app.api.setProgramView(fid, 'calendar');
-    assert.ok(text().includes('prog-day-today'));
+    assert.ok(text().includes('prog-cell-today'));
+    assert.ok(text().includes('data-pday="8"'), 'one cell per cycle day');
+    assert.ok(!text().includes('data-pday="9"'));
+  });
+
+  it('compact cards: no exercise names, Start and ⋯ only; Edit and Duplicate are in the menu', () => {
+    const { app } = programApp();
+    app.api.renderRoutines();
+    const list = app.el('routinesList');
+    const html = Array.from(list.children || list.childNodes || []).map((k) => k.innerHTML || '').join(' ');
+    assert.ok(!html.includes('Bench Press'), 'no exercise names on the card');
+    assert.ok(!html.includes('✏️ Edit'));
+    assert.ok(html.includes('rt-start'));
+    app.api.openRoutineMenu('rt1');
+    const menu = app.el('folderSheetBody').innerHTML;
+    ['✏️ Edit', '⧉ Duplicate', '📅 Change day', '📁 Move to folder', '🗄 Archive', '✕ Delete'].forEach((t) => assert.ok(menu.includes(t), t));
+  });
+
+  it('a workout moves to another cycle day (drag or the Day picker); ticks stay', () => {
+    const store = new Map();
+    const { app, fid } = programApp(store);
+    app.api.markProgram(fid, 'rt3', 'skipped');
+    assert.equal(app.api.moveProgramDay(fid, 'rt3', 2), true);
+    assert.equal(app.api.moveProgramDay(fid, 'rt3', 9), false, 'outside the cycle refused');
+    assert.equal(app.api.moveProgramDay(fid, 'rt1', 0), true, 'No day');
+    const p = createApp({ store }).api.state.folders[0].program;
+    same(p.days, { rt2: 3, rt3: 2 });
+    assert.equal(p.marks.rt3, 'skipped');
+    app.api.openProgramItem(fid, 'rt2');
+    assert.ok(app.el('folderSheetBody').innerHTML.includes('▶ Start workout'));
   });
 });

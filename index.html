@@ -140,19 +140,47 @@
     .folder-head { display: flex; gap: 8px; align-items: stretch; margin: 16px 0 10px; }
     .folder-toggle { flex: 1; min-height: 48px; justify-content: flex-start; text-align: left; font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; }
     .folder-count { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--text-sub); background: var(--bg-elevated); border-radius: 999px; padding: 2px 10px; }
-    .folder-add { min-height: 44px; margin-bottom: 4px; color: var(--text-sub); border-style: dashed; }
+    .folder-add { min-height: 38px; margin-bottom: 4px; font-size: 13px; color: var(--text-sub); border-style: dashed; background: transparent; }
     .folder-archive-head { min-height: 44px; margin-top: 20px; color: var(--text-sub); }
     .archive-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .archive-row:last-child { border-bottom: none; }
-    .prog-strip { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; margin: -4px 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-    .prog-done b, .prog-chip.prog-done { color: var(--lime-text); }
-    .prog-skipped { opacity: 0.6; }
-    .prog-late b { color: var(--error-text); }
-    .prog-day { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .prog-day:last-child { border-bottom: none; }
-    .prog-day-today { box-shadow: inset 3px 0 0 var(--lime-text); padding-left: 8px; }
-    .prog-day-label { width: 112px; flex: none; font-size: 12px; font-weight: 700; color: var(--text-sub); padding-top: 10px; }
-    .prog-chip { min-height: 40px; margin: 0 6px 6px 0; font-size: 13px; text-align: left; }
+    /* Compact routine card: name, one short line, Start, ⋯ and fine up/down. */
+    .rt-card { padding: 10px 10px 10px 14px; margin-bottom: 8px; }
+    .rt-row { display: flex; align-items: center; gap: 6px; }
+    .rt-main { flex: 1; min-width: 0; }
+    .rt-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rt-meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rt-start { min-width: 44px; min-height: 40px; padding: 0 12px; font-size: 15px; }
+    .rt-more { min-width: 36px; min-height: 40px; padding: 0 8px; }
+    .rt-move { display: flex; flex-direction: column; gap: 2px; }
+    .rt-move .btn { min-width: 28px; min-height: 19px; padding: 0; font-size: 9px; line-height: 1; border-radius: 6px; color: var(--text-sub); }
+    .rt-prog { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; }
+    .rt-prog .btn { min-height: 30px; padding: 0 10px; font-size: 12px; }
+    .prog-done b, .prog-done .rt-prog-label { color: var(--lime-text); }
+    .prog-late .rt-prog-label { color: var(--error-text); }
+    .prog-skipped .rt-prog-label { opacity: 0.6; }
+    .prog-bar { padding: 10px 12px; margin-bottom: 8px; }
+    .prog-bar-row { display: flex; align-items: center; gap: 8px; }
+    .prog-seg { display: flex; flex: 1; background: var(--bg-elevated); border-radius: 10px; padding: 3px; gap: 3px; }
+    .prog-seg .btn { flex: 1; min-height: 34px; font-size: 13px; padding: 0 6px; border: none; background: transparent; }
+    .prog-seg .btn.on { background: var(--primary); color: #fff; }
+    .prog-reset { min-width: 40px; min-height: 40px; padding: 0; }
+    .prog-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .prog-cal-head { text-align: center; font-size: 10px; color: var(--text-sub); font-weight: 700; padding-bottom: 2px; }
+    .prog-cell { min-height: 56px; border-radius: 8px; background: var(--bg-elevated); padding: 3px 2px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .prog-cell-out { background: transparent; opacity: 0.35; }
+    .prog-cell-today { box-shadow: 0 0 0 2px var(--lime-text) inset; }
+    .prog-cell-drop { box-shadow: 0 0 0 2px var(--primary) inset; background: var(--bg-card); }
+    .prog-cell-num { font-size: 10px; color: var(--text-sub); text-align: center; line-height: 1.2; }
+    .prog-cell-today .prog-cell-num { color: var(--lime-text); font-weight: 800; }
+    .prog-chip { display: block; width: 100%; font-size: 10px; font-weight: 700; line-height: 1.2; padding: 4px 2px; border-radius: 6px; border: none; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--primary); color: #fff; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+    .prog-chip.prog-done { background: var(--lime-text); color: #111; }
+    .prog-chip.prog-skipped { background: var(--bg-card); color: var(--text-sub); text-decoration: line-through; }
+    .prog-chip.prog-late { background: transparent; color: var(--error-text); box-shadow: 0 0 0 1px var(--error-text) inset; }
+    .prog-chip-ghost { position: fixed; z-index: 9999; pointer-events: none; width: auto; min-width: 56px; padding: 6px 10px; font-size: 12px; opacity: 0.92; box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+    .prog-unplaced { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-sub); }
+    .prog-unplaced .prog-chip { width: auto; padding: 6px 10px; font-size: 12px; }
+    .prog-hint { font-size: 11px; color: var(--text-sub); margin-top: 8px; text-align: center; }
     .logo-mascot { width: 40px; height: 40px; border-radius: 12px; display: block; }
 
     /* FOCUS & ACCESSIBILITY (P1-03) */
@@ -3381,29 +3409,28 @@
       renderRoutineArchive(container);
     }
 
+    /* Compact card (owner, 2026-11-03): no exercise names, no big buttons.
+       Edit / Duplicate / Move / Archive / Delete live in the ⋯ menu. */
     function routineCard(rt, folder) {
-      const exNames = (rt.exercises || []).map(item => {
-        const ex = state.exercises.find(e => e.id === item.exId);
-        return ex ? `${item.sets}x ${esc(ex.name)}` : '';
-      }).filter(Boolean).join(' • ');
-
+      const n = (rt.exercises || []).length;
+      const rid = esc(rt.id);
+      const prog = folder && folder.program ? folder.program : null;
+      const st = prog ? programItemStatus(prog, rt) : '';
       const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = (folder && folder.program ? programStripHtml(folder, rt) : '') + `
-        <div class="routine-card-header">
-          <div class="routine-title">${rt.name}</div>
-          <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteRoutine('${rt.id}')">✕</button>
-        </div>
-        <div class="routine-ex-list">${exNames || 'No exercises added'}</div>
-        <button class="btn btn-primary btn-block" onclick="startRoutineWorkout('${rt.id}')">Start Routine</button>
-        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-          <button class="btn" style="flex:1; min-height:44px;" onclick="editRoutine('${rt.id}')">✏️ Edit</button>
-          <button class="btn" style="flex:1; min-height:44px;" onclick="duplicateRoutine('${rt.id}')">⧉ Duplicate</button>
-          <button class="btn" style="min-height:44px; min-width:44px;" onclick="openRoutineMenu('${rt.id}')" aria-label="More">⋯</button>
-          <button class="btn" style="min-height:44px; min-width:44px;" onclick="moveRoutine('${rt.id}', -1)">▲</button>
-          <button class="btn" style="min-height:44px; min-width:44px;" onclick="moveRoutine('${rt.id}', 1)">▼</button>
-        </div>
-      `;
+      card.className = 'card rt-card' + (prog ? ' prog-' + st : '');
+      card.innerHTML = `
+        <div class="rt-row">
+          <div class="rt-main">
+            <div class="rt-name routine-title">${esc(rt.name)}</div>
+            <div class="rt-meta">${n ? n + (n === 1 ? ' exercise' : ' exercises') : 'No exercises yet'}</div>
+          </div>
+          <button class="btn btn-primary rt-start" data-r="${rid}" onclick="startRoutineWorkout(this.getAttribute('data-r'))" aria-label="Start">▶</button>
+          <button class="btn rt-more" data-r="${rid}" onclick="openRoutineMenu(this.getAttribute('data-r'))" aria-label="More">⋯</button>
+          <div class="rt-move">
+            <button class="btn" data-r="${rid}" onclick="moveRoutine(this.getAttribute('data-r'), -1)" aria-label="Move up">▲</button>
+            <button class="btn" data-r="${rid}" onclick="moveRoutine(this.getAttribute('data-r'), 1)" aria-label="Move down">▼</button>
+          </div>
+        </div>` + (prog ? programStripHtml(folder, rt) : '');
       return card;
     }
 
@@ -3663,7 +3690,21 @@
       const rt = state.routines.find(r => r && r.id === id);
       if (!rt) return;
       const b = (label, fn) => '<button class="btn btn-block" style="min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="' + fn + '(this.getAttribute(\'data-id\'))">' + label + '</button>';
-      openFolderSheet(rt.name, b('📁 Move to folder', 'openMoveRoutine') + b('🗄 Archive', 'archiveRoutine'));
+      const f = findFolder(routineFolderId(rt));
+      openFolderSheet(rt.name, b('✏️ Edit', 'menuEditRoutine') + b('⧉ Duplicate', 'menuDuplicateRoutine')
+        + (f && f.program ? '<button class="btn btn-block" style="min-height:44px; margin-bottom:8px;" data-f="' + esc(f.id) + '" data-r="' + esc(id) + '" onclick="openProgramItem(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'))">📅 Change day</button>' : '')
+        + b('📁 Move to folder', 'openMoveRoutine') + b('🗄 Archive', 'archiveRoutine')
+        + '<button class="btn btn-block btn-danger" style="min-height:44px;" data-id="' + esc(id) + '" onclick="closeModal(\'folderSheetModal\'); deleteRoutine(this.getAttribute(\'data-id\'))">✕ Delete</button>');
+    }
+
+    function menuEditRoutine(id) {
+      closeModal('folderSheetModal');
+      editRoutine(id);
+    }
+
+    function menuDuplicateRoutine(id) {
+      closeModal('folderSheetModal');
+      duplicateRoutine(id);
     }
 
     function openMoveRoutine(id) {
@@ -3797,16 +3838,13 @@
       const label = day ? programDayLabel(prog, day) : 'No day yet';
       const fid = esc(f.id);
       const rid = esc(rt.id);
+      const btn = (txt, val) => '<button class="btn" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), ' + val + ')">' + txt + '</button>';
       let btns = '';
-      if (prog.marks[rt.id]) {
-        btns = '<button class="btn" style="min-height:40px;" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), null)">↩ Undo</button>';
-      } else if (st !== 'done') {
-        btns = '<button class="btn" style="min-height:40px;" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), \'done\')">✓ Done</button>'
-          + '<button class="btn" style="min-height:40px;" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), \'skipped\')">⏭ Skip</button>';
-      }
-      return '<div class="prog-strip prog-' + st + '"><span><b>' + esc(label) + '</b>'
+      if (prog.marks[rt.id]) btns = btn('↩ Undo', 'null');
+      else if (st !== 'done') btns = btn('✓ Done', '\'done\'') + btn('⏭ Skip', '\'skipped\'');
+      return '<div class="rt-prog prog-strip"><span class="rt-prog-label"><b>' + esc(label) + '</b>'
         + (PROGRAM_STATUS_TEXT[st] ? ' · ' + PROGRAM_STATUS_TEXT[st] : '') + '</span>'
-        + '<span style="display:flex; gap:6px;">' + btns + '</span></div>';
+        + '<span style="display:flex; gap:4px; flex:none;">' + btns + '</span></div>';
     }
 
     function programBar(f, rts) {
@@ -3819,40 +3857,153 @@
       const fid = esc(f.id);
       const bar = document.createElement('div');
       bar.className = 'card prog-bar';
-      bar.innerHTML = '<div style="font-weight:800; font-size:15px;">📅 ' + esc(where) + '</div>'
-        + '<div style="font-size:13px; color:var(--text-sub); margin:4px 0 10px;">' + sum.done + ' done · ' + sum.skipped + ' skipped · ' + sum.left + ' to do</div>'
-        + '<div style="display:flex; gap:6px; flex-wrap:wrap;">'
-        + '<button class="btn' + (prog.view === 'list' ? ' btn-primary' : '') + '" style="flex:1; min-height:44px;" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'list\')">☰ List</button>'
-        + '<button class="btn' + (prog.view === 'calendar' ? ' btn-primary' : '') + '" style="flex:1; min-height:44px;" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'calendar\')">📅 Calendar</button>'
-        + '<button class="btn" style="flex:1; min-height:44px;" data-f="' + fid + '" onclick="openProgramSetup(this.getAttribute(\'data-f\'), true)">🔄 Reset</button>'
-        + '</div>';
+      bar.innerHTML = '<div style="display:flex; justify-content:space-between; gap:8px; font-size:13px; margin-bottom:8px;"><b>📅 ' + esc(where) + '</b>'
+        + '<span style="color:var(--text-sub);">' + sum.done + ' done · ' + sum.skipped + ' skipped · ' + sum.left + ' to do</span></div>'
+        + '<div class="prog-bar-row"><div class="prog-seg">'
+        + '<button class="btn' + (prog.view === 'list' ? ' on' : '') + '" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'list\')">☰ List</button>'
+        + '<button class="btn' + (prog.view === 'calendar' ? ' on' : '') + '" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'calendar\')">📅 Calendar</button>'
+        + '</div><button class="btn prog-reset" data-f="' + fid + '" onclick="openProgramSetup(this.getAttribute(\'data-f\'), true)" aria-label="Reset cycle">🔄</button></div>';
       return bar;
     }
 
-    /* Calendar view: one row per cycle day; tap a workout to start it. */
+    /* Calendar view: a real week grid over the cycle (same week start as the
+       History calendar). Drag a workout to another day; tap it for options. */
     function programCalendar(f, rts) {
       const prog = f.program;
       const today = todayPlanKey();
-      const box = document.createElement('div');
-      box.className = 'card';
-      let html = '';
-      for (let d = 1; d <= prog.length; d++) {
-        const key = programDayKey(prog, d);
-        const items = rts.filter(rt => prog.days[rt.id] === d);
-        html += '<div class="prog-day' + (key === today ? ' prog-day-today' : '') + '"><div class="prog-day-label">' + esc(programDayLabel(prog, d)) + '</div><div>'
-          + (items.length ? items.map(rt => {
-            const st = programItemStatus(prog, rt, today);
-            const icon = { done: '✅', skipped: '⏭', late: '⚠️', today: '📌' }[st] || '•';
-            return '<button class="btn prog-chip prog-' + st + '" data-r="' + esc(rt.id) + '" onclick="startRoutineWorkout(this.getAttribute(\'data-r\'))">' + icon + ' ' + esc(rt.name) + '</button>';
-          }).join('') : '<span style="color:var(--text-sub); font-size:13px;">Rest</span>')
-          + '</div></div>';
+      const ws = getWeekStartDayNum();
+      const startD = new Date(prog.start + 'T00:00:00');
+      const lead = (startD.getDay() - ws + 7) % 7;
+      const total = Math.ceil((lead + prog.length) / 7) * 7;
+      const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const fid = esc(f.id);
+      let html = '<div class="prog-cal">';
+      for (let i = 0; i < 7; i++) html += '<div class="prog-cal-head">' + names[(ws + i) % 7] + '</div>';
+      for (let c = 0; c < total; c++) {
+        const dayIdx = c - lead + 1;
+        const d = new Date(startD.getTime());
+        d.setDate(d.getDate() + (c - lead));
+        const key = dayKeyLocal(d.getTime());
+        if (dayIdx < 1 || dayIdx > prog.length) {
+          html += '<div class="prog-cell prog-cell-out"><div class="prog-cell-num">' + d.getDate() + '</div></div>';
+          continue;
+        }
+        const items = rts.filter(rt => prog.days[rt.id] === dayIdx);
+        html += '<div class="prog-cell' + (key === today ? ' prog-cell-today' : '') + '" data-pday="' + dayIdx + '">'
+          + '<div class="prog-cell-num">' + d.getDate() + '</div>'
+          + items.map(rt => programChipHtml(fid, prog, rt, today)).join('') + '</div>';
       }
+      html += '</div>';
       const unplaced = rts.filter(rt => !prog.days[rt.id]);
       if (unplaced.length) {
-        html += '<div style="font-size:12px; color:var(--text-sub); margin-top:8px;">No day yet: ' + unplaced.map(rt => esc(rt.name)).join(', ') + '</div>';
+        html += '<div class="prog-unplaced"><span>No day yet:</span>' + unplaced.map(rt => programChipHtml(fid, prog, rt, today)).join('') + '</div>';
       }
+      html += '<div class="prog-hint">Drag a workout to another day. Tap it to start, tick or skip.</div>';
+      const box = document.createElement('div');
+      box.className = 'card';
+      box.style.padding = '10px 8px';
       box.innerHTML = html;
       return box;
+    }
+
+    function programChipHtml(fid, prog, rt, today) {
+      const st = programItemStatus(prog, rt, today);
+      const short = String(rt.name).split(/[\s(]/)[0].slice(0, 8) || String(rt.name).slice(0, 8);
+      return '<button class="prog-chip prog-' + st + '" data-f="' + fid + '" data-r="' + esc(rt.id) + '" title="' + esc(rt.name) + '"'
+        + ' onpointerdown="progChipDown(event, this)">' + esc(short) + '</button>';
+    }
+
+    /* Drag with pointer events (works with a finger, unlike HTML drag and drop).
+       A short press without moving is a tap and opens the workout sheet. */
+    let progDrag = null;
+    function progChipDown(ev, el) {
+      if (ev.button !== undefined && ev.button !== 0) return;
+      progDrag = { el: el, fid: el.getAttribute('data-f'), rid: el.getAttribute('data-r'), x: ev.clientX, y: ev.clientY, ghost: null, over: null };
+      if (ev.preventDefault) ev.preventDefault();
+    }
+    function progCellAt(x, y) {
+      const hit = document.elementFromPoint ? document.elementFromPoint(x, y) : null;
+      return hit && hit.closest ? hit.closest('[data-pday]') : null;
+    }
+    function progDragMove(ev) {
+      if (!progDrag) return;
+      if (!progDrag.ghost) {
+        if (Math.abs(ev.clientX - progDrag.x) + Math.abs(ev.clientY - progDrag.y) < 8) return;
+        const g = progDrag.el.cloneNode(true);
+        g.className += ' prog-chip-ghost';
+        document.body.appendChild(g);
+        progDrag.ghost = g;
+        progDrag.el.style.opacity = '0.3';
+      }
+      progDrag.ghost.style.left = (ev.clientX - 30) + 'px';
+      progDrag.ghost.style.top = (ev.clientY - 18) + 'px';
+      const cell = progCellAt(ev.clientX, ev.clientY);
+      if (cell !== progDrag.over) {
+        if (progDrag.over) progDrag.over.classList.remove('prog-cell-drop');
+        if (cell) cell.classList.add('prog-cell-drop');
+        progDrag.over = cell;
+      }
+    }
+    function progDragEnd(ev) {
+      const d = progDrag;
+      progDrag = null;
+      if (!d) return;
+      if (!d.ghost) return openProgramItem(d.fid, d.rid);
+      d.ghost.remove();
+      d.el.style.opacity = '';
+      if (d.over) d.over.classList.remove('prog-cell-drop');
+      const cell = d.over || progCellAt(ev.clientX, ev.clientY);
+      if (cell) moveProgramDay(d.fid, d.rid, parseInt(cell.getAttribute('data-pday'), 10));
+    }
+    try {
+      document.addEventListener('pointermove', progDragMove, { passive: true });
+      document.addEventListener('pointerup', progDragEnd);
+      document.addEventListener('pointercancel', function () {
+        if (progDrag && progDrag.ghost) { progDrag.ghost.remove(); progDrag.el.style.opacity = ''; }
+        if (progDrag && progDrag.over) progDrag.over.classList.remove('prog-cell-drop');
+        progDrag = null;
+      });
+    } catch (e) {}
+
+    /* Put one workout on another cycle day (0 = no day). Ticks are kept. */
+    function moveProgramDay(fid, rid, day) {
+      const f = findFolder(fid);
+      if (!f || !f.program) return false;
+      const d = parseInt(day, 10);
+      if (d >= 1 && d <= f.program.length) f.program.days[rid] = d;
+      else if (d === 0) delete f.program.days[rid];
+      else return false;
+      saveState();
+      renderRoutines();
+      try { renderTrainingCalendar(); } catch (e) {}
+      closeModal('folderSheetModal');
+      return true;
+    }
+
+    /* Tap a workout in the program: Start, Done / Skip / Undo, change its day. */
+    function openProgramItem(fid, rid) {
+      const f = findFolder(fid);
+      const rt = state.routines.find(r => r && r.id === rid);
+      if (!f || !f.program || !rt) return;
+      const prog = f.program;
+      const st = programItemStatus(prog, rt);
+      const a = 'data-f="' + esc(fid) + '" data-r="' + esc(rid) + '"';
+      const btn = (label, fn, extra) => '<button class="btn btn-block' + (extra || '') + '" style="min-height:44px; margin-bottom:8px;" ' + a + ' onclick="' + fn + '">' + label + '</button>';
+      let opts = '<option value="0">No day</option>';
+      for (let i = 1; i <= prog.length; i++) {
+        opts += '<option value="' + i + '"' + (prog.days[rid] === i ? ' selected' : '') + '>' + esc(programDayLabel(prog, i)) + '</option>';
+      }
+      let html = '<div style="font-size:13px; color:var(--text-sub); margin-bottom:10px;">'
+        + esc(prog.days[rid] ? programDayLabel(prog, prog.days[rid]) : 'No day yet') + (PROGRAM_STATUS_TEXT[st] ? ' · ' + PROGRAM_STATUS_TEXT[st] : '') + '</div>'
+        + btn('▶ Start workout', "closeModal('folderSheetModal'); startRoutineWorkout(this.getAttribute('data-r'))", ' btn-primary');
+      if (prog.marks[rid]) html += btn('↩ Undo', "closeModal('folderSheetModal'); markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), null)");
+      else if (st !== 'done') {
+        html += btn('✓ Done', "closeModal('folderSheetModal'); markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), 'done')")
+          + btn('⏭ Skip (does not count)', "closeModal('folderSheetModal'); markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), 'skipped')");
+      }
+      html += '<label style="display:block; font-size:12px; color:var(--text-sub); margin-top:4px;">Day'
+        + '<select class="input-field" style="min-height:44px; margin:4px 0 0;" ' + a + ' onchange="moveProgramDay(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), this.value)">' + opts + '</select></label>';
+      openFolderSheet(rt.name, html);
     }
 
     /* Setup / Reset sheet. Reset keeps the workouts and their days, starts

@@ -2,6 +2,10 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-03 — Cleaner routine cards and a real program calendar (P2-15 step 3), awaiting owner phone check
+
+- Owner feedback on his phone: cards too big and wordy, calendar not found, wants to drag workouts between days. Routine cards are now one compact row (name, number of exercises, ▶ Start, ⋯, small ▲▼); exercise names and the big Edit/Duplicate/Delete buttons are gone, all in the ⋯ menu (Edit, Duplicate, Change day, Move to folder, Archive, Delete). Program bar is one line with a List / Calendar switch and a small Reset. Calendar view is a week grid over the cycle (same week start as History), drag a workout to another day with the finger, tap it for Start / Done / Skip / Day. 483 tests pass.
+
 ## 2026-11-03 — Program cycle (P2-15 step 2), awaiting owner phone check
 
 - A folder can be a program: start date, cycle length 1-31 days, a day for each workout (several per day allowed). Folder shows "Day X of N", done / skipped / to do, List and Calendar views, Reset. Done = ticked, or a finished workout of that routine since the cycle start. Skip never counts. Nothing repeats by itself: Reset keeps the workouts and days, takes a new start and length, clears the ticks. Program workouts show in the training calendar and its day sheet. 481 tests pass.
