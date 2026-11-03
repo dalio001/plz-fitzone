@@ -136,6 +136,14 @@
     }
     .logo span { color: var(--text); }
     .logo-plz { color: var(--lime-text); font-weight: 900; }
+    /* P2-15 folders */
+    .folder-head { display: flex; gap: 8px; align-items: stretch; margin: 16px 0 10px; }
+    .folder-toggle { flex: 1; min-height: 48px; justify-content: flex-start; text-align: left; font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    .folder-count { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--text-sub); background: var(--bg-elevated); border-radius: 999px; padding: 2px 10px; }
+    .folder-add { min-height: 44px; margin-bottom: 4px; color: var(--text-sub); border-style: dashed; }
+    .folder-archive-head { min-height: 44px; margin-top: 20px; color: var(--text-sub); }
+    .archive-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .archive-row:last-child { border-bottom: none; }
     .logo-mascot { width: 40px; height: 40px; border-radius: 12px; display: block; }
 
     /* FOCUS & ACCESSIBILITY (P1-03) */
@@ -872,7 +880,10 @@
       <div class="section-group" style="margin-top:var(--space-24);">
         <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
           <h3 class="section-title" style="margin:0; font-size:var(--font-20); color:var(--text); text-transform:none; letter-spacing:normal;">My Routines (Unlimited)</h3>
-          <button class="btn" onclick="openRoutineBuilder()">+ New Routine</button>
+          <div style="display:flex; gap:var(--space-8); flex-wrap:wrap;">
+            <button class="btn" onclick="openRoutineBuilder()">+ New Routine</button>
+            <button class="btn" onclick="openNewFolder()">📁 New folder</button>
+          </div>
         </div>
         <!-- P4-11: paste a routine from an AI assistant, or open an import link -->
         <button class="btn btn-block" style="min-height:44px;" onclick="openRoutineImport()">⬇ Import routine</button>
@@ -1474,10 +1485,23 @@
       </div>
       <div class="modal-body">
         <input type="text" id="routineNameInput" class="input-field" placeholder="Routine Title (e.g. Upper Body A)">
+        <label style="font-size:12px; color:var(--text-sub);">Folder</label>
+        <select id="routineFolderSelect" class="input-field" style="max-width:100%; min-height:44px; margin:6px 0 10px;"></select>
         <div id="routineBuilderExList" style="margin-bottom:12px;"></div>
         <button class="btn btn-block" style="margin-bottom:10px;" onclick="openExercisePicker('routine')">➕ Add Exercise to Routine</button>
         <button class="btn btn-primary btn-block" onclick="saveRoutine()">💾 Save Routine</button>
       </div>
+    </div>
+  </div>
+
+  <!-- P2-15 FOLDER SHEET (new/rename folder, folder and routine menus, delete folder) -->
+  <div class="modal" id="folderSheetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="folderSheetTitle">Folder</span>
+        <button class="btn" onclick="closeModal('folderSheetModal')">✕</button>
+      </div>
+      <div class="modal-body" id="folderSheetBody"></div>
     </div>
   </div>
 
@@ -2448,6 +2472,7 @@
       sounds: { restSound: 'beep', restVolume: 'high', setVolume: 'off', prVolume: 'medium' },
       exercises: [],
       routines: [],
+      folders: [], // P2-15: [{ id, name, archived, collapsed }]; filled on load
       history: [],
       body: []
     };
@@ -3310,30 +3335,369 @@
         container.appendChild(banner);
       }
 
-      state.routines.forEach((rt, rtIdx) => {
-        const exNames = rt.exercises.map(item => {
-          const ex = state.exercises.find(e => e.id === item.exId);
-          return ex ? `${item.sets}x ${esc(ex.name)}` : '';
-        }).filter(Boolean).join(' • ');
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="routine-card-header">
-            <div class="routine-title">${rt.name}</div>
-            <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteRoutine('${rt.id}')">✕</button>
-          </div>
-          <div class="routine-ex-list">${exNames || 'No exercises added'}</div>
-          <button class="btn btn-primary btn-block" onclick="startRoutineWorkout('${rt.id}')">Start Routine</button>
-          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
-            <button class="btn" style="flex:1; min-height:44px;" onclick="editRoutine('${rt.id}')">✏️ Edit</button>
-            <button class="btn" style="flex:1; min-height:44px;" onclick="duplicateRoutine('${rt.id}')">⧉ Duplicate</button>
-            <button class="btn" style="min-height:44px; min-width:44px;" onclick="moveRoutine('${rt.id}', -1)">▲</button>
-            <button class="btn" style="min-height:44px; min-width:44px;" onclick="moveRoutine('${rt.id}', 1)">▼</button>
-          </div>
+      ensureFolders().filter(f => !f.archived).forEach(f => {
+        const rts = state.routines.filter(rt => !isRoutineHidden(rt) && routineFolderId(rt) === f.id);
+        const head = document.createElement('div');
+        head.className = 'folder-head';
+        head.innerHTML = `
+          <button class="btn folder-toggle" data-id="${esc(f.id)}" onclick="toggleFolder(this.getAttribute('data-id'))">
+            <span>${f.collapsed ? '▸' : '▾'}</span> <span>📁 ${esc(f.name)}</span> <span class="folder-count">${rts.length}</span>
+          </button>
+          <button class="btn" style="min-width:44px; min-height:44px;" data-id="${esc(f.id)}" onclick="openFolderMenu(this.getAttribute('data-id'))" aria-label="Folder options">⋯</button>
         `;
-        container.appendChild(card);
+        container.appendChild(head);
+        if (f.collapsed) return;
+        rts.forEach(rt => container.appendChild(routineCard(rt)));
+        const add = document.createElement('button');
+        add.className = 'btn btn-block folder-add';
+        add.setAttribute('data-id', f.id);
+        add.textContent = rts.length ? '+ Add routine here' : 'No routines here yet. + Add one';
+        add.onclick = function () { openRoutineBuilder(f.id); };
+        container.appendChild(add);
       });
+      renderRoutineArchive(container);
+    }
+
+    function routineCard(rt) {
+      const exNames = (rt.exercises || []).map(item => {
+        const ex = state.exercises.find(e => e.id === item.exId);
+        return ex ? `${item.sets}x ${esc(ex.name)}` : '';
+      }).filter(Boolean).join(' • ');
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="routine-card-header">
+          <div class="routine-title">${rt.name}</div>
+          <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteRoutine('${rt.id}')">✕</button>
+        </div>
+        <div class="routine-ex-list">${exNames || 'No exercises added'}</div>
+        <button class="btn btn-primary btn-block" onclick="startRoutineWorkout('${rt.id}')">Start Routine</button>
+        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+          <button class="btn" style="flex:1; min-height:44px;" onclick="editRoutine('${rt.id}')">✏️ Edit</button>
+          <button class="btn" style="flex:1; min-height:44px;" onclick="duplicateRoutine('${rt.id}')">⧉ Duplicate</button>
+          <button class="btn" style="min-height:44px; min-width:44px;" onclick="openRoutineMenu('${rt.id}')" aria-label="More">⋯</button>
+          <button class="btn" style="min-height:44px; min-width:44px;" onclick="moveRoutine('${rt.id}', -1)">▲</button>
+          <button class="btn" style="min-height:44px; min-width:44px;" onclick="moveRoutine('${rt.id}', 1)">▼</button>
+        </div>
+      `;
+      return card;
+    }
+
+    /* P2-15 archive: archived folders and routines, hidden from every list
+       and plan picker, restorable. Closed by default (not saved). */
+    function renderRoutineArchive(container) {
+      const folders = ensureFolders().filter(f => f.archived);
+      const rts = state.routines.filter(rt => rt && rt.archived === true);
+      const total = folders.length + rts.length;
+      if (!total) return;
+      const head = document.createElement('button');
+      head.className = 'btn btn-block folder-archive-head';
+      head.textContent = (routineArchiveOpen ? '▾' : '▸') + ' 🗄 Archive (' + total + ')';
+      head.onclick = function () { toggleRoutineArchive(); };
+      container.appendChild(head);
+      if (!routineArchiveOpen) return;
+      const box = document.createElement('div');
+      box.className = 'card';
+      box.innerHTML = folders.map(f => {
+        const n = state.routines.filter(rt => rt && routineFolderId(rt) === f.id && rt.archived !== true).length;
+        return `<div class="archive-row"><span>📁 ${esc(f.name)} <span class="folder-count">${n}</span></span>
+          <span style="display:flex; gap:6px;">
+            <button class="btn" style="min-height:44px;" data-id="${esc(f.id)}" onclick="restoreFolder(this.getAttribute('data-id'))">Restore</button>
+            <button class="btn btn-danger" style="min-height:44px;" data-id="${esc(f.id)}" onclick="openDeleteFolder(this.getAttribute('data-id'))">Delete</button>
+          </span></div>`;
+      }).join('') + rts.map(rt => `<div class="archive-row"><span>${esc(rt.name)}</span>
+          <span style="display:flex; gap:6px;">
+            <button class="btn" style="min-height:44px;" data-id="${esc(rt.id)}" onclick="restoreRoutine(this.getAttribute('data-id'))">Restore</button>
+            <button class="btn btn-danger" style="min-height:44px;" data-id="${esc(rt.id)}" onclick="deleteRoutine(this.getAttribute('data-id'))">✕</button>
+          </span></div>`).join('');
+      container.appendChild(box);
+    }
+
+    /* P2-15 FOLDERS. Every routine lives in exactly one folder; a routine
+       with no (or an unknown) folder belongs to the default one, so routines
+       added by import, the AI connector or "save as routine" need no change.
+       Folder actions never touch history. */
+    const DEFAULT_FOLDER_ID = 'fd_default';
+    const DEFAULT_FOLDER_NAME = 'My routines';
+    const FOLDER_NAME_MAX = 40;
+    let routineArchiveOpen = false;
+
+    function normalizeFolders(list) {
+      const out = [];
+      const seen = {};
+      (Array.isArray(list) ? list : []).forEach(f => {
+        if (!f || typeof f !== 'object') return;
+        const id = (typeof f.id === 'string' && f.id) ? f.id : '';
+        if (!id || seen[id]) return;
+        seen[id] = true;
+        const isDefault = id === DEFAULT_FOLDER_ID;
+        const name = String(f.name || '').trim().slice(0, FOLDER_NAME_MAX) || (isDefault ? DEFAULT_FOLDER_NAME : 'Folder');
+        out.push({ id: id, name: name, archived: !isDefault && f.archived === true, collapsed: f.collapsed === true });
+      });
+      if (!seen[DEFAULT_FOLDER_ID]) out.unshift({ id: DEFAULT_FOLDER_ID, name: DEFAULT_FOLDER_NAME, archived: false, collapsed: false });
+      return out;
+    }
+
+    function ensureFolders() {
+      if (!Array.isArray(state.folders) || !state.folders.some(f => f && f.id === DEFAULT_FOLDER_ID)) {
+        state.folders = normalizeFolders(state.folders);
+      }
+      return state.folders;
+    }
+
+    function findFolder(id) {
+      return ensureFolders().find(f => f.id === id) || null;
+    }
+
+    function routineFolderId(rt) {
+      return (rt && typeof rt.folderId === 'string' && findFolder(rt.folderId)) ? rt.folderId : DEFAULT_FOLDER_ID;
+    }
+
+    function isRoutineHidden(rt) {
+      if (!rt || rt.archived === true) return true;
+      const f = findFolder(routineFolderId(rt));
+      return !!(f && f.archived);
+    }
+
+    function normalizeRoutineFolders() {
+      state.folders = normalizeFolders(state.folders);
+      if (!Array.isArray(state.routines)) return;
+      state.routines.forEach(rt => {
+        if (!rt || typeof rt !== 'object') return;
+        rt.folderId = routineFolderId(rt);
+        if (rt.archived !== true) delete rt.archived;
+      });
+    }
+
+    function newFolderId() {
+      let id = 'fd_' + Date.now();
+      let n = 2;
+      while (findFolder(id)) id = 'fd_' + Date.now() + '_' + (n++);
+      return id;
+    }
+
+    function openFolderSheet(title, html) {
+      document.getElementById('folderSheetTitle').textContent = title;
+      document.getElementById('folderSheetBody').innerHTML = html;
+      document.getElementById('folderSheetModal').classList.add('open');
+    }
+
+    function folderNameFormHtml(id, value) {
+      return '<input type="text" id="folderNameInput" class="input-field" maxlength="' + FOLDER_NAME_MAX + '" placeholder="Folder name (e.g. 8-day split)" value="' + esc(value) + '">'
+        + '<button class="btn btn-primary btn-block" style="min-height:44px; margin-top:10px;" data-id="' + esc(id) + '" onclick="saveFolderName(this.getAttribute(\'data-id\'))">Save</button>';
+    }
+
+    function openNewFolder() {
+      openFolderSheet('New folder', folderNameFormHtml('', ''));
+    }
+
+    function openRenameFolder(id) {
+      const f = findFolder(id);
+      if (!f) return;
+      openFolderSheet('Rename folder', folderNameFormHtml(id, f.name));
+    }
+
+    /* Creates (no id) or renames a folder. Returns the folder id, or null. */
+    function saveFolderName(id, nameArg) {
+      const input = document.getElementById('folderNameInput');
+      const raw = (typeof nameArg === 'string') ? nameArg : (input ? input.value : '');
+      const name = String(raw || '').trim();
+      if (!name || name.length > FOLDER_NAME_MAX) {
+        alert('Give the folder a name (1-' + FOLDER_NAME_MAX + ' characters).');
+        return null;
+      }
+      let f = id ? findFolder(id) : null;
+      if (id && !f) return null;
+      if (f) {
+        f.name = name;
+      } else {
+        f = { id: newFolderId(), name: name, archived: false, collapsed: false };
+        ensureFolders().push(f);
+      }
+      saveState();
+      renderRoutines();
+      closeModal('folderSheetModal');
+      return f.id;
+    }
+
+    function toggleFolder(id) {
+      const f = findFolder(id);
+      if (!f) return;
+      f.collapsed = !f.collapsed;
+      saveState();
+      renderRoutines();
+    }
+
+    function moveFolder(id, delta) {
+      const list = ensureFolders();
+      const i = list.findIndex(f => f.id === id);
+      if (i < 0) return;
+      let j = i + delta;
+      while (j >= 0 && j < list.length && list[j].archived) j += delta;
+      if (j < 0 || j >= list.length) return;
+      const t = list[i]; list[i] = list[j]; list[j] = t;
+      saveState();
+      renderRoutines();
+      closeModal('folderSheetModal');
+    }
+
+    function openFolderMenu(id) {
+      const f = findFolder(id);
+      if (!f) return;
+      const b = (label, fn, cls) => '<button class="btn btn-block' + (cls ? ' ' + cls : '') + '" style="min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="' + fn + '(this.getAttribute(\'data-id\'))">' + label + '</button>';
+      let html = b('✏️ Rename', 'openRenameFolder')
+        + b('+ Add routine here', 'openRoutineBuilder')
+        + '<div style="display:flex; gap:8px;">'
+        + '<button class="btn" style="flex:1; min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="moveFolder(this.getAttribute(\'data-id\'), -1)">▲ Move up</button>'
+        + '<button class="btn" style="flex:1; min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="moveFolder(this.getAttribute(\'data-id\'), 1)">▼ Move down</button>'
+        + '</div>';
+      if (id !== DEFAULT_FOLDER_ID) {
+        html += b('🗄 Archive folder', 'archiveFolder') + b('🗑 Delete folder', 'openDeleteFolder', 'btn-danger');
+      } else {
+        html += '<div style="font-size:13px; color:var(--text-sub);">This is your main folder. It can be renamed but not archived or deleted.</div>';
+      }
+      openFolderSheet('📁 ' + f.name, html);
+    }
+
+    function archiveFolder(id) {
+      const f = findFolder(id);
+      if (!f || id === DEFAULT_FOLDER_ID) return;
+      f.archived = true;
+      saveState();
+      renderRoutines();
+      closeModal('folderSheetModal');
+    }
+
+    function restoreFolder(id) {
+      const f = findFolder(id);
+      if (!f) return;
+      f.archived = false;
+      saveState();
+      renderRoutines();
+    }
+
+    /* Delete asks, per routine, "keep it in the archive" (ticked) or delete
+       it for good (unticked). History is never touched. */
+    function openDeleteFolder(id) {
+      const f = findFolder(id);
+      if (!f || id === DEFAULT_FOLDER_ID) return;
+      const rts = state.routines.filter(rt => rt && routineFolderId(rt) === id && rt.archived !== true);
+      let html = '<div style="font-size:14px; line-height:1.5; margin-bottom:10px;">'
+        + (rts.length
+          ? 'Ticked routines go to the Archive. Unticked ones are deleted for good. Your past workouts in History always stay.'
+          : 'This folder is empty. Your past workouts in History always stay.')
+        + '</div>';
+      if (rts.length) {
+        html += '<div style="display:flex; gap:8px; margin-bottom:10px;">'
+          + '<button class="btn" style="flex:1; min-height:44px;" onclick="setDeleteFolderChecks(true)">Archive all</button>'
+          + '<button class="btn" style="flex:1; min-height:44px;" onclick="setDeleteFolderChecks(false)">Delete all</button>'
+          + '</div>'
+          + rts.map(rt => '<label class="archive-row" style="cursor:pointer;"><span>' + esc(rt.name) + '</span>'
+            + '<input type="checkbox" class="folder-del-keep" style="width:24px; height:24px;" value="' + esc(rt.id) + '" checked></label>').join('');
+      }
+      html += '<button class="btn btn-danger btn-block" style="min-height:44px; margin-top:12px;" data-id="' + esc(id) + '" onclick="confirmDeleteFolder(this.getAttribute(\'data-id\'))">🗑 Delete folder</button>';
+      openFolderSheet('Delete "' + f.name + '"?', html);
+    }
+
+    function setDeleteFolderChecks(on) {
+      document.querySelectorAll('.folder-del-keep').forEach(cb => { cb.checked = !!on; });
+    }
+
+    /* keepIds: routines to archive; any other routine in the folder is
+       deleted. Without keepIds the ticked boxes of the sheet are used. */
+    function confirmDeleteFolder(id, keepIds) {
+      const list = ensureFolders();
+      const idx = list.findIndex(f => f.id === id);
+      if (idx < 0 || id === DEFAULT_FOLDER_ID) return false;
+      let keep = keepIds;
+      if (!Array.isArray(keep)) {
+        keep = [];
+        document.querySelectorAll('.folder-del-keep').forEach(cb => { if (cb.checked) keep.push(cb.value); });
+      }
+      const keepSet = new Set(keep.map(String));
+      state.routines = state.routines.filter(rt => {
+        if (!rt || routineFolderId(rt) !== id) return true;
+        if (rt.archived === true || keepSet.has(String(rt.id))) {
+          rt.archived = true;
+          rt.folderId = DEFAULT_FOLDER_ID;
+          return true;
+        }
+        return false;
+      });
+      list.splice(idx, 1);
+      saveState();
+      renderRoutines();
+      closeModal('folderSheetModal');
+      return true;
+    }
+
+    function openRoutineMenu(id) {
+      const rt = state.routines.find(r => r && r.id === id);
+      if (!rt) return;
+      const b = (label, fn) => '<button class="btn btn-block" style="min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="' + fn + '(this.getAttribute(\'data-id\'))">' + label + '</button>';
+      openFolderSheet(rt.name, b('📁 Move to folder', 'openMoveRoutine') + b('🗄 Archive', 'archiveRoutine'));
+    }
+
+    function openMoveRoutine(id) {
+      const rt = state.routines.find(r => r && r.id === id);
+      if (!rt) return;
+      const cur = routineFolderId(rt);
+      const html = ensureFolders().filter(f => !f.archived).map(f =>
+        '<button class="btn btn-block' + (f.id === cur ? ' btn-primary' : '') + '" style="min-height:44px; margin-bottom:8px;" data-id="' + esc(f.id) + '" data-rt="' + esc(id) + '" onclick="moveRoutineToFolder(this.getAttribute(\'data-rt\'), this.getAttribute(\'data-id\'))">📁 ' + esc(f.name) + '</button>'
+      ).join('') + '<button class="btn btn-block" style="min-height:44px;" onclick="openNewFolder()">+ New folder</button>';
+      openFolderSheet('Move "' + rt.name + '" to', html);
+    }
+
+    function moveRoutineToFolder(id, folderId) {
+      const rt = state.routines.find(r => r && r.id === id);
+      const f = findFolder(folderId);
+      if (!rt || !f || f.archived) return false;
+      rt.folderId = f.id;
+      saveState();
+      renderRoutines();
+      closeModal('folderSheetModal');
+      return true;
+    }
+
+    function archiveRoutine(id) {
+      const rt = state.routines.find(r => r && r.id === id);
+      if (!rt) return;
+      rt.archived = true;
+      saveState();
+      renderRoutines();
+      closeModal('folderSheetModal');
+    }
+
+    /* A restored routine whose folder is archived goes back to the main folder,
+       so it shows up again straight away. */
+    function restoreRoutine(id) {
+      const rt = state.routines.find(r => r && r.id === id);
+      if (!rt) return;
+      delete rt.archived;
+      const f = findFolder(routineFolderId(rt));
+      if (!f || f.archived) rt.folderId = DEFAULT_FOLDER_ID;
+      saveState();
+      renderRoutines();
+    }
+
+    function toggleRoutineArchive() {
+      routineArchiveOpen = !routineArchiveOpen;
+      renderRoutines();
+    }
+
+    function fillRoutineFolderSelect(selectedId) {
+      const sel = document.getElementById('routineFolderSelect');
+      if (!sel) return;
+      sel.innerHTML = ensureFolders().filter(f => !f.archived || f.id === selectedId).map(f =>
+        '<option value="' + esc(f.id) + '"' + (f.id === selectedId ? ' selected' : '') + '>' + esc(f.name) + '</option>').join('');
+      sel.value = selectedId;
+    }
+
+    function builderFolderChoice() {
+      const sel = document.getElementById('routineFolderSelect');
+      const v = sel ? sel.value : '';
+      return (v && findFolder(v)) ? v : (findFolder(builderFolderId) ? builderFolderId : DEFAULT_FOLDER_ID);
     }
 
     /* P2-04 prescriptions: per-exercise targets + note live on the routine
@@ -3456,25 +3820,35 @@
       state.routines.splice(idx + 1, 0, {
         id: 'rt_' + Date.now(),
         name,
+        folderId: routineFolderId(src),
         exercises: (src.exercises || []).map(normalizeRoutineItem)
       });
       saveState();
       renderRoutines();
     }
 
+    /* P2-15: swaps with the nearest shown routine in the same folder. */
     function moveRoutine(id, delta) {
-      const i = state.routines.findIndex(r => r.id === id);
-      const j = i + delta;
-      if (i < 0 || j < 0 || j >= state.routines.length) return;
-      const m = state.routines.splice(i, 1)[0];
-      state.routines.splice(j, 0, m);
+      const list = state.routines;
+      const i = list.findIndex(r => r && r.id === id);
+      if (i < 0) return;
+      const fid = routineFolderId(list[i]);
+      let j = i + delta;
+      while (j >= 0 && j < list.length && (isRoutineHidden(list[j]) || routineFolderId(list[j]) !== fid)) j += delta;
+      if (j < 0 || j >= list.length) return;
+      const t = list[i]; list[i] = list[j]; list[j] = t;
       saveState();
       renderRoutines();
     }
 
-    function openRoutineBuilder() {
+    let builderFolderId = null; // P2-15
+
+    function openRoutineBuilder(folderId) {
       editingRoutineId = null;
       tempRoutineExercises = [];
+      builderFolderId = findFolder(folderId) ? folderId : DEFAULT_FOLDER_ID;
+      fillRoutineFolderSelect(builderFolderId);
+      try { closeModal('folderSheetModal'); } catch (e) {}
       document.getElementById('routineNameInput').value = '';
       document.getElementById('routineModalTitle').innerText = 'Create Routine';
       renderRoutineBuilderList();
@@ -3486,6 +3860,8 @@
       if (!rt) return;
       editingRoutineId = id;
       tempRoutineExercises = (rt.exercises || []).map(normalizeRoutineItem);
+      builderFolderId = routineFolderId(rt);
+      fillRoutineFolderSelect(builderFolderId);
       document.getElementById('routineNameInput').value = rt.name;
       document.getElementById('routineModalTitle').innerText = 'Edit Routine';
       renderRoutineBuilderList();
@@ -3653,10 +4029,12 @@
         if (!rt) return;
         rt.name = name;
         rt.exercises = items;
+        rt.folderId = builderFolderChoice();
       } else {
         state.routines.unshift({
           id: 'rt_' + Date.now(),
           name,
+          folderId: builderFolderChoice(),
           exercises: items
         });
       }
@@ -8493,6 +8871,7 @@
       // Routine items are NOT rewritten here: normalizeRoutineItem runs on every
       // read, and baking it in would freeze today's Profile rest default.
       state.plans = normalizePlans(state.plans); // P2-10
+      normalizeRoutineFolders(); // P2-15
       state.body = normalizeBodyEntries(state.body); // P5-04
       if (state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)) {
         state.profile = normalizeProfile(state.profile);
@@ -9648,7 +10027,7 @@
        calendar, never the screen under the finger. */
     function planEditorHtml(key, plan) {
       const current = plan && plan.kind !== 'rest' ? String(plan.routineId || '') : (plan && plan.kind === 'rest' ? 'rest' : '');
-      const opts = state.routines.map(rt => '<option value="' + esc(rt.id) + '"' + (String(rt.id) === current ? ' selected' : '') + '>'
+      const opts = state.routines.filter(rt => !isRoutineHidden(rt) || String(rt.id) === current).map(rt => '<option value="' + esc(rt.id) + '"' + (String(rt.id) === current ? ' selected' : '') + '>'
         + esc(rt.name) + '</option>').join('');
       return '<label style="font-size:12px; color:var(--text-sub);">Routine</label>'
         + '<select id="planRoutineSelect" class="input-field" style="max-width:100%; min-height:44px; margin:6px 0 10px;">'
@@ -13300,6 +13679,7 @@
 
     function applyPulledState(newState, updatedBy, summary) {
       if (newState.routines) state.routines = newState.routines;
+      if (Array.isArray(newState.folders)) state.folders = newState.folders; // P2-15
       if (newState.plans) state.plans = newState.plans;
       if (Array.isArray(newState.history) && newState.history.length > 0) {
         const seen = new Set();
@@ -13386,6 +13766,7 @@
 
     function handleSyncConflict(serverState, serverRev, summary) {
       if (serverState.routines) state.routines = serverState.routines;
+      if (Array.isArray(serverState.folders)) state.folders = serverState.folders; // P2-15
       if (serverState.plans) state.plans = serverState.plans;
       if (Array.isArray(serverState.history)) {
         const existingIds = new Set(state.history.map(function(w) { return w.id; }));
