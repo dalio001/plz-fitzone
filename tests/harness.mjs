@@ -342,6 +342,8 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   openNewFolder, saveFolderName, toggleFolder, moveFolder, openFolderMenu, archiveFolder, restoreFolder,
   openDeleteFolder, confirmDeleteFolder, openRoutineMenu, openMoveRoutine, moveRoutineToFolder,
   archiveRoutine, restoreRoutine, toggleRoutineArchive,
+  normalizeProgram, programDayKey, programItemStatus, programSummary, openProgramSetup,
+  saveProgramSetup, stopProgram, markProgram, setProgramView, programItemsOn,
   ROUTINE_IMPORT, validateRoutineImport, formatRoutineImportErrors,
   decodeRoutineImportHash, renderRoutineImportPreview,
   openRoutineImport, previewRoutineImportText, routineFileChosen,

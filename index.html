@@ -144,6 +144,15 @@
     .folder-archive-head { min-height: 44px; margin-top: 20px; color: var(--text-sub); }
     .archive-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .archive-row:last-child { border-bottom: none; }
+    .prog-strip { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; margin: -4px 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .prog-done b, .prog-chip.prog-done { color: var(--lime-text); }
+    .prog-skipped { opacity: 0.6; }
+    .prog-late b { color: var(--error-text); }
+    .prog-day { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .prog-day:last-child { border-bottom: none; }
+    .prog-day-today { box-shadow: inset 3px 0 0 var(--lime-text); padding-left: 8px; }
+    .prog-day-label { width: 112px; flex: none; font-size: 12px; font-weight: 700; color: var(--text-sub); padding-top: 10px; }
+    .prog-chip { min-height: 40px; margin: 0 6px 6px 0; font-size: 13px; text-align: left; }
     .logo-mascot { width: 40px; height: 40px; border-radius: 12px; display: block; }
 
     /* FOCUS & ACCESSIBILITY (P1-03) */
@@ -3347,18 +3356,32 @@
         `;
         container.appendChild(head);
         if (f.collapsed) return;
-        rts.forEach(rt => container.appendChild(routineCard(rt)));
+        if (f.program) {
+          container.appendChild(programBar(f, rts));
+          if (f.program.view === 'calendar') {
+            container.appendChild(programCalendar(f, rts));
+            return;
+          }
+        }
+        rts.forEach(rt => container.appendChild(routineCard(rt, f)));
         const add = document.createElement('button');
         add.className = 'btn btn-block folder-add';
         add.setAttribute('data-id', f.id);
         add.textContent = rts.length ? '+ Add routine here' : 'No routines here yet. + Add one';
         add.onclick = function () { openRoutineBuilder(f.id); };
         container.appendChild(add);
+        if (!f.program && rts.length) {
+          const mk = document.createElement('button');
+          mk.className = 'btn btn-block folder-add';
+          mk.textContent = '📅 Make it a program (cycle)';
+          mk.onclick = function () { openProgramSetup(f.id, false); };
+          container.appendChild(mk);
+        }
       });
       renderRoutineArchive(container);
     }
 
-    function routineCard(rt) {
+    function routineCard(rt, folder) {
       const exNames = (rt.exercises || []).map(item => {
         const ex = state.exercises.find(e => e.id === item.exId);
         return ex ? `${item.sets}x ${esc(ex.name)}` : '';
@@ -3366,7 +3389,7 @@
 
       const card = document.createElement('div');
       card.className = 'card';
-      card.innerHTML = `
+      card.innerHTML = (folder && folder.program ? programStripHtml(folder, rt) : '') + `
         <div class="routine-card-header">
           <div class="routine-title">${rt.name}</div>
           <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteRoutine('${rt.id}')">✕</button>
@@ -3433,7 +3456,10 @@
         seen[id] = true;
         const isDefault = id === DEFAULT_FOLDER_ID;
         const name = String(f.name || '').trim().slice(0, FOLDER_NAME_MAX) || (isDefault ? DEFAULT_FOLDER_NAME : 'Folder');
-        out.push({ id: id, name: name, archived: !isDefault && f.archived === true, collapsed: f.collapsed === true });
+        const folder = { id: id, name: name, archived: !isDefault && f.archived === true, collapsed: f.collapsed === true };
+        const prog = normalizeProgram(f.program);
+        if (prog) folder.program = prog;
+        out.push(folder);
       });
       if (!seen[DEFAULT_FOLDER_ID]) out.unshift({ id: DEFAULT_FOLDER_ID, name: DEFAULT_FOLDER_NAME, archived: false, collapsed: false });
       return out;
@@ -3548,6 +3574,7 @@
       const b = (label, fn, cls) => '<button class="btn btn-block' + (cls ? ' ' + cls : '') + '" style="min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="' + fn + '(this.getAttribute(\'data-id\'))">' + label + '</button>';
       let html = b('✏️ Rename', 'openRenameFolder')
         + b('+ Add routine here', 'openRoutineBuilder')
+        + b(f.program ? '📅 Program days' : '📅 Make it a program', 'openProgramSetup')
         + '<div style="display:flex; gap:8px;">'
         + '<button class="btn" style="flex:1; min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="moveFolder(this.getAttribute(\'data-id\'), -1)">▲ Move up</button>'
         + '<button class="btn" style="flex:1; min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="moveFolder(this.getAttribute(\'data-id\'), 1)">▼ Move down</button>'
@@ -3692,6 +3719,266 @@
       sel.innerHTML = ensureFolders().filter(f => !f.archived || f.id === selectedId).map(f =>
         '<option value="' + esc(f.id) + '"' + (f.id === selectedId ? ' selected' : '') + '>' + esc(f.name) + '</option>').join('');
       sel.value = selectedId;
+    }
+
+    /* P2-15 step 2: PROGRAM CYCLE. A folder can carry one cycle:
+         program = { start:'YYYY-MM-DD', length:1..31, days:{ routineId: 1..length },
+                     marks:{ routineId: 'done'|'skipped' }, view:'list'|'calendar' }
+       Nothing repeats by itself: the owner presses Reset, keeps the workouts and
+       picks new days / a new length. A workout counts as done when ticked, or
+       when a finished workout of that routine exists since the cycle start.
+       Skipped never counts (not done, not late). History is never touched. */
+    const PROGRAM_MAX_DAYS = 31;
+
+    function normalizeProgram(p) {
+      if (!p || typeof p !== 'object' || !isPlanDayKey(String(p.start))) return null;
+      const length = parseInt(p.length, 10);
+      if (!isFinite(length) || length < 1 || length > PROGRAM_MAX_DAYS) return null;
+      const days = {};
+      Object.keys(p.days && typeof p.days === 'object' ? p.days : {}).forEach(k => {
+        const d = parseInt(p.days[k], 10);
+        if (isFinite(d) && d >= 1 && d <= length) days[k] = d;
+      });
+      const marks = {};
+      Object.keys(p.marks && typeof p.marks === 'object' ? p.marks : {}).forEach(k => {
+        if (p.marks[k] === 'done' || p.marks[k] === 'skipped') marks[k] = p.marks[k];
+      });
+      return { start: String(p.start), length: length, days: days, marks: marks, view: p.view === 'calendar' ? 'calendar' : 'list' };
+    }
+
+    function programDayKey(prog, dayIdx) {
+      const d = new Date(prog.start + 'T00:00:00');
+      d.setDate(d.getDate() + (dayIdx - 1));
+      return dayKeyLocal(d.getTime());
+    }
+
+    function programDayLabel(prog, dayIdx) {
+      const d = new Date(programDayKey(prog, dayIdx) + 'T00:00:00');
+      return 'Day ' + dayIdx + ' · ' + d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
+    /* 'done' | 'skipped' | 'late' (its day has passed) | 'today' | 'todo' | 'unplaced' */
+    function programItemStatus(prog, rt, todayKey) {
+      const id = rt && rt.id;
+      if (!prog || !id) return 'unplaced';
+      if (prog.marks[id]) return prog.marks[id];
+      const startMs = new Date(prog.start + 'T00:00:00').getTime();
+      const did = (state.history || []).some(w => w && w.routineId === id && Number(w.date) >= startMs);
+      if (did) return 'done';
+      const day = prog.days[id];
+      if (!day) return 'unplaced';
+      const key = programDayKey(prog, day);
+      const today = todayKey || todayPlanKey();
+      if (key < today) return 'late';
+      return key === today ? 'today' : 'todo';
+    }
+
+    function programSummary(prog, rts, todayKey) {
+      const today = todayKey || todayPlanKey();
+      const startMs = new Date(prog.start + 'T00:00:00').getTime();
+      const todayMs = new Date(today + 'T00:00:00').getTime();
+      const dayNow = Math.floor((todayMs - startMs) / 86400000 + 0.5) + 1;
+      const out = { dayNow: dayNow, length: prog.length, done: 0, skipped: 0, left: 0 };
+      (rts || []).forEach(rt => {
+        const st = programItemStatus(prog, rt, today);
+        if (st === 'done') out.done++;
+        else if (st === 'skipped') out.skipped++;
+        else out.left++;
+      });
+      return out;
+    }
+
+    const PROGRAM_STATUS_TEXT = { done: '✅ Done', skipped: '⏭ Skipped', late: '⚠️ Not done yet', today: '📌 Today', todo: '', unplaced: '' };
+
+    function programStripHtml(f, rt) {
+      const prog = f.program;
+      const st = programItemStatus(prog, rt);
+      const day = prog.days[rt.id];
+      const label = day ? programDayLabel(prog, day) : 'No day yet';
+      const fid = esc(f.id);
+      const rid = esc(rt.id);
+      let btns = '';
+      if (prog.marks[rt.id]) {
+        btns = '<button class="btn" style="min-height:40px;" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), null)">↩ Undo</button>';
+      } else if (st !== 'done') {
+        btns = '<button class="btn" style="min-height:40px;" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), \'done\')">✓ Done</button>'
+          + '<button class="btn" style="min-height:40px;" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), \'skipped\')">⏭ Skip</button>';
+      }
+      return '<div class="prog-strip prog-' + st + '"><span><b>' + esc(label) + '</b>'
+        + (PROGRAM_STATUS_TEXT[st] ? ' · ' + PROGRAM_STATUS_TEXT[st] : '') + '</span>'
+        + '<span style="display:flex; gap:6px;">' + btns + '</span></div>';
+    }
+
+    function programBar(f, rts) {
+      const prog = f.program;
+      const sum = programSummary(prog, rts);
+      let where;
+      if (sum.dayNow < 1) where = 'Starts ' + programDayLabel(prog, 1).replace('Day 1 · ', '');
+      else if (sum.dayNow > prog.length) where = 'Cycle over (' + prog.length + ' days)';
+      else where = 'Day ' + sum.dayNow + ' of ' + prog.length;
+      const fid = esc(f.id);
+      const bar = document.createElement('div');
+      bar.className = 'card prog-bar';
+      bar.innerHTML = '<div style="font-weight:800; font-size:15px;">📅 ' + esc(where) + '</div>'
+        + '<div style="font-size:13px; color:var(--text-sub); margin:4px 0 10px;">' + sum.done + ' done · ' + sum.skipped + ' skipped · ' + sum.left + ' to do</div>'
+        + '<div style="display:flex; gap:6px; flex-wrap:wrap;">'
+        + '<button class="btn' + (prog.view === 'list' ? ' btn-primary' : '') + '" style="flex:1; min-height:44px;" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'list\')">☰ List</button>'
+        + '<button class="btn' + (prog.view === 'calendar' ? ' btn-primary' : '') + '" style="flex:1; min-height:44px;" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'calendar\')">📅 Calendar</button>'
+        + '<button class="btn" style="flex:1; min-height:44px;" data-f="' + fid + '" onclick="openProgramSetup(this.getAttribute(\'data-f\'), true)">🔄 Reset</button>'
+        + '</div>';
+      return bar;
+    }
+
+    /* Calendar view: one row per cycle day; tap a workout to start it. */
+    function programCalendar(f, rts) {
+      const prog = f.program;
+      const today = todayPlanKey();
+      const box = document.createElement('div');
+      box.className = 'card';
+      let html = '';
+      for (let d = 1; d <= prog.length; d++) {
+        const key = programDayKey(prog, d);
+        const items = rts.filter(rt => prog.days[rt.id] === d);
+        html += '<div class="prog-day' + (key === today ? ' prog-day-today' : '') + '"><div class="prog-day-label">' + esc(programDayLabel(prog, d)) + '</div><div>'
+          + (items.length ? items.map(rt => {
+            const st = programItemStatus(prog, rt, today);
+            const icon = { done: '✅', skipped: '⏭', late: '⚠️', today: '📌' }[st] || '•';
+            return '<button class="btn prog-chip prog-' + st + '" data-r="' + esc(rt.id) + '" onclick="startRoutineWorkout(this.getAttribute(\'data-r\'))">' + icon + ' ' + esc(rt.name) + '</button>';
+          }).join('') : '<span style="color:var(--text-sub); font-size:13px;">Rest</span>')
+          + '</div></div>';
+      }
+      const unplaced = rts.filter(rt => !prog.days[rt.id]);
+      if (unplaced.length) {
+        html += '<div style="font-size:12px; color:var(--text-sub); margin-top:8px;">No day yet: ' + unplaced.map(rt => esc(rt.name)).join(', ') + '</div>';
+      }
+      box.innerHTML = html;
+      return box;
+    }
+
+    /* Setup / Reset sheet. Reset keeps the workouts and their days, starts
+       today by default and clears the done / skipped ticks. */
+    function openProgramSetup(fid, isReset, draft) {
+      const f = findFolder(fid);
+      if (!f) return;
+      const rts = state.routines.filter(rt => !isRoutineHidden(rt) && routineFolderId(rt) === f.id);
+      const prog = f.program;
+      const d = draft || {
+        start: (isReset || !prog) ? todayPlanKey() : prog.start,
+        length: prog ? prog.length : 7,
+        days: prog ? Object.assign({}, prog.days) : {}
+      };
+      if (!prog && !draft) rts.forEach((rt, i) => { d.days[rt.id] = Math.min(i + 1, d.length); });
+      const temp = { start: d.start, length: d.length };
+      let html = '<div style="font-size:13px; color:var(--text-sub); margin-bottom:10px;">'
+        + (isReset ? 'Same workouts, new cycle. Pick the start, the length and the days. Done and Skipped ticks are cleared.' : 'Pick when the cycle starts, how many days it lasts, and the day of each workout.')
+        + '</div>'
+        + '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">'
+        + '<label style="flex:1; min-width:140px; font-size:12px; color:var(--text-sub);">Start<input type="date" id="progStartInput" class="input-field" style="max-width:100%; min-height:44px;" value="' + esc(d.start) + '" onchange="refreshProgramSetup(\'' + esc(fid) + '\', ' + (isReset ? 'true' : 'false') + ')"></label>'
+        + '<label style="width:110px; font-size:12px; color:var(--text-sub);">Days<input type="number" id="progLengthInput" class="input-field" style="max-width:100%; min-height:44px;" min="1" max="' + PROGRAM_MAX_DAYS + '" inputmode="numeric" value="' + d.length + '" onchange="refreshProgramSetup(\'' + esc(fid) + '\', ' + (isReset ? 'true' : 'false') + ')"></label>'
+        + '</div>';
+      html += rts.map(rt => {
+        let opts = '<option value="0">No day</option>';
+        for (let i = 1; i <= d.length; i++) {
+          opts += '<option value="' + i + '"' + (d.days[rt.id] === i ? ' selected' : '') + '>' + esc(programDayLabel(temp, i)) + '</option>';
+        }
+        return '<div class="archive-row"><span>' + esc(rt.name) + '</span><select class="input-field prog-day-select" data-r="' + esc(rt.id) + '" style="width:170px; min-height:44px; margin:0;">' + opts + '</select></div>';
+      }).join('') || '<div style="font-size:13px; color:var(--text-sub);">Add routines to this folder first.</div>';
+      html += '<button class="btn btn-primary btn-block" style="min-height:44px; margin-top:12px;" data-f="' + esc(fid) + '" onclick="saveProgramSetup(this.getAttribute(\'data-f\'), ' + (isReset ? 'true' : 'false') + ')">' + (isReset ? '🔄 Start new cycle' : '💾 Save') + '</button>';
+      if (prog) {
+        html += '<button class="btn btn-block" style="min-height:44px; margin-top:8px;" data-f="' + esc(fid) + '" onclick="stopProgram(this.getAttribute(\'data-f\'))">Stop program (keep the folder)</button>';
+      }
+      openFolderSheet((isReset ? '🔄 Reset · ' : '📅 Program · ') + f.name, html);
+    }
+
+    function readProgramDraft() {
+      const startEl = document.getElementById('progStartInput');
+      const lenEl = document.getElementById('progLengthInput');
+      const days = {};
+      document.querySelectorAll('.prog-day-select').forEach(sel => {
+        const v = parseInt(sel.value, 10);
+        if (v > 0) days[sel.getAttribute('data-r')] = v;
+      });
+      let length = parseInt(lenEl ? lenEl.value : '', 10);
+      if (!isFinite(length) || length < 1) length = 1;
+      if (length > PROGRAM_MAX_DAYS) length = PROGRAM_MAX_DAYS;
+      const start = (startEl && isPlanDayKey(startEl.value)) ? startEl.value : todayPlanKey();
+      Object.keys(days).forEach(k => { if (days[k] > length) days[k] = length; });
+      return { start: start, length: length, days: days };
+    }
+
+    function refreshProgramSetup(fid, isReset) {
+      openProgramSetup(fid, isReset, readProgramDraft());
+    }
+
+    /* draft (tests) or the sheet's inputs. Returns the saved program or null. */
+    function saveProgramSetup(fid, isReset, draft) {
+      const f = findFolder(fid);
+      if (!f) return null;
+      const d = draft || readProgramDraft();
+      const prog = normalizeProgram({
+        start: d.start,
+        length: d.length,
+        days: d.days,
+        marks: (isReset || !f.program) ? {} : f.program.marks,
+        view: f.program ? f.program.view : 'list'
+      });
+      if (!prog) {
+        alert('Pick a start date and 1-' + PROGRAM_MAX_DAYS + ' days.');
+        return null;
+      }
+      f.program = prog;
+      f.collapsed = false;
+      saveState();
+      renderRoutines();
+      try { renderTrainingCalendar(); } catch (e) {}
+      closeModal('folderSheetModal');
+      return prog;
+    }
+
+    function stopProgram(fid) {
+      const f = findFolder(fid);
+      if (!f || !f.program) return;
+      if (!confirm('Stop this program? The folder and its routines stay.')) return;
+      delete f.program;
+      saveState();
+      renderRoutines();
+      try { renderTrainingCalendar(); } catch (e) {}
+      closeModal('folderSheetModal');
+    }
+
+    function markProgram(fid, rid, status) {
+      const f = findFolder(fid);
+      if (!f || !f.program) return;
+      if (status === 'done' || status === 'skipped') f.program.marks[rid] = status;
+      else delete f.program.marks[rid];
+      saveState();
+      renderRoutines();
+      try { renderTrainingCalendar(); } catch (e) {}
+    }
+
+    function setProgramView(fid, view) {
+      const f = findFolder(fid);
+      if (!f || !f.program) return;
+      f.program.view = view === 'calendar' ? 'calendar' : 'list';
+      saveState();
+      renderRoutines();
+    }
+
+    /* Program workouts placed on one local day (for the training calendar). */
+    function programItemsOn(key) {
+      const out = [];
+      const today = todayPlanKey();
+      ensureFolders().forEach(f => {
+        if (f.archived || !f.program) return;
+        state.routines.forEach(rt => {
+          if (isRoutineHidden(rt) || routineFolderId(rt) !== f.id) return;
+          const day = f.program.days[rt.id];
+          if (day && programDayKey(f.program, day) === key) {
+            out.push({ folder: f, routine: rt, status: programItemStatus(f.program, rt, today) });
+          }
+        });
+      });
+      return out;
     }
 
     function builderFolderChoice() {
@@ -9886,7 +10173,8 @@
           + names[(model.weekStart + i) % 7] + '</div>';
       }
       const hasAny = (Array.isArray(state.history) && state.history.length > 0)
-        || Object.keys(normalizePlans(state.plans)).length > 0;
+        || Object.keys(normalizePlans(state.plans)).length > 0
+        || ensureFolders().some(f => !f.archived && f.program); // P2-15
       let cellsHtml = '';
       if (!hasAny) {
         cellsHtml = '<div style="grid-column:1 / -1; text-align:center; color:var(--text-sub); font-size:13px; padding:14px 0;">No workouts yet</div>';
@@ -9918,9 +10206,12 @@
           const doneBadge = (status === 'done') ? '<div style="font-size:9px; font-weight:800; color:var(--lime-text);">✓</div>' : '';
           /* Planned/missed day: the routine's first word ("Push"), or "Rest". */
           const planShort = plan ? (plan.kind === 'rest' ? 'Rest' : String(planLabel(plan, state.routines)).split(/[\s(]/)[0].slice(0, 6)) : '';
+          const progItems = (c.inMonth && c.key && !plan && !filled) ? programItemsOn(c.key).filter(x => x.status !== 'skipped') : [];
+          const progDot = progItems.length ? '<div style="font-size:9px; font-weight:700; max-width:100%; overflow:hidden; white-space:nowrap; color:var(--lime-text);">'
+            + esc(String(progItems[0].routine.name).split(/[\s(]/)[0].slice(0, 6)) + '</div>' : '';
           const planDot = (!filled && status !== 'none') ? '<div style="font-size:9px; font-weight:700; max-width:100%; overflow:hidden; white-space:nowrap; color:' + (status === 'missed' ? 'var(--text-sub)' : '#a3e635') + ';">' + esc(status === 'missed' ? 'missed' : planShort) + '</div>' : '';
           return '<div class="cal-day' + (filled ? ' cal-day-filled' : '') + (c.isToday ? ' cal-day-today' : '') + (status === 'missed' ? ' cal-day-missed' : '') + '" data-key="' + esc(c.key || '') + '"' + click + ' style="' + cellStyle + '">'
-            + '<span>' + c.day + '</span>' + badge + doneBadge + planDot + '</div>';
+            + '<span>' + c.day + '</span>' + badge + doneBadge + (progDot || planDot) + '</div>';
         }).join('');
       }
       if (gridEl) {
@@ -10083,6 +10374,15 @@
         html += '<div style="font-size:14px; font-weight:700; margin-bottom:8px;">Plan this day</div>' + planEditorHtml(k, null);
       } else {
         html += '<div style="font-size:13px; color:var(--text-sub); margin-bottom:8px;">You can plan today or a future day. Past days only keep a plan you already made.</div>';
+      }
+
+      const progItems = programItemsOn(k);
+      if (progItems.length) {
+        html += '<div style="border-top:1px solid var(--border); margin-top:6px; padding-top:10px;">'
+          + '<div style="font-size:12px; color:var(--text-sub); margin-bottom:6px;">Program</div>'
+          + progItems.map(x => '<div style="font-size:14px; margin-bottom:6px;">📁 ' + esc(x.folder.name) + ' · <b>' + esc(x.routine.name) + '</b>'
+            + (PROGRAM_STATUS_TEXT[x.status] ? ' · ' + PROGRAM_STATUS_TEXT[x.status] : '') + '</div>').join('')
+          + '</div>';
       }
 
       if (list.length) {

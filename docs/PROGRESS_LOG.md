@@ -2,6 +2,11 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-03 — Program cycle (P2-15 step 2), awaiting owner phone check
+
+- A folder can be a program: start date, cycle length 1-31 days, a day for each workout (several per day allowed). Folder shows "Day X of N", done / skipped / to do, List and Calendar views, Reset. Done = ticked, or a finished workout of that routine since the cycle start. Skip never counts. Nothing repeats by itself: Reset keeps the workouts and days, takes a new start and length, clears the ticks. Program workouts show in the training calendar and its day sheet. 481 tests pass.
+- Next: P4-12 Google Calendar (needs the owner's Google Cloud setup).
+
 ## 2026-11-03 — Routine folders (P2-15 step 1), awaiting owner phone check
 
 - Owner asked for folders and programs (chat 2026-11-03). New plan rows: P2-15 (folders, then program cycle with List/Calendar view, Skip and Reset) and P4-12 (full Google Calendar connection, needs his Google Cloud sign-in setup).
