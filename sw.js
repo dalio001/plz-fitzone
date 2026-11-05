@@ -85,6 +85,8 @@ self.addEventListener('fetch', function(event) {
   // P4-11: never cache or intercept /api requests: network only, no fallback.
   if (url.pathname.startsWith('/api/') || url.pathname === '/api') return;
   if (request.method !== 'GET') return;
+  // P4-12: Google sign-in and Google Calendar are never cached.
+  if (/(^|\.)(googleapis|google|gstatic)\.com$/.test(url.hostname)) return;
   if (isExercisePicture(request)) {
     // Runtime cache-first for exercise pictures: instant on the second view
     // and available offline. A failed/404 response is never cached, so a

@@ -2,6 +2,10 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-05 — Google Calendar connection (P4-12), awaiting owner's first connect
+
+- Owner created his own Google Cloud project, consent screen (testing, both his Gmail addresses as test users) and web client. Settings › Google Calendar › Connect opens Google's window; the app makes a "PLZ Train" calendar and keeps one all-day event per program workout (✅ done, ⏭ skipped), updating moved days and deleting removed ones. Only the calendar.app.created permission; the access token is kept in memory only. Sends by itself for an hour after connecting; afterwards a "Send changes to Google Calendar" button shows under the program bar. Service worker never caches Google requests. 487 tests pass.
+
 ## 2026-11-03 — Cleaner routine cards and a real program calendar (P2-15 step 3), awaiting owner phone check
 
 - Owner feedback on his phone: cards too big and wordy, calendar not found, wants to drag workouts between days. Routine cards are now one compact row (name, number of exercises, ▶ Start, ⋯, small ▲▼); exercise names and the big Edit/Duplicate/Delete buttons are gone, all in the ⋯ menu (Edit, Duplicate, Change day, Move to folder, Archive, Delete). Program bar is one line with a List / Calendar switch and a small Reset. Calendar view is a week grid over the cycle (same week start as History), drag a workout to another day with the finger, tap it for Start / Done / Skip / Day. 483 tests pass.

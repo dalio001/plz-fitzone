@@ -344,6 +344,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   archiveRoutine, restoreRoutine, toggleRoutineArchive,
   normalizeProgram, programDayKey, programItemStatus, programSummary, openProgramSetup,
   saveProgramSetup, stopProgram, markProgram, setProgramView, programItemsOn, moveProgramDay, openProgramItem,
+  gcalEventId, gcalDesiredEvents, gcalSync, gcalPending, renderGcalSettings, GCAL_SCOPE,
   ROUTINE_IMPORT, validateRoutineImport, formatRoutineImportErrors,
   decodeRoutineImportHash, renderRoutineImportPreview,
   openRoutineImport, previewRoutineImportText, routineFileChosen,

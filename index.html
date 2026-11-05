@@ -180,6 +180,7 @@
     .prog-chip-ghost { position: fixed; z-index: 9999; pointer-events: none; width: auto; min-width: 56px; padding: 6px 10px; font-size: 12px; opacity: 0.92; box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
     .prog-unplaced { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-sub); }
     .prog-unplaced .prog-chip { width: auto; padding: 6px 10px; font-size: 12px; }
+    .gcal-pending { display: block; width: 100%; margin-top: 8px; min-height: 34px; font-size: 12px; color: var(--text-sub); background: transparent; border-style: dashed; }
     .prog-hint { font-size: 11px; color: var(--text-sub); margin-top: 8px; text-align: center; }
     .logo-mascot { width: 40px; height: 40px; border-radius: 12px; display: block; }
 
@@ -1115,6 +1116,12 @@
           <div class="section-title" style="margin-bottom:10px; font-size:16px;">My profile</div>
           <div id="myProfileBody"></div>
         </div>
+        </div>
+
+        <div class="card" id="gcalCard">
+          <div class="section-title" style="margin-bottom:6px; font-size:16px;">Google Calendar</div>
+          <div style="font-size:var(--font-12); color:var(--text-sub); margin-bottom:10px;">Puts your program workouts in a calendar called "PLZ Train" in your Google Calendar. The app only touches that calendar.</div>
+          <div id="gcalBody"></div>
         </div>
 
         <div class="card">
@@ -3319,6 +3326,7 @@
       // P0-01: mirror the exact bytes into IndexedDB as well.
       queueMainStateMirror(raw, state.savedAt);
       try { scheduleSyncPush(); } catch (e) {}
+      try { gcalNoteChange(); } catch (e) {}
     }
 
     /* NAVIGATION */
@@ -3862,7 +3870,8 @@
         + '<div class="prog-bar-row"><div class="prog-seg">'
         + '<button class="btn' + (prog.view === 'list' ? ' on' : '') + '" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'list\')">☰ List</button>'
         + '<button class="btn' + (prog.view === 'calendar' ? ' on' : '') + '" data-f="' + fid + '" onclick="setProgramView(this.getAttribute(\'data-f\'), \'calendar\')">📅 Calendar</button>'
-        + '</div><button class="btn prog-reset" data-f="' + fid + '" onclick="openProgramSetup(this.getAttribute(\'data-f\'), true)" aria-label="Reset cycle">🔄</button></div>';
+        + '</div><button class="btn prog-reset" data-f="' + fid + '" onclick="openProgramSetup(this.getAttribute(\'data-f\'), true)" aria-label="Reset cycle">🔄</button></div>'
+        + (gcalPending() ? '<button class="btn gcal-pending" onclick="gcalSyncNow()">📆 Send changes to Google Calendar</button>' : '');
       return bar;
     }
 
@@ -4130,6 +4139,271 @@
         });
       });
       return out;
+    }
+
+    /* P4-12 Google Calendar. The owner connects his own Google account (his
+       own Google Cloud client, Google's sign-in window). The app only uses
+       the "calendar.app.created" permission: it can make its own "PLZ Train"
+       calendar and change events in it, nothing else in his calendar.
+       The access token lives in memory only (never saved, logged or put in a
+       web address); it lasts about an hour, after that one tap renews it.
+       Each program workout = one all-day event with a fixed id, so moving a
+       day updates the same event and a removed workout deletes it. */
+    const GCAL_CLIENT_ID = '792458699804-9p208866rf2a2ie75gtnafueqbrn0c9t.apps.googleusercontent.com';
+    const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.app.created';
+    const GCAL_KEY = 'plz_gcal';
+    const GCAL_API = 'https://www.googleapis.com/calendar/v3';
+    let gcalToken = null;
+    let gcalTokenExp = 0;
+    let gcalTokenClient = null;
+    let gcalBusy = false;
+    let gcalTimer = null;
+    let gcalLastError = '';
+
+    function gcalConfig() {
+      try {
+        const c = JSON.parse(localStorage.getItem(GCAL_KEY) || 'null');
+        return c && typeof c === 'object' ? c : {};
+      } catch (e) { return {}; }
+    }
+    function setGcalConfig(c) {
+      try { localStorage.setItem(GCAL_KEY, JSON.stringify(c)); } catch (e) {}
+    }
+    function gcalConnected() { return gcalConfig().on === true; }
+    function gcalTokenValid() { return !!gcalToken && Date.now() < gcalTokenExp - 60000; }
+
+    function gcalEventId(fid, rid, start) {
+      /* Google event ids: letters a-v and digits only. Hex fits. */
+      const txt = unescape(encodeURIComponent(fid + '|' + rid + '|' + start));
+      let hex = 'plt';
+      for (let i = 0; i < txt.length; i++) hex += txt.charCodeAt(i).toString(16).padStart(2, '0');
+      return hex;
+    }
+
+    function gcalNextDay(key) {
+      const d = new Date(key + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      return dayKeyLocal(d.getTime());
+    }
+
+    /* What Google Calendar should show, worked out from the programs. */
+    function gcalDesiredEvents() {
+      const out = [];
+      const today = todayPlanKey();
+      ensureFolders().forEach(f => {
+        if (f.archived || !f.program) return;
+        const prog = f.program;
+        state.routines.forEach(rt => {
+          if (!rt || isRoutineHidden(rt) || routineFolderId(rt) !== f.id) return;
+          const day = prog.days[rt.id];
+          if (!day) return;
+          const st = programItemStatus(prog, rt, today);
+          const mark = st === 'done' ? '✅ ' : st === 'skipped' ? '⏭ ' : '';
+          out.push({
+            id: gcalEventId(f.id, rt.id, prog.start),
+            date: programDayKey(prog, day),
+            title: mark + rt.name,
+            note: 'PLZ Train · ' + f.name + ' · Day ' + day + ' of ' + prog.length + (st === 'skipped' ? ' · skipped (does not count)' : '')
+          });
+        });
+      });
+      return out;
+    }
+
+    function gcalSignature() { return JSON.stringify(gcalDesiredEvents()); }
+
+    function gcalPending() {
+      if (!gcalConnected()) return false;
+      try { return gcalConfig().sig !== gcalSignature(); } catch (e) { return false; }
+    }
+
+    /* Called after every save: send on its own while the hour-long
+       permission is still valid, otherwise the "Send changes" button shows. */
+    function gcalNoteChange() {
+      if (!gcalConnected() || !gcalTokenValid() || gcalBusy) return;
+      if (!gcalPending()) return;
+      clearTimeout(gcalTimer);
+      gcalTimer = setTimeout(function () { gcalSync().catch(function () {}); }, 1500);
+    }
+
+    function gcalLoadLib() {
+      if (window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+      return new Promise(function (resolve, reject) {
+        const el = document.createElement('script');
+        el.src = 'https://accounts.google.com/gsi/client';
+        el.async = true;
+        el.onload = function () { resolve(); };
+        el.onerror = function () { reject(new Error('Could not reach Google. Check the internet.')); };
+        document.head.appendChild(el);
+      });
+    }
+
+    /* Opens Google's own window. Needs a tap (browsers block it otherwise). */
+    function gcalGetToken(firstTime) {
+      if (gcalTokenValid()) return Promise.resolve(gcalToken);
+      return gcalLoadLib().then(function () {
+        return new Promise(function (resolve, reject) {
+          if (!gcalTokenClient) {
+            gcalTokenClient = google.accounts.oauth2.initTokenClient({ client_id: GCAL_CLIENT_ID, scope: GCAL_SCOPE, callback: function () {} });
+          }
+          gcalTokenClient.callback = function (r) {
+            if (!r || r.error || !r.access_token) return reject(new Error('Google did not give permission.'));
+            if (google.accounts.oauth2.hasGrantedAllScopes && !google.accounts.oauth2.hasGrantedAllScopes(r, GCAL_SCOPE)) {
+              return reject(new Error('Please tick the calendar box in the Google window.'));
+            }
+            gcalToken = r.access_token;
+            gcalTokenExp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+            resolve(gcalToken);
+          };
+          gcalTokenClient.error_callback = function (e) {
+            reject(new Error(e && e.type === 'popup_failed_to_open' ? 'The browser blocked the Google window. Allow pop-ups for this app and try again.' : 'The Google window was closed.'));
+          };
+          gcalTokenClient.requestAccessToken({ prompt: firstTime ? 'consent' : '' });
+        });
+      });
+    }
+
+    function gcalApi(method, path, body) {
+      return fetch(GCAL_API + path, {
+        method: method,
+        headers: { Authorization: 'Bearer ' + gcalToken, 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined,
+        cache: 'no-store'
+      }).then(function (r) {
+        if (r.status === 204) return null;
+        return r.json().catch(function () { return null; }).then(function (j) {
+          if (!r.ok) {
+            const e = new Error('Google answered ' + r.status);
+            e.status = r.status;
+            if (r.status === 401) { gcalToken = null; gcalTokenExp = 0; }
+            throw e;
+          }
+          return j;
+        });
+      });
+    }
+
+    function gcalEnsureCalendar() {
+      const c = gcalConfig();
+      const make = function () {
+        let tz = 'UTC';
+        try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) {}
+        return gcalApi('POST', '/calendars', { summary: 'PLZ Train', description: 'Workouts from the PLZ Train app', timeZone: tz }).then(function (cal) {
+          const c2 = gcalConfig();
+          c2.calendarId = cal.id;
+          setGcalConfig(c2);
+          return cal.id;
+        });
+      };
+      if (!c.calendarId) return make();
+      return gcalApi('GET', '/calendars/' + encodeURIComponent(c.calendarId)).then(function () { return c.calendarId; }, function (e) {
+        if (e.status === 404 || e.status === 403 || e.status === 410) return make();
+        throw e;
+      });
+    }
+
+    /* Make the PLZ Train calendar match the programs: add, change, delete. */
+    async function gcalSync() {
+      if (gcalBusy) return false;
+      gcalBusy = true;
+      gcalLastError = '';
+      renderGcalSettings();
+      try {
+        const calId = await gcalEnsureCalendar();
+        const base = '/calendars/' + encodeURIComponent(calId) + '/events';
+        const have = {};
+        let page = '';
+        do {
+          const res = await gcalApi('GET', base + '?maxResults=2500' + (page ? '&pageToken=' + encodeURIComponent(page) : ''));
+          ((res && res.items) || []).forEach(ev => { if (ev && ev.status !== 'cancelled') have[ev.id] = ev; });
+          page = res && res.nextPageToken;
+        } while (page);
+        const want = gcalDesiredEvents();
+        const sig = JSON.stringify(want);
+        const keep = {};
+        for (const w of want) {
+          keep[w.id] = true;
+          const body = { id: w.id, summary: w.title, description: w.note, start: { date: w.date }, end: { date: gcalNextDay(w.date) }, transparency: 'transparent' };
+          const cur = have[w.id];
+          if (cur) {
+            if (cur.summary === w.title && cur.start && cur.start.date === w.date && cur.description === w.note) continue;
+            await gcalApi('PUT', base + '/' + w.id, body);
+          } else {
+            try {
+              await gcalApi('POST', base, body);
+            } catch (e) {
+              if (e.status !== 409) throw e;
+              await gcalApi('PUT', base + '/' + w.id, body); // a deleted copy with this id
+            }
+          }
+        }
+        for (const id of Object.keys(have)) {
+          if (!keep[id]) await gcalApi('DELETE', base + '/' + id);
+        }
+        const c = gcalConfig();
+        c.sig = sig;
+        c.lastSync = Date.now();
+        setGcalConfig(c);
+        return true;
+      } catch (e) {
+        gcalLastError = (e && e.message) || 'Sync failed.';
+        return false;
+      } finally {
+        gcalBusy = false;
+        renderGcalSettings();
+        try { renderRoutines(); } catch (e) {}
+      }
+    }
+
+    function gcalConnect() {
+      gcalLastError = '';
+      return gcalGetToken(true).then(function () {
+        const c = gcalConfig();
+        c.on = true;
+        delete c.sig;
+        setGcalConfig(c);
+        return gcalSync();
+      }).catch(function (e) {
+        gcalLastError = (e && e.message) || 'Could not connect.';
+        renderGcalSettings();
+        return false;
+      });
+    }
+
+    function gcalSyncNow() {
+      return gcalGetToken(false).then(function () { return gcalSync(); }).catch(function (e) {
+        gcalLastError = (e && e.message) || 'Could not connect.';
+        renderGcalSettings();
+        return false;
+      });
+    }
+
+    function gcalDisconnect() {
+      if (!confirm('Stop sending workouts to Google Calendar? The "PLZ Train" calendar stays in Google; you can delete it there.')) return;
+      try { if (gcalToken && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(gcalToken, function () {}); } catch (e) {}
+      gcalToken = null;
+      gcalTokenExp = 0;
+      setGcalConfig({});
+      gcalLastError = '';
+      renderGcalSettings();
+      try { renderRoutines(); } catch (e) {}
+    }
+
+    function renderGcalSettings() {
+      const box = document.getElementById('gcalBody');
+      if (!box) return;
+      const c = gcalConfig();
+      const btn = (label, fn, cls) => '<button class="btn' + (cls || '') + '" style="min-height:44px; flex:1;" onclick="' + fn + '()"' + (gcalBusy ? ' disabled' : '') + '>' + label + '</button>';
+      let line;
+      if (gcalBusy) line = 'Sending to Google Calendar…';
+      else if (!c.on) line = 'Not connected.';
+      else if (gcalPending()) line = 'Connected. Some changes are not in Google yet.';
+      else line = 'Connected. Up to date' + (c.lastSync ? ' (' + new Date(c.lastSync).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ')' : '') + '.';
+      box.innerHTML = '<div style="font-size:14px; margin-bottom:8px;">' + esc(line) + '</div>'
+        + (gcalLastError ? '<div style="font-size:12px; color:var(--error-text); margin-bottom:8px;">' + esc(gcalLastError) + '</div>' : '')
+        + '<div style="display:flex; gap:8px;">'
+        + (c.on ? btn('🔄 Sync now', 'gcalSyncNow', ' btn-primary') + btn('Disconnect', 'gcalDisconnect') : btn('Connect Google Calendar', 'gcalConnect', ' btn-primary'))
+        + '</div>';
     }
 
     function builderFolderChoice() {
@@ -10801,6 +11075,7 @@
       if (plEl) plEl.value = ps.platesLb.join(', ');
       const wsSel = document.getElementById('weekStartSelect');
       if (wsSel) wsSel.value = getWeekStart();
+      try { renderGcalSettings(); } catch (e) {}
       const thSel = document.getElementById('themeSelect');
       if (thSel) thSel.value = normalizeTheme(state.theme);
       const tsSel = document.getElementById('textSizeSelect');
