@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-05 — One plan: week plan and programs speak to each other (P2-17), awaiting owner phone check
+
+- Owner: "everything we put in the new one should appear in the old one and vice versa".
+- Profile calendar, week count and Today card now include program workouts; the day sheet can Start / Done / Skip / move them. Planning a program workout inside its cycle in the Profile calendar sets its program day. Week plans show outlined in the program calendar and can be dragged. Google Calendar also gets week plans (all day).
+- Checks: new `tests/p2_17_one_plan.test.mjs` (9 tests); all 501 tests pass. Before/after screenshots taken on a local test copy (Today card, program calendar, Profile calendar).
+
 ## 2026-11-05 — Phone test sweep on the owner's Huawei (test origin, his data untouched)
 
 - Owner asked Claude to test the built features on his USB phone (Chrome 125, Android 9, 360 px). Worked: first-run setup, start routine, typing weights, tick + rest timer + Drop set, reload mid-workout → Resume, finish review (12 unticked → Drop them), history detail, PREVIOUS values + tap to copy, Target line, set menu + Remove + Undo, warm-up sets, plate calculator, equipment swap list, exercise search keeps focus, exercise picture + how-to, Progress / Records / Body weight, Light + Extra large, keep screen awake (wake lock held), week plan for a day, backup file (share sheet), timed set (Plank) start/stop saves time.

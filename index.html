@@ -177,6 +177,7 @@
     .prog-chip.prog-done { background: var(--lime-text); color: #111; }
     .prog-chip.prog-skipped { background: var(--bg-card); color: var(--text-sub); text-decoration: line-through; }
     .prog-chip.prog-late { background: transparent; color: var(--error-text); box-shadow: 0 0 0 1px var(--error-text) inset; }
+    .prog-chip.prog-dayplan { background: transparent; color: var(--lime-text); box-shadow: 0 0 0 1px var(--lime-text) inset; }
     .prog-chip-ghost { position: fixed; z-index: 9999; pointer-events: none; width: auto; min-width: 56px; padding: 6px 10px; font-size: 12px; opacity: 0.92; box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
     .prog-unplaced { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-sub); }
     .prog-unplaced .prog-chip { width: auto; padding: 6px 10px; font-size: 12px; }
@@ -3943,16 +3944,16 @@
           continue;
         }
         const items = rts.filter(rt => prog.days[rt.id] === dayIdx);
-        html += '<div class="prog-cell' + (key === today ? ' prog-cell-today' : '') + '" data-pday="' + dayIdx + '">'
+        html += '<div class="prog-cell' + (key === today ? ' prog-cell-today' : '') + '" data-pday="' + dayIdx + '" data-pkey="' + esc(key) + '">'
           + '<div class="prog-cell-num">' + d.getDate() + '</div>'
-          + items.map(rt => programChipHtml(fid, prog, rt, today)).join('') + '</div>';
+          + items.map(rt => programChipHtml(fid, prog, rt, today)).join('') + dayPlanChipHtml(key, items) + '</div>';
       }
       html += '</div>';
       const unplaced = rts.filter(rt => !prog.days[rt.id]);
       if (unplaced.length) {
         html += '<div class="prog-unplaced"><span>No day yet:</span>' + unplaced.map(rt => programChipHtml(fid, prog, rt, today)).join('') + '</div>';
       }
-      html += '<div class="prog-hint">Drag a workout to another day. Tap it to start, tick or skip.</div>';
+      html += '<div class="prog-hint">Drag a workout to another day. Tap it to start, tick or skip. Outlined = planned in the Profile calendar.</div>';
       const box = document.createElement('div');
       box.className = 'card';
       box.style.padding = '10px 8px';
@@ -3967,12 +3968,25 @@
         + ' onpointerdown="progChipDown(event, this)">' + esc(short) + '</button>';
     }
 
+    /* P2-17 one plan: a day planned in the Profile calendar also shows in the
+       program calendar (outlined). It can be dragged to another day the same
+       way; tapping it opens that day's sheet. Same routine twice = shown once. */
+    function dayPlanChipHtml(key, progRts) {
+      const plan = getPlan(key);
+      if (!plan) return '';
+      if (plan.kind === 'routine' && (progRts || []).some(rt => rt.id === plan.routineId)) return '';
+      const name = planLabel(plan, state.routines);
+      const short = plan.kind === 'rest' ? 'Rest' : (String(name).split(/[\s(]/)[0].slice(0, 8) || String(name).slice(0, 8));
+      return '<button class="prog-chip prog-dayplan" data-plan="' + esc(key) + '" title="' + esc(name) + '"'
+        + ' onpointerdown="progChipDown(event, this)">' + esc(short) + '</button>';
+    }
+
     /* Drag with pointer events (works with a finger, unlike HTML drag and drop).
        A short press without moving is a tap and opens the workout sheet. */
     let progDrag = null;
     function progChipDown(ev, el) {
       if (ev.button !== undefined && ev.button !== 0) return;
-      progDrag = { el: el, fid: el.getAttribute('data-f'), rid: el.getAttribute('data-r'), x: ev.clientX, y: ev.clientY, ghost: null, over: null };
+      progDrag = { el: el, fid: el.getAttribute('data-f'), rid: el.getAttribute('data-r'), plan: el.getAttribute('data-plan'), x: ev.clientX, y: ev.clientY, ghost: null, over: null };
       if (ev.preventDefault) ev.preventDefault();
     }
     function progCellAt(x, y) {
@@ -4002,12 +4016,14 @@
       const d = progDrag;
       progDrag = null;
       if (!d) return;
-      if (!d.ghost) return openProgramItem(d.fid, d.rid);
+      if (!d.ghost) return d.plan ? openPlanDay(d.plan) : openProgramItem(d.fid, d.rid);
       d.ghost.remove();
       d.el.style.opacity = '';
       if (d.over) d.over.classList.remove('prog-cell-drop');
       const cell = d.over || progCellAt(ev.clientX, ev.clientY);
-      if (cell) moveProgramDay(d.fid, d.rid, parseInt(cell.getAttribute('data-pday'), 10));
+      if (!cell) return;
+      if (d.plan) movePlan(d.plan, cell.getAttribute('data-pkey'));
+      else moveProgramDay(d.fid, d.rid, parseInt(cell.getAttribute('data-pday'), 10));
     }
     try {
       document.addEventListener('pointermove', progDragMove, { passive: true });
@@ -4192,6 +4208,23 @@
       renderRoutines();
     }
 
+    /* P2-17: cycle day (1..length) of a local day key, or 0 outside the cycle. */
+    function programDayIndex(prog, key) {
+      if (!prog || !isPlanDayKey(String(key))) return 0;
+      const s = new Date(prog.start + 'T00:00:00');
+      const d = new Date(String(key) + 'T00:00:00');
+      const idx = Math.round((d.getTime() - s.getTime()) / 86400000) + 1;
+      return idx >= 1 && idx <= prog.length ? idx : 0;
+    }
+
+    /* The running program that holds this routine, or null. */
+    function programFolderOf(routineId) {
+      const rt = state.routines.find(r => r && r.id === routineId);
+      if (!rt || isRoutineHidden(rt)) return null;
+      const f = findFolder(routineFolderId(rt));
+      return f && !f.archived && f.program ? f : null;
+    }
+
     /* Program workouts placed on one local day (for the training calendar). */
     function programItemsOn(key) {
       const out = [];
@@ -4296,11 +4329,27 @@
             date: programDayKey(prog, day),
             time: programItemTime(prog, rt.id),
             minutes: programMinutes(prog),
+            rid: rt.id,
             title: mark + rt.name,
             note: 'PLZ Train · ' + f.name + ' · Day ' + day + ' of ' + prog.length + (st === 'skipped' ? ' · skipped (does not count)' : '')
           });
         });
       });
+      /* P2-17 one plan: workouts planned in the Profile calendar too (all
+         day). Rest days stay out; a plan that repeats a program workout of
+         the same day is sent once. */
+      const plans = normalizePlans(state.plans);
+      const byDay = historyByDay(state.history);
+      Object.keys(plans).sort().forEach(key => {
+        const plan = plans[key];
+        if (plan.kind !== 'routine') return;
+        const rt = state.routines.find(r => r && r.id === plan.routineId);
+        if (!rt) return;
+        if (out.some(e => e.date === key && e.rid === rt.id)) return;
+        const done = planStatus(plan, byDay[key] || [], key, today) === 'done';
+        out.push({ id: gcalEventId('day', rt.id, key), date: key, time: '', minutes: PROGRAM_DEFAULT_MINUTES, title: (done ? '✅ ' : '') + rt.name, note: 'PLZ Train · Week plan' });
+      });
+      out.forEach(e => { delete e.rid; });
       return out;
     }
 
@@ -10522,6 +10571,27 @@
       return { planned: planned, done: done };
     }
 
+    /* P2-17: program workouts placed in the local week of nowMs (skipped ones
+       and ones already counted as a week plan of the same day are left out). */
+    function programWeekCount(nowMs, weekStart) {
+      const out = { planned: 0, done: 0 };
+      const startMs = startOfWeekMs(nowMs, weekStart);
+      if (startMs === null) return out;
+      const plans = normalizePlans(state.plans);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startMs);
+        d.setDate(d.getDate() + i);
+        const key = dayKeyLocal(d.getTime());
+        programItemsOn(key).forEach(x => {
+          if (x.status === 'skipped') return;
+          if (plans[key] && plans[key].routineId === x.routine.id) return;
+          out.planned++;
+          if (x.status === 'done') out.done++;
+        });
+      }
+      return out;
+    }
+
     /* Pure calendar model for one month: whole weeks of 7 (5 or 6 rows),
        padded with neighbouring days. Out-of-month days are never counted. */
     function buildCalendarModel(history, year, month, weekStart, nowMs) {
@@ -10743,12 +10813,15 @@
           const doneBadge = (status === 'done') ? '<div style="font-size:9px; font-weight:800; color:var(--lime-text);">✓</div>' : '';
           /* Planned/missed day: the routine's first word ("Push"), or "Rest". */
           const planShort = plan ? (plan.kind === 'rest' ? 'Rest' : String(planLabel(plan, state.routines)).split(/[\s(]/)[0].slice(0, 6)) : '';
-          const progItems = (c.inMonth && c.key && !plan && !filled) ? programItemsOn(c.key).filter(x => x.status !== 'skipped') : [];
-          const progDot = progItems.length ? '<div style="font-size:9px; font-weight:700; max-width:100%; overflow:hidden; white-space:nowrap; color:var(--lime-text);">'
-            + esc(String(progItems[0].routine.name).split(/[\s(]/)[0].slice(0, 6)) + '</div>' : '';
+          /* P2-17 one plan: program workouts show next to a week plan. */
+          const progItems = (c.inMonth && c.key && !filled) ? programItemsOn(c.key).filter(x => x.status !== 'skipped' && !(plan && plan.routineId === x.routine.id)) : [];
+          const progDot = progItems.length ? '<div style="font-size:9px; font-weight:700; max-width:100%; overflow:hidden; white-space:nowrap; color:' + (progItems[0].status === 'late' ? 'var(--text-sub)' : 'var(--lime-text)') + ';">'
+            + esc(progItems[0].status === 'late' ? 'missed' : String(progItems[0].routine.name).split(/[\s(]/)[0].slice(0, 6)) + '</div>' : '';
           const planDot = (!filled && status !== 'none') ? '<div style="font-size:9px; font-weight:700; max-width:100%; overflow:hidden; white-space:nowrap; color:' + (status === 'missed' ? 'var(--text-sub)' : '#a3e635') + ';">' + esc(status === 'missed' ? 'missed' : planShort) + '</div>' : '';
+          const extra = (planDot ? 1 : 0) + progItems.length - 1;
+          const moreDot = extra > 0 ? '<div style="font-size:9px; font-weight:700; color:var(--lime-text);">+' + extra + '</div>' : '';
           return '<div class="cal-day' + (filled ? ' cal-day-filled' : '') + (c.isToday ? ' cal-day-today' : '') + (status === 'missed' ? ' cal-day-missed' : '') + '" data-key="' + esc(c.key || '') + '"' + click + ' style="' + cellStyle + '">'
-            + '<span>' + c.day + '</span>' + badge + doneBadge + (progDot || planDot) + '</div>';
+            + '<span>' + c.day + '</span>' + badge + doneBadge + (planDot || progDot) + moreDot + '</div>';
         }).join('');
       }
       if (gridEl) {
@@ -10762,6 +10835,9 @@
       if (consEl) {
         /* P2-10: the existing line is untouched; the plan count is appended. */
         const planWeek = computePlanWeek(state.plans, state.history, nowMs, model.weekStart);
+        const progWeek = programWeekCount(nowMs, model.weekStart);
+        planWeek.planned += progWeek.planned;
+        planWeek.done += progWeek.done;
         consEl.innerHTML = 'This week ' + cons.thisWeek + ' · This month ' + cons.thisMonth
           + ' · Streak ' + cons.streakWeeks + (cons.streakWeeks === 1 ? ' week' : ' weeks')
           + ' · Planned this week ' + planWeek.planned + ', done ' + planWeek.done;
@@ -10797,7 +10873,7 @@
       const k = String(key);
       const items = historyByDay(state.history)[k] || [];
       const plan = getPlan(k);
-      if (plan) {
+      if (plan || programItemsOn(k).length) {
         planEditKey = null;
         return openDaySheet(k, items, plan);
       }
@@ -10917,8 +10993,19 @@
       if (progItems.length) {
         html += '<div style="border-top:1px solid var(--border); margin-top:6px; padding-top:10px;">'
           + '<div style="font-size:12px; color:var(--text-sub); margin-bottom:6px;">Program</div>'
-          + progItems.map(x => '<div style="font-size:14px; margin-bottom:6px;">📁 ' + esc(x.folder.name) + ' · <b>' + esc(x.routine.name) + '</b>'
-            + (PROGRAM_STATUS_TEXT[x.status] ? ' · ' + PROGRAM_STATUS_TEXT[x.status] : '') + '</div>').join('')
+          + progItems.map(x => {
+            const a = ' data-f="' + esc(x.folder.id) + '" data-r="' + esc(x.routine.id) + '"';
+            const b = (label, fn, cls) => '<button class="btn' + (cls || '') + '" style="flex:1; min-height:40px; font-size:13px;"' + a + ' onclick="closeCalDay(); ' + fn + '">' + label + '</button>';
+            const marked = x.folder.program.marks[x.routine.id];
+            let row = b('▶ Start', "startRoutineWorkout(this.getAttribute('data-r'))", ' btn-primary');
+            if (marked) row += b('↩ Undo', "markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), null)");
+            else if (x.status !== 'done') row += b('✓ Done', "markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), 'done')")
+              + b('⏭ Skip', "markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), 'skipped')");
+            row += b('📅 Day', "openProgramItem(this.getAttribute('data-f'), this.getAttribute('data-r'))");
+            return '<div style="font-size:14px; margin-bottom:6px;">📁 ' + esc(x.folder.name) + ' · <b>' + esc(x.routine.name) + '</b>'
+              + (PROGRAM_STATUS_TEXT[x.status] ? ' · ' + PROGRAM_STATUS_TEXT[x.status] : '') + '</div>'
+              + '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' + row + '</div>';
+          }).join('')
           + '</div>';
       }
 
@@ -10968,6 +11055,18 @@
       if (!isPlanableDay(k)) return false;
       if (typeof routineId !== 'string' || routineId.trim() === '') return false;
       state.plans = normalizePlans(state.plans);
+      /* P2-17 one plan: a workout of a running program, on a day inside its
+         cycle, is put on that day of the program (once per cycle), so both
+         calendars show the same thing. */
+      const pf = programFolderOf(routineId);
+      const idx = pf ? programDayIndex(pf.program, k) : 0;
+      if (idx) {
+        pf.program.days[routineId] = idx;
+        delete state.plans[k];
+        saveState();
+        afterPlanChange(k);
+        return true;
+      }
       state.plans[k] = { routineId: routineId, kind: 'routine', createdAt: Date.now() };
       saveState();
       afterPlanChange(k);
@@ -11040,7 +11139,19 @@
       if (!el) return;
       const key = todayPlanKey();
       const plan = key ? getPlan(key) : null;
-      if (!plan) { el.innerHTML = ''; return; }
+      /* P2-17 one plan: today's program workouts show here too. */
+      const progToday = key ? programItemsOn(key).filter(x => !(plan && plan.routineId === x.routine.id)) : [];
+      const progHtml = progToday.map(x => {
+        if (x.status === 'done') return '<div style="font-size:15px; font-weight:700; margin-top:8px;">✅ Today: ' + esc(x.routine.name) + ' — done</div>';
+        if (x.status === 'skipped') return '<div style="font-size:15px; font-weight:700; margin-top:8px; color:var(--text-sub);">⏭ Today: ' + esc(x.routine.name) + ' — skipped</div>';
+        const tm = programItemTime(x.folder.program, x.routine.id);
+        return '<div style="font-size:15px; font-weight:700; margin-top:8px;">📌 Today: ' + esc(x.routine.name) + (tm ? ' · ' + esc(tm) : '') + '</div>'
+          + '<button class="btn btn-primary btn-block" style="margin-top:8px; min-height:44px;" data-r="' + esc(x.routine.id) + '" onclick="startRoutineWorkout(this.getAttribute(\'data-r\'))">▶ Start</button>';
+      }).join('');
+      if (!plan) {
+        el.innerHTML = progHtml ? '<div class="card" style="max-width:412px; margin-left:auto; margin-right:auto;">' + progHtml.replace('margin-top:8px; ', '') + '</div>' : '';
+        return;
+      }
       const items = historyByDay(state.history)[key] || [];
       const status = planStatus(plan, items, key, key);
       const label = planLabel(plan, state.routines);
@@ -11048,7 +11159,7 @@
       if (status === 'done') {
         el.innerHTML = cardOpen
           + '<div style="font-size:15px; font-weight:700;">✅ Today: ' + esc(label) + ' — done</div>'
-          + '<div style="font-size:12px; color:var(--text-sub); margin-top:4px;">Finished today. Nothing left to do.</div></div>';
+          + '<div style="font-size:12px; color:var(--text-sub); margin-top:4px;">Finished today. Nothing left to do.</div>' + progHtml + '</div>';
         return;
       }
       if (plan.kind === 'rest') {
@@ -11056,7 +11167,7 @@
           + '<div style="font-size:15px; font-weight:700;">😌 Today: Rest day</div>'
           + '<div style="font-size:12px; color:var(--text-sub); margin-top:4px;">'
           + (items.length ? 'You trained anyway — the day counts.' : 'No workout planned today. Recovery is the plan.')
-          + '</div></div>';
+          + '</div>' + progHtml + '</div>';
         return;
       }
       const exists = state.routines.some(r => r && r.id === plan.routineId);
@@ -11065,7 +11176,7 @@
         + (exists
           ? '<button class="btn btn-primary btn-block" style="margin-top:8px; min-height:44px;" onclick="startTodayPlanWorkout()">▶ Start</button>'
           : '<div style="font-size:12px; color:var(--text-sub); margin-top:4px;">That routine no longer exists. Pick another routine, or delete the plan in the calendar.</div>')
-        + '</div>';
+        + progHtml + '</div>';
     }
 
     function startTodayPlanWorkout() {
