@@ -266,12 +266,13 @@
       background: var(--bg-main);
       z-index: 10;
       display: flex;
+      flex-wrap: wrap;
       gap: var(--space-4);
       padding: var(--space-4) 0 var(--space-12);
       margin-bottom: var(--space-8);
     }
     .profile-section-btn {
-      flex: 1;
+      flex: 1 1 auto;
       min-height: var(--control-min-height);
       font-weight: 700;
       padding: var(--space-8) var(--space-4);
@@ -5706,6 +5707,15 @@
       return !!(activeWorkout && activeWorkout.targetsHidden === true);
     }
 
+    /* A timed exercise (Plank) asks for a comfortable time, not a weight. */
+    function targetTextFor(exIdx, target) {
+      const txt = nextTargetText(target);
+      if (target.kind !== 'none') return txt;
+      const ex = activeWorkout && activeWorkout.exercises[exIdx];
+      const info = ex && state.exercises.find(e => e.id === ex.exId);
+      return isDurationEx(info) ? txt.replace('comfortable weight', 'comfortable time') : txt;
+    }
+
     function targetLineHtml(exIdx) {
       if (!showTargetsEnabled() || targetsHiddenForWorkout()) return '';
       const target = computeNextTarget(exIdx);
@@ -5715,7 +5725,7 @@
         : '';
       return `
         <div class="target-line" id="target-line-${exIdx}" data-target-kind="${target.kind}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px;">
-          <span style="font-size:12px; color:var(--text-sub); min-width:0; overflow-wrap:anywhere;">${esc(nextTargetText(target))}</span>
+          <span style="font-size:12px; color:var(--text-sub); min-width:0; overflow-wrap:anywhere;">${esc(targetTextFor(exIdx, target))}</span>
           <span style="display:flex; gap:6px; flex-shrink:0;">
             ${useBtn}
             <button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" onclick="hideTargetsForWorkout()">Hide</button>
@@ -6864,6 +6874,7 @@
         // P2-02: validate in display-unit terms before anything is saved.
         const raw = parseFloat(val);
         if (!isFinite(raw)) {
+          activeWorkout.exercises[exIdx].sets[sIdx].weight = '';
           setFieldError(exIdx, sIdx, 'weight', 'Enter a number');
           paintSetRowError(exIdx, sIdx);
           saveActiveSession();
@@ -6872,7 +6883,10 @@
         const kg = fromInputWeight(val, state.unit);
         const err = getWeightErrorKg(kg);
         if (err) {
-          // Nothing invalid is saved to the set model.
+          // Nothing invalid is saved to the set model. The field is emptied
+          // (not left on the last valid keystroke: 2000 must not become 200),
+          // so the set stays untickable and the red box keeps what was typed.
+          activeWorkout.exercises[exIdx].sets[sIdx].weight = '';
           setFieldError(exIdx, sIdx, 'weight', err);
           paintSetRowError(exIdx, sIdx);
           saveActiveSession();
@@ -6883,6 +6897,7 @@
       } else {
         const n = Number(val);
         if (!isFinite(n)) {
+          activeWorkout.exercises[exIdx].sets[sIdx].reps = '';
           setFieldError(exIdx, sIdx, 'reps', 'Enter a number');
           paintSetRowError(exIdx, sIdx);
           saveActiveSession();
@@ -6890,6 +6905,7 @@
         }
         const err = getRepsError(n);
         if (err) {
+          activeWorkout.exercises[exIdx].sets[sIdx].reps = '';
           setFieldError(exIdx, sIdx, 'reps', err);
           paintSetRowError(exIdx, sIdx);
           saveActiveSession();
@@ -6921,8 +6937,10 @@
         // P2-02 / P2-12: an invalid set cannot be ticked (duration rows use a time).
         const errs = setFieldErrorsFor(s, exType);
         if (errs.weight || errs.reps || errs.duration) {
-          if (errs.weight) setFieldError(exIdx, sIdx, 'weight', errs.weight);
-          if (errs.reps) setFieldError(exIdx, sIdx, 'reps', errs.reps);
+          // Keep the reason already shown (e.g. "max 1000 kg") over "Enter weight".
+          const had = setInputErrors[exIdx + ':' + sIdx] || {};
+          if (errs.weight) setFieldError(exIdx, sIdx, 'weight', had.weight || errs.weight);
+          if (errs.reps) setFieldError(exIdx, sIdx, 'reps', had.reps || errs.reps);
           if (errs.duration) setFieldError(exIdx, sIdx, 'duration', errs.duration);
           renderActiveWorkout();
           saveActiveSession();

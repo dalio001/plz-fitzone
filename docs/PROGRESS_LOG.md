@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-05 — Phone test sweep on the owner's Huawei (test origin, his data untouched)
+
+- Owner asked Claude to test the built features on his USB phone (Chrome 125, Android 9, 360 px). Worked: first-run setup, start routine, typing weights, tick + rest timer + Drop set, reload mid-workout → Resume, finish review (12 unticked → Drop them), history detail, PREVIOUS values + tap to copy, Target line, set menu + Remove + Undo, warm-up sets, plate calculator, equipment swap list, exercise search keeps focus, exercise picture + how-to, Progress / Records / Body weight, Light + Extra large, keep screen awake (wake lock held), week plan for a day, backup file (share sheet), timed set (Plank) start/stop saves time.
+- Fixed: (1) a too-big weight or reps (e.g. 2000 kg) fell back to the shorter value typed on the way (200) and could be ticked; now the box stays red with the real reason ("Max 1000 kg") and the set cannot be ticked. (2) At Extra large text the Profile "Settings" tab was cut off; the tabs now wrap. (3) Plank said "pick a comfortable weight"; timed exercises now say "time". 492 tests pass.
+- Not testable by Claude: lock-screen rest alert (needs his permission tap) and sounds (cannot hear).
+
 ## 2026-11-05 — Workout times, also from the AI connector (P2-16), awaiting owner phone check
 
 - Program setup: "Usual time" (empty = all day) and "Minutes". Tap a workout: its own time, "All day", or "Usual time". Times show on the cards. Google Calendar gets timed blocks (all-day stays all-day). Connector tools get_programs and schedule_program (time, minutes, start, length, per-workout time and day). 489 tests pass.
