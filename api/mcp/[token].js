@@ -162,6 +162,41 @@ const TOOLS = [
     }
   },
   {
+    name: 'get_programs',
+    description: 'List the program cycles (routine folders with a cycle): start date, length in days, usual time, minutes, and each workout with its cycle day, date, time ("all day" when none) and status.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false }
+  },
+  {
+    name: 'schedule_program',
+    description: 'Change a program cycle: its usual time and length, the start date and number of days, and per workout its time ("HH:MM", "allday", or "default" = the usual time) and its cycle day (0 = no day). Done/skipped ticks are kept.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        folder: { type: 'string', description: 'Folder name or ID that holds the program' },
+        usualTime: { type: 'string', description: '"HH:MM" (24 h) for all workouts, or "allday"' },
+        minutes: { type: 'integer', description: 'How long each workout lasts in the calendar (10-300)' },
+        start: { type: 'string', description: 'Cycle start date YYYY-MM-DD' },
+        length: { type: 'integer', description: 'Cycle length in days (1-31)' },
+        workouts: {
+          type: 'array',
+          description: 'Per workout changes',
+          items: {
+            type: 'object',
+            properties: {
+              routine: { type: 'string', description: 'Routine name or ID in this folder' },
+              time: { type: 'string', description: '"HH:MM", "allday" or "default"' },
+              day: { type: 'integer', description: 'Cycle day 1..length, 0 = no day' }
+            },
+            required: ['routine'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['folder'],
+      additionalProperties: false
+    }
+  },
+  {
     name: 'add_body_entry',
     description: 'Log body weight in kg and optional measurements for a date (YYYY-MM-DD). Weight bounds: 20-500 kg.',
     inputSchema: {
@@ -221,6 +256,20 @@ function extractToken(req) {
   const auth = req.headers['authorization'] || req.headers['Authorization'] || '';
   if (auth.startsWith('Bearer ')) return auth.slice(7).trim();
   return '';
+}
+
+// Program cycle helpers (same rules as the app, P2-15 / P2-16).
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+function programTimeOf(p, rid) {
+  const own = p.times ? p.times[rid] : undefined;
+  if (own === 'allday') return '';
+  if (CLOCK.test(String(own || ''))) return own;
+  return CLOCK.test(String(p.time || '')) ? p.time : '';
+}
+function cycleDate(start, day) {
+  const d = new Date(start + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + day - 1);
+  return d.toISOString().slice(0, 10);
 }
 
 // Routine items as the app stores them (validated payload -> app shape).
@@ -485,6 +534,87 @@ async function executeTool(toolName, args, owner, ownerHash) {
     const newRev = await saveAiChange(owner, ownerHash, st, 'Updated weekly workout plan');
 
     return { text: `Weekly plan updated. Synced at rev ${newRev}.` };
+  }
+
+  if (toolName === 'get_programs') {
+    const folders = (Array.isArray(st.folders) ? st.folders : []).filter(f => f && !f.archived && f.program);
+    if (!folders.length) return { text: 'No program cycles yet. In the app: open a folder, tap "Make it a program".' };
+    const routines = Array.isArray(st.routines) ? st.routines : [];
+    const history = Array.isArray(st.history) ? st.history : [];
+    const lines = [];
+    folders.forEach(f => {
+      const p = f.program;
+      lines.push(`Program "${f.name}" (folder ID: ${f.id}): starts ${p.start}, ${p.length} days, usual time ${p.time || 'all day'}, ${p.minutes || 60} min each.`);
+      const startMs = new Date(p.start + 'T00:00:00').getTime();
+      routines.filter(rt => rt && rt.archived !== true && rt.folderId === f.id).forEach(rt => {
+        const day = p.days && p.days[rt.id];
+        const did = history.some(w => w && w.routineId === rt.id && Number(w.date) >= startMs);
+        const status = (p.marks && p.marks[rt.id]) || (did ? 'done' : 'to do');
+        const time = programTimeOf(p, rt.id) || 'all day';
+        lines.push(`- ${rt.name} (ID: ${rt.id}): ${day ? 'day ' + day + ' (' + cycleDate(p.start, day) + '), ' + time : 'no day yet'}, ${status}`);
+      });
+    });
+    return { text: lines.join('\n') };
+  }
+
+  if (toolName === 'schedule_program') {
+    const folders = Array.isArray(st.folders) ? st.folders : [];
+    const key = String(args.folder || '').trim().toLowerCase();
+    const f = folders.find(x => x && !x.archived && x.program && (String(x.id).toLowerCase() === key || String(x.name).toLowerCase() === key));
+    if (!f) return { isError: true, text: `No program found for folder "${args.folder}". Use get_programs to see them.` };
+    const p = JSON.parse(JSON.stringify(f.program));
+    const changes = [];
+    if (args.start !== undefined) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(args.start)) || isNaN(new Date(args.start + 'T00:00:00').getTime())) return { isError: true, text: 'start must be YYYY-MM-DD.' };
+      p.start = args.start;
+      changes.push('start ' + p.start);
+    }
+    if (args.length !== undefined) {
+      const len = Number(args.length);
+      if (!Number.isInteger(len) || len < 1 || len > 31) return { isError: true, text: 'length must be 1-31 days.' };
+      p.length = len;
+      Object.keys(p.days || {}).forEach(k => { if (p.days[k] > len) p.days[k] = len; });
+      changes.push(len + ' days');
+    }
+    if (args.usualTime !== undefined) {
+      if (args.usualTime === 'allday') delete p.time;
+      else if (CLOCK.test(String(args.usualTime))) p.time = args.usualTime;
+      else return { isError: true, text: 'usualTime must be "HH:MM" (24 h) or "allday".' };
+      changes.push('usual time ' + (p.time || 'all day'));
+    }
+    if (args.minutes !== undefined) {
+      const m = Number(args.minutes);
+      if (!Number.isInteger(m) || m < 10 || m > 300) return { isError: true, text: 'minutes must be 10-300.' };
+      if (m === 60) delete p.minutes; else p.minutes = m;
+      changes.push(m + ' min');
+    }
+    const routines = (Array.isArray(st.routines) ? st.routines : []).filter(rt => rt && rt.archived !== true && rt.folderId === f.id);
+    const items = Array.isArray(args.workouts) ? args.workouts : [];
+    for (let i = 0; i < items.length; i++) {
+      const w = items[i] || {};
+      const rk = String(w.routine || '').trim().toLowerCase();
+      const rt = routines.find(r => String(r.id).toLowerCase() === rk || String(r.name).toLowerCase() === rk);
+      if (!rt) return { isError: true, text: `Workout ${i + 1}: no routine "${w.routine}" in this program.` };
+      if (w.time !== undefined) {
+        p.times = p.times || {};
+        if (w.time === 'default') delete p.times[rt.id];
+        else if (w.time === 'allday' || CLOCK.test(String(w.time))) p.times[rt.id] = w.time;
+        else return { isError: true, text: `Workout ${i + 1}: time must be "HH:MM", "allday" or "default".` };
+        if (!Object.keys(p.times).length) delete p.times;
+        changes.push(`${rt.name} ${w.time}`);
+      }
+      if (w.day !== undefined) {
+        const d = Number(w.day);
+        if (!Number.isInteger(d) || d < 0 || d > p.length) return { isError: true, text: `Workout ${i + 1}: day must be 0-${p.length}.` };
+        p.days = p.days || {};
+        if (d === 0) delete p.days[rt.id]; else p.days[rt.id] = d;
+        changes.push(`${rt.name} day ${d}`);
+      }
+    }
+    if (!changes.length) return { isError: true, text: 'Nothing to change.' };
+    f.program = p;
+    const newRev = await saveAiChange(owner, ownerHash, st, `Program "${f.name}": ${changes.join(', ')}`);
+    return { text: `Program "${f.name}" updated: ${changes.join(', ')}. Synced at rev ${newRev}. Google Calendar updates when the app sends its changes.` };
   }
 
   if (toolName === 'add_body_entry') {

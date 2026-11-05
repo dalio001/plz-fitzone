@@ -90,6 +90,28 @@ describe('P4-12 Google Calendar', () => {
     assert.equal(JSON.parse(store.get('plz_gcal')).calendarId, 'c1');
   });
 
+  it('P2-16 times: usual time, own time, all day; Google gets timed blocks', async () => {
+    const { app, g, today, fid, store } = setup();
+    app.api.saveProgramSetup(fid, false, { start: today, length: 7, days: { rt1: 1, rt2: 3 }, time: '18:00', minutes: 75 });
+    app.api.setProgramItemTime(fid, 'rt2', '07:30');
+    const p = app.api.state.folders[0].program;
+    assert.equal(app.api.programItemTime(p, 'rt1'), '18:00');
+    assert.equal(app.api.programItemTime(p, 'rt2'), '07:30');
+    assert.equal(app.api.setProgramItemTime(fid, 'rt2', '7h30'), false, 'bad time refused');
+    await app.api.gcalSync();
+    const e1 = g.events[app.api.gcalEventId(fid, 'rt1', today)];
+    assert.equal(e1.start.dateTime, today + 'T18:00:00');
+    assert.equal(e1.end.dateTime, today + 'T19:15:00');
+    app.api.setProgramItemTime(fid, 'rt1', 'allday');
+    await app.api.gcalSync();
+    assert.equal(g.events[app.api.gcalEventId(fid, 'rt1', today)].start.date, today);
+    const app2 = createApp({ store, fetch: g.fetch });
+    const p2 = app2.api.state.folders[0].program;
+    assert.equal(p2.time, '18:00');
+    assert.equal(p2.minutes, 75);
+    assert.equal(JSON.stringify(p2.times), JSON.stringify({ rt2: '07:30', rt1: 'allday' }));
+  });
+
   it('a Google error is shown, nothing is marked as sent', async () => {
     const store = new Map();
     store.set('plz_gcal', JSON.stringify({ on: true }));

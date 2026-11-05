@@ -358,13 +358,13 @@ describe('P4-11 MCP Protocol Handshake & Tool Discovery', () => {
     await mcpHandler(listReq, listRes);
     assert.equal(listRes.statusCode, 200);
     const tools = listRes.body.result.tools;
-    assert.equal(tools.length, 13, 'all 13 tools registered');
+    assert.equal(tools.length, 15, 'all 15 tools registered');
     const toolNames = tools.map(t => t.name);
     [
       'get_overview', 'list_workouts', 'get_workout', 'get_records',
       'get_body', 'list_routines', 'list_exercises', 'create_routine',
       'update_routine', 'delete_routine', 'plan_week', 'add_body_entry',
-      'log_workout'
+      'log_workout', 'get_programs', 'schedule_program'
     ].forEach(name => {
       assert.ok(toolNames.includes(name), `tool ${name} is in tools/list`);
     });
@@ -546,6 +546,27 @@ describe('P4-11 All 13 MCP Tools & Validation Errors', () => {
     assert.equal(db.plz_state_history[0].rev, initialRev);
     assert.ok(!(db.plz_state_history[0].state.routines || []).some(r => r.name === 'Shoulders Day'),
       'the undo copy is the state BEFORE the AI change');
+  });
+  it('P2-16 get_programs and schedule_program set times and days of a program', async () => {
+    const ownerHash = hashToken(token);
+    const row = db.plz_state.get(ownerHash);
+    row.state.folders = [{ id: 'fd_default', name: 'My routines', program: { start: '2026-11-02', length: 8, days: { rt_1: 3 }, marks: {}, view: 'list' } }];
+    row.state.routines[0].folderId = 'fd_default';
+    const none = await callMcpTool('get_programs');
+    assert.ok(none.content[0].text.includes('day 3 (2026-11-04), all day'));
+    const bad = await callMcpTool('schedule_program', { folder: 'My routines', usualTime: '25:00' });
+    assert.equal(bad.isError, true);
+    const ok = await callMcpTool('schedule_program', { folder: 'my routines', usualTime: '18:00', minutes: 75, workouts: [{ routine: 'Upper Power', time: '07:30', day: 5 }] });
+    assert.equal(ok.isError, false);
+    const p = db.plz_state.get(ownerHash).state.folders[0].program;
+    assert.equal(p.time, '18:00');
+    assert.equal(p.minutes, 75);
+    assert.equal(p.times.rt_1, '07:30');
+    assert.equal(p.days.rt_1, 5);
+    const list = await callMcpTool('get_programs');
+    assert.ok(list.content[0].text.includes('day 5 (2026-11-06), 07:30'));
+    await callMcpTool('schedule_program', { folder: 'fd_default', workouts: [{ routine: 'rt_1', time: 'default' }] });
+    assert.equal(db.plz_state.get(ownerHash).state.folders[0].program.times, undefined);
   });
 });
 

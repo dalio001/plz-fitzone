@@ -2,6 +2,10 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-05 — Workout times, also from the AI connector (P2-16), awaiting owner phone check
+
+- Program setup: "Usual time" (empty = all day) and "Minutes". Tap a workout: its own time, "All day", or "Usual time". Times show on the cards. Google Calendar gets timed blocks (all-day stays all-day). Connector tools get_programs and schedule_program (time, minutes, start, length, per-workout time and day). 489 tests pass.
+
 ## 2026-11-05 — Google Calendar connection (P4-12), awaiting owner's first connect
 
 - Owner created his own Google Cloud project, consent screen (testing, both his Gmail addresses as test users) and web client. Settings › Google Calendar › Connect opens Google's window; the app makes a "PLZ Train" calendar and keeps one all-day event per program workout (✅ done, ⏭ skipped), updating moved days and deleting removed ones. Only the calendar.app.created permission; the access token is kept in memory only. Sends by itself for an hour after connecting; afterwards a "Send changes to Google Calendar" button shows under the program bar. Service worker never caches Google requests. 487 tests pass.

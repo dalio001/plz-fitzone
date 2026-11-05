@@ -3792,7 +3792,50 @@
       Object.keys(p.marks && typeof p.marks === 'object' ? p.marks : {}).forEach(k => {
         if (p.marks[k] === 'done' || p.marks[k] === 'skipped') marks[k] = p.marks[k];
       });
-      return { start: String(p.start), length: length, days: days, marks: marks, view: p.view === 'calendar' ? 'calendar' : 'list' };
+      const out = { start: String(p.start), length: length, days: days, marks: marks, view: p.view === 'calendar' ? 'calendar' : 'list' };
+      /* Times (owner, 2026-11-05): optional usual time + length for the whole
+         program, and per workout 'HH:MM' or 'allday'. No time = all day. */
+      if (isClockTime(p.time)) out.time = p.time;
+      const minutes = parseInt(p.minutes, 10);
+      if (isFinite(minutes) && minutes >= 10 && minutes <= 300 && minutes !== PROGRAM_DEFAULT_MINUTES) out.minutes = minutes;
+      const times = {};
+      Object.keys(p.times && typeof p.times === 'object' ? p.times : {}).forEach(k => {
+        if (p.times[k] === 'allday' || isClockTime(p.times[k])) times[k] = p.times[k];
+      });
+      if (Object.keys(times).length) out.times = times;
+      return out;
+    }
+
+    const PROGRAM_DEFAULT_MINUTES = 60;
+    function isClockTime(v) { return typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v); }
+
+    /* 'HH:MM' or '' (all day) for one workout of a program. */
+    function programItemTime(prog, rid) {
+      const own = prog && prog.times ? prog.times[rid] : undefined;
+      if (own === 'allday') return '';
+      if (isClockTime(own)) return own;
+      return prog && isClockTime(prog.time) ? prog.time : '';
+    }
+
+    function programMinutes(prog) { return (prog && prog.minutes) || PROGRAM_DEFAULT_MINUTES; }
+
+    /* value: 'HH:MM', 'allday', or 'default' (follow the program's usual time). */
+    function setProgramItemTime(fid, rid, value, keepSheet) {
+      const f = findFolder(fid);
+      if (!f || !f.program) return false;
+      const prog = f.program;
+      if (value === 'default') {
+        if (prog.times) delete prog.times[rid];
+      } else if (value === 'allday' || isClockTime(value)) {
+        prog.times = prog.times || {};
+        prog.times[rid] = value;
+      } else return false;
+      if (prog.times && !Object.keys(prog.times).length) delete prog.times;
+      saveState();
+      renderRoutines();
+      try { renderTrainingCalendar(); } catch (e) {}
+      if (keepSheet) openProgramItem(fid, rid);
+      return true;
     }
 
     function programDayKey(prog, dayIdx) {
@@ -3843,7 +3886,8 @@
       const prog = f.program;
       const st = programItemStatus(prog, rt);
       const day = prog.days[rt.id];
-      const label = day ? programDayLabel(prog, day) : 'No day yet';
+      const tm = programItemTime(prog, rt.id);
+      const label = (day ? programDayLabel(prog, day) : 'No day yet') + (day && tm ? ' · ' + tm : '');
       const fid = esc(f.id);
       const rid = esc(rt.id);
       const btn = (txt, val) => '<button class="btn" data-f="' + fid + '" data-r="' + rid + '" onclick="markProgram(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), ' + val + ')">' + txt + '</button>';
@@ -4010,6 +4054,13 @@
         html += btn('✓ Done', "closeModal('folderSheetModal'); markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), 'done')")
           + btn('⏭ Skip (does not count)', "closeModal('folderSheetModal'); markProgram(this.getAttribute('data-f'), this.getAttribute('data-r'), 'skipped')");
       }
+      const tm = programItemTime(prog, rid);
+      const own = prog.times ? prog.times[rid] : undefined;
+      const tbtn = (label, val, on) => '<button class="btn' + (on ? ' btn-primary' : '') + '" style="flex:1; min-height:40px; font-size:13px;" ' + a + ' onclick="setProgramItemTime(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), \'' + val + '\', true)">' + label + '</button>';
+      html += '<label style="display:block; font-size:12px; color:var(--text-sub); margin-top:4px;">Time (empty = all day)'
+        + '<input type="time" class="input-field" style="min-height:44px; margin:4px 0 6px;" ' + a + ' value="' + esc(tm) + '" onchange="setProgramItemTime(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), this.value || \'allday\', true)"></label>'
+        + '<div style="display:flex; gap:6px; margin-bottom:8px;">' + tbtn('All day', 'allday', !tm)
+        + (prog.time ? tbtn('Usual time (' + esc(prog.time) + ')', 'default', own === undefined) : '') + '</div>';
       html += '<label style="display:block; font-size:12px; color:var(--text-sub); margin-top:4px;">Day'
         + '<select class="input-field" style="min-height:44px; margin:4px 0 0;" ' + a + ' onchange="moveProgramDay(this.getAttribute(\'data-f\'), this.getAttribute(\'data-r\'), this.value)">' + opts + '</select></label>';
       openFolderSheet(rt.name, html);
@@ -4025,7 +4076,9 @@
       const d = draft || {
         start: (isReset || !prog) ? todayPlanKey() : prog.start,
         length: prog ? prog.length : 7,
-        days: prog ? Object.assign({}, prog.days) : {}
+        days: prog ? Object.assign({}, prog.days) : {},
+        time: prog && prog.time ? prog.time : '',
+        minutes: programMinutes(prog)
       };
       if (!prog && !draft) rts.forEach((rt, i) => { d.days[rt.id] = Math.min(i + 1, d.length); });
       const temp = { start: d.start, length: d.length };
@@ -4035,7 +4088,12 @@
         + '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">'
         + '<label style="flex:1; min-width:140px; font-size:12px; color:var(--text-sub);">Start<input type="date" id="progStartInput" class="input-field" style="max-width:100%; min-height:44px;" value="' + esc(d.start) + '" onchange="refreshProgramSetup(\'' + esc(fid) + '\', ' + (isReset ? 'true' : 'false') + ')"></label>'
         + '<label style="width:110px; font-size:12px; color:var(--text-sub);">Days<input type="number" id="progLengthInput" class="input-field" style="max-width:100%; min-height:44px;" min="1" max="' + PROGRAM_MAX_DAYS + '" inputmode="numeric" value="' + d.length + '" onchange="refreshProgramSetup(\'' + esc(fid) + '\', ' + (isReset ? 'true' : 'false') + ')"></label>'
-        + '</div>';
+        + '</div>'
+        + '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;">'
+        + '<label style="flex:1; min-width:140px; font-size:12px; color:var(--text-sub);">Usual time (empty = all day)<input type="time" id="progTimeInput" class="input-field" style="max-width:100%; min-height:44px;" value="' + esc(d.time || '') + '"></label>'
+        + '<label style="width:110px; font-size:12px; color:var(--text-sub);">Minutes<input type="number" id="progMinutesInput" class="input-field" style="max-width:100%; min-height:44px;" min="10" max="300" step="5" inputmode="numeric" value="' + (d.minutes || PROGRAM_DEFAULT_MINUTES) + '"></label>'
+        + '</div>'
+        + '<div style="font-size:11px; color:var(--text-sub); margin-bottom:10px;">One workout at another time? Tap it in the program and change its time.</div>';
       html += rts.map(rt => {
         let opts = '<option value="0">No day</option>';
         for (let i = 1; i <= d.length; i++) {
@@ -4063,7 +4121,13 @@
       if (length > PROGRAM_MAX_DAYS) length = PROGRAM_MAX_DAYS;
       const start = (startEl && isPlanDayKey(startEl.value)) ? startEl.value : todayPlanKey();
       Object.keys(days).forEach(k => { if (days[k] > length) days[k] = length; });
-      return { start: start, length: length, days: days };
+      const timeEl = document.getElementById('progTimeInput');
+      const minEl = document.getElementById('progMinutesInput');
+      const time = timeEl && isClockTime(timeEl.value) ? timeEl.value : '';
+      let minutes = parseInt(minEl ? minEl.value : '', 10);
+      if (!isFinite(minutes) || minutes < 10) minutes = PROGRAM_DEFAULT_MINUTES;
+      if (minutes > 300) minutes = 300;
+      return { start: start, length: length, days: days, time: time, minutes: minutes };
     }
 
     function refreshProgramSetup(fid, isReset) {
@@ -4080,7 +4144,10 @@
         length: d.length,
         days: d.days,
         marks: (isReset || !f.program) ? {} : f.program.marks,
-        view: f.program ? f.program.view : 'list'
+        view: f.program ? f.program.view : 'list',
+        time: d.time !== undefined ? d.time : (f.program && f.program.time),
+        minutes: d.minutes !== undefined ? d.minutes : (f.program && f.program.minutes),
+        times: f.program ? f.program.times : undefined
       });
       if (!prog) {
         alert('Pick a start date and 1-' + PROGRAM_MAX_DAYS + ' days.');
@@ -4186,6 +4253,30 @@
       return dayKeyLocal(d.getTime());
     }
 
+    function gcalLocalDateTime(ms) {
+      const d = new Date(ms);
+      const p2 = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':00';
+    }
+
+    /* All-day event, or a timed block (usual time / own time + minutes). */
+    function gcalEventBody(w) {
+      let tz = 'UTC';
+      try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) {}
+      const body = { id: w.id, summary: w.title, description: w.note, extendedProperties: { private: { plzsig: JSON.stringify([w.title, w.note, w.date, w.time, w.minutes]) } } };
+      if (w.time) {
+        const startMs = new Date(w.date + 'T' + w.time + ':00').getTime();
+        body.start = { dateTime: gcalLocalDateTime(startMs), timeZone: tz };
+        body.end = { dateTime: gcalLocalDateTime(startMs + w.minutes * 60000), timeZone: tz };
+        body.transparency = 'opaque';
+      } else {
+        body.start = { date: w.date };
+        body.end = { date: gcalNextDay(w.date) };
+        body.transparency = 'transparent';
+      }
+      return body;
+    }
+
     /* What Google Calendar should show, worked out from the programs. */
     function gcalDesiredEvents() {
       const out = [];
@@ -4202,6 +4293,8 @@
           out.push({
             id: gcalEventId(f.id, rt.id, prog.start),
             date: programDayKey(prog, day),
+            time: programItemTime(prog, rt.id),
+            minutes: programMinutes(prog),
             title: mark + rt.name,
             note: 'PLZ Train · ' + f.name + ' · Day ' + day + ' of ' + prog.length + (st === 'skipped' ? ' · skipped (does not count)' : '')
           });
@@ -4323,10 +4416,11 @@
         const keep = {};
         for (const w of want) {
           keep[w.id] = true;
-          const body = { id: w.id, summary: w.title, description: w.note, start: { date: w.date }, end: { date: gcalNextDay(w.date) }, transparency: 'transparent' };
+          const body = gcalEventBody(w);
           const cur = have[w.id];
           if (cur) {
-            if (cur.summary === w.title && cur.start && cur.start.date === w.date && cur.description === w.note) continue;
+            const curSig = cur.extendedProperties && cur.extendedProperties.private ? cur.extendedProperties.private.plzsig : '';
+            if (curSig === body.extendedProperties.private.plzsig) continue;
             await gcalApi('PUT', base + '/' + w.id, body);
           } else {
             try {
