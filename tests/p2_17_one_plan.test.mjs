@@ -153,3 +153,52 @@ describe('P2-17 add a workout from the program calendar', () => {
     assert.equal(app.api.addProgramWorkoutOnDay(addDays(today, 20), 'rt3'), false, 'outside the cycle');
   });
 });
+
+// Owner, 2026-11-06: sending a second plan to the calendar must be a switch,
+// not an addition; Google Calendar follows.
+describe('P2-17 one program at a time', () => {
+  function twoFolders() {
+    const ctx = programApp();
+    const { app, today } = ctx;
+    app.api.state.folders.push({ id: 'fd2', name: 'Workout plan 1', archived: false, collapsed: false });
+    app.api.state.routines.push(Object.assign(JSON.parse(JSON.stringify(app.api.state.routines[0])), { id: 'w1', name: 'Arm', folderId: 'fd2' }));
+    return Object.assign(ctx, { f2: app.api.state.folders.find((x) => x.id === 'fd2'), start: today });
+  }
+
+  it('starting a second program switches the first off, its days kept', () => {
+    const { app, f, f2, today } = twoFolders();
+    assert.equal(app.api.otherRunningProgram('fd2').id, f.id);
+    assert.ok(app.api.saveProgramSetup('fd2', false, { start: today, length: 7, days: { w1: 1 } }));
+    assert.ok(f2.program);
+    assert.equal(f.program, undefined);
+    assert.equal(f.programOff.days.rt2, 4);
+    const items = app.api.programItemsOn(today).map((x) => x.routine.id);
+    assert.deepEqual(JSON.parse(JSON.stringify(items)), ['w1']);
+    const ev = app.api.gcalDesiredEvents();
+    assert.ok(ev.length >= 1);
+    assert.ok(ev.every((e) => !String(e.title).includes('Push')), 'old program left Google Calendar');
+  });
+
+  it('switching back restores the old days; programOff survives a reload', () => {
+    const { app, f, f2, today } = twoFolders();
+    app.api.saveProgramSetup('fd2', false, { start: today, length: 7, days: { w1: 1 } });
+    const back = JSON.parse(JSON.stringify(app.api.normalizeFolders(app.api.state.folders)));
+    assert.equal(back.find((x) => x.id === f.id).programOff.days.rt3, 6);
+    app.api.openProgramSetup(f.id, false);
+    const sheet = app.document.getElementById('folderSheetBody') || app.document.body;
+    assert.match(sheet.innerHTML, /One program at a time/);
+    assert.match(sheet.innerHTML, /data-r="rt3"[^]*?value="6" selected/, 'the old days are offered again');
+    assert.ok(app.api.saveProgramSetup(f.id, false, { start: today, length: 7, days: JSON.parse(JSON.stringify(f.programOff.days)) }));
+    assert.equal(f.program.days.rt3, 6);
+    assert.equal(f2.program, undefined);
+    assert.ok(f2.programOff);
+  });
+
+  it('editing the running program does not stop anything', () => {
+    const { app, f, f2, today } = twoFolders();
+    app.api.saveProgramSetup('fd2', false, { start: today, length: 7, days: { w1: 1 } });
+    app.api.saveProgramSetup('fd2', false, { start: today, length: 9, days: { w1: 2 } });
+    assert.equal(f2.program.length, 9);
+    assert.equal(f.program, undefined);
+  });
+});

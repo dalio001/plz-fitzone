@@ -3411,7 +3411,7 @@
         if (!f.program && rts.length) {
           const mk = document.createElement('button');
           mk.className = 'btn btn-block folder-add';
-          mk.textContent = '📅 Make it a program (cycle)';
+          mk.textContent = otherRunningProgram(f.id) ? '📅 Switch to this program' : '📅 Make it a program (cycle)';
           mk.onclick = function () { openProgramSetup(f.id, false); };
           container.appendChild(mk);
         }
@@ -3496,6 +3496,8 @@
         const folder = { id: id, name: name, archived: !isDefault && f.archived === true, collapsed: f.collapsed === true };
         const prog = normalizeProgram(f.program);
         if (prog) folder.program = prog;
+        const off = normalizeProgram(f.programOff);
+        if (off && !prog) folder.programOff = off;
         out.push(folder);
       });
       if (!seen[DEFAULT_FOLDER_ID]) out.unshift({ id: DEFAULT_FOLDER_ID, name: DEFAULT_FOLDER_NAME, archived: false, collapsed: false });
@@ -3611,7 +3613,7 @@
       const b = (label, fn, cls) => '<button class="btn btn-block' + (cls ? ' ' + cls : '') + '" style="min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="' + fn + '(this.getAttribute(\'data-id\'))">' + label + '</button>';
       let html = b('✏️ Rename', 'openRenameFolder')
         + b('+ Add routine here', 'openRoutineBuilder')
-        + b(f.program ? '📅 Program days' : '📅 Make it a program', 'openProgramSetup')
+        + b(f.program ? '📅 Program days' : (otherRunningProgram(f.id) ? '📅 Switch to this program' : '📅 Make it a program'), 'openProgramSetup')
         + '<div style="display:flex; gap:8px;">'
         + '<button class="btn" style="flex:1; min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="moveFolder(this.getAttribute(\'data-id\'), -1)">▲ Move up</button>'
         + '<button class="btn" style="flex:1; min-height:44px; margin-bottom:8px;" data-id="' + esc(id) + '" onclick="moveFolder(this.getAttribute(\'data-id\'), 1)">▼ Move down</button>'
@@ -4100,18 +4102,20 @@
       if (!f) return;
       const rts = state.routines.filter(rt => !isRoutineHidden(rt) && routineFolderId(rt) === f.id);
       const prog = f.program;
+      const kept = prog || f.programOff; // a program switched off earlier keeps its days
       const d = draft || {
         start: (isReset || !prog) ? todayPlanKey() : prog.start,
-        length: prog ? prog.length : 7,
-        days: prog ? Object.assign({}, prog.days) : {},
-        time: prog && prog.time ? prog.time : '',
-        minutes: programMinutes(prog)
+        length: kept ? kept.length : 7,
+        days: kept ? Object.assign({}, kept.days) : {},
+        time: kept && kept.time ? kept.time : '',
+        minutes: programMinutes(kept)
       };
-      if (!prog && !draft) rts.forEach((rt, i) => { d.days[rt.id] = Math.min(i + 1, d.length); });
+      if (!kept && !draft) rts.forEach((rt, i) => { d.days[rt.id] = Math.min(i + 1, d.length); });
       const temp = { start: d.start, length: d.length };
       let html = '<div style="font-size:13px; color:var(--text-sub); margin-bottom:10px;">'
         + (isReset ? 'Same workouts, new cycle. Pick the start, the length and the days. Done and Skipped ticks are cleared.' : 'Pick when the cycle starts, how many days it lasts, and the day of each workout.')
         + '</div>'
+        + (!prog && otherRunningProgram(fid) ? '<div style="font-size:13px; color:var(--warning, #f59e0b); margin-bottom:10px;">One program at a time: saving stops "' + esc(otherRunningProgram(fid).name) + '" and takes its workouts off the calendars and Google Calendar. Its days are kept for later.</div>' : '')
         + '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">'
         + '<label style="flex:1; min-width:140px; font-size:12px; color:var(--text-sub);">Start<input type="date" id="progStartInput" class="input-field" style="max-width:100%; min-height:44px;" value="' + esc(d.start) + '" onchange="refreshProgramSetup(\'' + esc(fid) + '\', ' + (isReset ? 'true' : 'false') + ')"></label>'
         + '<label style="width:110px; font-size:12px; color:var(--text-sub);">Days<input type="number" id="progLengthInput" class="input-field" style="max-width:100%; min-height:44px;" min="1" max="' + PROGRAM_MAX_DAYS + '" inputmode="numeric" value="' + d.length + '" onchange="refreshProgramSetup(\'' + esc(fid) + '\', ' + (isReset ? 'true' : 'false') + ')"></label>'
@@ -4180,7 +4184,18 @@
         alert('Pick a start date and 1-' + PROGRAM_MAX_DAYS + ' days.');
         return null;
       }
+      /* Owner, 2026-11-06: one program at a time. Starting this one switches
+         the others off (their days are kept in programOff for a later switch
+         back); Google Calendar drops their events on the next sync. */
+      if (!f.program) {
+        ensureFolders().forEach(o => {
+          if (o.id === f.id || !o.program) return;
+          o.programOff = o.program;
+          delete o.program;
+        });
+      }
       f.program = prog;
+      delete f.programOff;
       f.collapsed = false;
       saveState();
       renderRoutines();
@@ -4193,6 +4208,7 @@
       const f = findFolder(fid);
       if (!f || !f.program) return;
       if (!confirm('Stop this program? The folder and its routines stay.')) return;
+      f.programOff = f.program;
       delete f.program;
       saveState();
       renderRoutines();
@@ -4216,6 +4232,11 @@
       f.program.view = view === 'calendar' ? 'calendar' : 'list';
       saveState();
       renderRoutines();
+    }
+
+    /* Another folder's running program (one program at a time), or null. */
+    function otherRunningProgram(fid) {
+      return ensureFolders().find(o => o && o.id !== fid && !o.archived && o.program) || null;
     }
 
     /* P2-17: cycle day (1..length) of a local day key, or 0 outside the cycle. */

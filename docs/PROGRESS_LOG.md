@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — One program at a time (P2-17 follow-up), awaiting owner phone check
+
+- Owner: sending a second workout plan to the calendar added it next to the first; it should be a switch, Google Calendar too.
+- Starting a program now stops the running one (warning shown in the setup sheet; button reads "Switch to this program"). The old one's days are kept and offered again when switching back. Week plans made in the Profile calendar stay.
+- Checks: 3 new tests in `tests/p2_17_one_plan.test.mjs`; all 506 tests pass. Before/after screenshots on a local test copy.
+
 ## 2026-11-06 — Add a workout from the program calendar (P2-17 follow-up), awaiting owner phone check
 
 - Owner: adding a workout to a day only worked from the Profile calendar.
