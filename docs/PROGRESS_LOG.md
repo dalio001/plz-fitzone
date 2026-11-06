@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — Calisthenics pictures (P2-18 step 7), in progress
+
+- Owner: "start making the photos... focus more on the progressions". 139 start/end (or entry/hold) pictures made in Google Flow (image mode, Nano Banana 2.1, 16:9, x2, PLZ Train character as reference, 0 credits), each take checked for form; prompts docs/research/cali-picture-prompts.tsv, picks docs/research/cali-picture-picks.txt. Every built-in exercise (239) now has a picture and a list thumbnail.
+- Owner caught wrong shapes (upside-down deadlift take, back lever arms). Back-lever family regenerated after studying THENX FZZqbeZti84 frames: arms angled back to the hips, face down.
+- Weak, redo candidates: manna (high V-sit, not full manna), straddle planche and advanced tuck planche (shape not exact), side plank raise (no visible change), hollow rock, negative muscle-up, dip bottoms a little shallow.
+
 ## 2026-11-06 — Calisthenics coach audit applied (P2-18), in progress
 
 - Owner: "Be careful about repetitions, durations, how it's done, when it's with holds, when it's with reps". Audit: docs/research/CALISTHENICS_AUDIT.md (88 rows, 11 more videos + 4 research files).

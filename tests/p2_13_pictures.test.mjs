@@ -85,11 +85,13 @@ describe('P2-13 exercise pictures (full size in detail sheet)', () => {
   it('picture-shown-only-for-listed-ids', () => {
     const app = createApp();
     const listed = app.api.EXERCISE_PICTURES;
-    assert.ok(Array.isArray(listed) && listed.length === 100, 'all 100 built-in exercises have a picture');
+    // 100 gym exercises + every P2-18 calisthenics exercise (2026-11-06).
+    const builtin = app.api.DEFAULT_EXERCISES.map((e) => e.id);
+    assert.ok(Array.isArray(listed) && listed.length === builtin.length, 'every built-in exercise has a picture');
     assert.deepEqual(
       [...listed].sort(),
-      Array.from({ length: 100 }, (_, i) => 'ex' + (i + 1)).sort(),
-      'exactly ex1..ex100',
+      [...builtin].sort(),
+      'exactly the built-in ids',
     );
 
     for (const id of listed) {
