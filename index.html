@@ -716,6 +716,36 @@
       -webkit-overflow-scrolling: touch;
       scrollbar-width: thin;
     }
+    /* P2-18 calisthenics */
+    .mode-switch { display: flex; gap: var(--space-8); margin-bottom: var(--space-16); }
+    .mode-switch .chip { flex: 1; }
+    .cali-row { display: flex; justify-content: space-between; align-items: center; gap: var(--space-8); }
+    .cali-sub { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+    .cali-kind { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-sub); margin: var(--space-16) 0 var(--space-8); }
+    .cali-ladder { display: block; width: 100%; text-align: left; color: var(--text); cursor: pointer; margin-bottom: var(--space-8); font: inherit; }
+    .cali-name { font-weight: 800; font-size: 15px; }
+    .cali-count { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+    .cali-off { opacity: .55; }
+    .cali-off .cali-count { color: var(--text-sub); }
+    .cali-places { display: flex; flex-wrap: wrap; gap: var(--space-8); }
+    .cali-gear { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+    .cali-gear small { color: var(--text-sub); font-size: 12px; }
+    .cali-gear.on { border-color: var(--primary); }
+    .cali-gear:disabled { cursor: default; }
+    .cali-gear-ico { font-size: 22px; width: 30px; text-align: center; }
+    .cali-tick { margin-left: auto; font-weight: 900; color: var(--primary); font-size: 18px; }
+    .cali-note { font-size: 13px; line-height: 1.5; padding: 8px 10px; border-radius: 10px; background: var(--bg-elevated); margin-bottom: 10px; }
+    .cali-step { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+    .cali-step-main { flex: 1; min-width: 0; }
+    .cali-num { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex: 0 0 auto; }
+    .cali-alt { font-size: 12px; color: var(--primary); }
+    .cali-extra { font-size: 12px; color: var(--text-sub); padding: 4px 0; text-decoration: underline; text-underline-offset: 2px; }
+    .cali-lvl { display: inline-block; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 6px; margin-right: 4px; background: var(--bg-elevated); }
+    .cali-lvl.lv0, .cali-lvl.lv1 { color: #4ade80; }
+    .cali-lvl.lv2 { color: #60a5fa; }
+    .cali-lvl.lv3 { color: #f59e0b; }
+    .cali-lvl.lv4 { color: #f87171; }
+    .cali-chev { color: var(--text-sub); font-size: 20px; }
     .chip {
       flex: 0 0 auto;
       min-height: var(--control-min-height);
@@ -889,6 +919,13 @@
   <main>
     <!-- 1. WORKOUT TAB -->
     <section id="tab-workout" class="tab-view active">
+      <!-- P2-18: Gym | Calisthenics -->
+      <div class="mode-switch">
+        <button class="chip on" id="modeGymBtn" onclick="setWorkoutMode('gym')">🏋️ Gym</button>
+        <button class="chip" id="modeCaliBtn" onclick="setWorkoutMode('cali')">🤸 Calisthenics</button>
+      </div>
+      <div id="caliView" style="display:none;"></div>
+      <div id="gymView">
       <div class="section-header">
         <h2 class="section-title" style="margin:0;">Quick Start</h2>
       </div>
@@ -928,6 +965,7 @@
         <!-- P4-11: paste a routine from an AI assistant, or open an import link -->
         <button class="btn btn-block" style="min-height:44px;" onclick="openRoutineImport()">⬇ Import routine</button>
         <div id="routinesList" style="margin-top:var(--space-12);"></div>
+      </div>
       </div>
     </section>
 
@@ -1366,6 +1404,17 @@
   </div>
 
   <!-- EXERCISE PICKER MODAL -->
+  <!-- P2-18 calisthenics sheet (before exDetailModal so a step's how-to opens on top) -->
+  <div class="modal" id="caliSheetModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="caliSheetTitle">Calisthenics</span>
+        <button class="btn" onclick="closeModal('caliSheetModal')">✕</button>
+      </div>
+      <div class="modal-body" id="caliSheetBody"></div>
+    </div>
+  </div>
+
   <div class="modal" id="exPickerModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -2357,6 +2406,7 @@
       ['cx_strict_muscleup', 'Strict Muscle-Up', 'Bodyweight', 'Back', ['Triceps'], 'bodyweight_reps'],
       ['cx_tuck_fl', 'Tuck Front Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_adv_tuck_fl', 'Advanced Tuck Front Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
+      ['cx_inverted_deadlift', 'Upside-Down Deadlift', 'Bodyweight', 'Back', ['Core'], 'bodyweight_reps'],
       ['cx_fl_negative', 'Front-Lever Negative', 'Bodyweight', 'Back', ['Core'], 'bodyweight_reps'],
       ['cx_one_leg_fl', 'One-Leg Front Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_straddle_fl', 'Straddle Front Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
@@ -2364,28 +2414,53 @@
       ['cx_skin_cat', 'Skin the Cat', 'Bodyweight', 'Back', ['Shoulders'], 'bodyweight_reps'],
       ['cx_german_hang', 'German Hang', 'Bodyweight', 'Shoulders', ['Chest'], 'duration'],
       ['cx_tuck_bl', 'Tuck Back Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
+      ['cx_inverted_hang', 'Inverted Hang', 'Bodyweight', 'Back', ['Core'], 'duration'],
+      ['cx_single_leg_bl_negative', 'Single-Leg Back-Lever Negative', 'Bodyweight', 'Back', ['Shoulders'], 'bodyweight_reps'],
       ['cx_bl_negative', 'Back-Lever Negative', 'Bodyweight', 'Back', ['Core'], 'bodyweight_reps'],
       ['cx_straddle_bl', 'Straddle Back Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_full_bl', 'Full Back Lever', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_scap_pushup', 'Scapula Push-Up', 'Bodyweight', 'Shoulders', ['Chest'], 'bodyweight_reps'],
       ['cx_planche_lean', 'Planche Lean', 'Bodyweight', 'Shoulders', ['Core'], 'duration'],
+      ['cx_reverse_leg_raise', 'Reverse Leg Raise', 'Bodyweight', 'Glutes', ['Back'], 'bodyweight_reps'],
+      ['cx_lsit_to_tuck_planche', 'L-Sit to Tuck Planche', 'Bodyweight', 'Shoulders', ['Core'], 'bodyweight_reps'],
       ['cx_tuck_planche', 'Tuck Planche', 'Bodyweight', 'Shoulders', ['Core'], 'duration'],
       ['cx_adv_tuck_planche', 'Advanced Tuck Planche', 'Bodyweight', 'Shoulders', ['Core'], 'duration'],
       ['cx_straddle_planche', 'Straddle Planche', 'Bodyweight', 'Shoulders', ['Core'], 'duration'],
       ['cx_full_planche', 'Full Planche', 'Bodyweight', 'Shoulders', ['Core'], 'duration'],
       ['cx_side_plank_raise', 'Side Plank Raise', 'Bodyweight', 'Core', ['Shoulders'], 'bodyweight_reps'],
-      ['cx_vertical_flag', 'Vertical Flag', 'Bodyweight', 'Back', ['Core'], 'duration'],
+      ['cx_pole_side_plank', 'Pole Side Plank', 'Bodyweight', 'Core', ['Shoulders'], 'duration'],
       ['cx_tuck_flag', 'Tuck Flag', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_straddle_flag', 'Straddle Flag', 'Bodyweight', 'Back', ['Core'], 'duration'],
+      ['cx_flag_negative', 'Flag Negative', 'Bodyweight', 'Core', ['Shoulders'], 'bodyweight_reps'],
       ['cx_full_flag', 'Human Flag', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_df_hip_raise', 'Dragon Flag Hip Raise', 'Bodyweight', 'Core', ['Back'], 'bodyweight_reps'],
       ['cx_df_tuck_negative', 'Tuck Dragon Flag Negative', 'Bodyweight', 'Core', ['Back'], 'bodyweight_reps'],
       ['cx_df_negative', 'Dragon Flag Negative', 'Bodyweight', 'Core', ['Back'], 'bodyweight_reps'],
+      ['cx_switch_leg_dragon', 'Switching-Leg Dragon Flag', 'Bodyweight', 'Core', ['Back'], 'bodyweight_reps'],
+      ['cx_single_leg_dragon', 'Single-Leg Dragon Flag Raise', 'Bodyweight', 'Core', ['Back'], 'bodyweight_reps'],
       ['cx_dragon_flag', 'Dragon Flag', 'Bodyweight', 'Core', ['Back'], 'bodyweight_reps'],
       ['cx_wrist_prep', 'Wrist Warm-Up', 'Bodyweight', 'Forearms', [], 'bodyweight_reps'],
       ['cx_shoulder_dislocate', 'Stick Shoulder Pass', 'Bodyweight', 'Shoulders', [], 'bodyweight_reps'],
       ['cx_pike_stretch', 'Pike Stretch', 'Bodyweight', 'Hamstrings', [], 'duration'],
-      ['cx_active_pike', 'Active Pike Lift', 'Bodyweight', 'Core', ['Quads'], 'bodyweight_reps']
+      ['cx_active_pike', 'Active Pike Lift', 'Bodyweight', 'Core', ['Quads'], 'bodyweight_reps'],
+      ['cx_wall_pushup', 'Wall Push-Up', 'Bodyweight', 'Chest', ['Triceps'], 'bodyweight_reps'],
+      ['cx_towel_door_row', 'Towel Door Row', 'Bodyweight', 'Back', ['Biceps'], 'bodyweight_reps'],
+      ['cx_broom_row', 'Broomstick Row', 'Bodyweight', 'Back', ['Biceps'], 'bodyweight_reps'],
+      ['cx_table_row', 'Table Row', 'Bodyweight', 'Back', ['Biceps'], 'bodyweight_reps'],
+      ['cx_table_row_feet_up', 'Feet-Elevated Table Row', 'Bodyweight', 'Back', ['Biceps'], 'bodyweight_reps'],
+      ['cx_support_knee_raise', 'Support Knee Raise', 'Bodyweight', 'Core', [], 'bodyweight_reps'],
+      ['cx_support_leg_raise', 'Support Leg Raise', 'Bodyweight', 'Core', [], 'bodyweight_reps'],
+      ['cx_floor_tuck_planche', 'Floor Tuck Planche', 'Bodyweight', 'Shoulders', ['Core'], 'duration'],
+      ['cx_band_pullup', 'Band-Assisted Pull-Up', 'Band', 'Back', ['Biceps'], 'bodyweight_reps'],
+      ['cx_band_dip', 'Band-Assisted Dip', 'Band', 'Triceps', ['Chest'], 'bodyweight_reps'],
+      ['cx_band_straightbar_dip', 'Band-Assisted Straight-Bar Dip', 'Band', 'Triceps', ['Chest'], 'bodyweight_reps'],
+      ['cx_band_front_lever', 'Band Front Lever', 'Band', 'Back', ['Core'], 'duration'],
+      ['cx_band_straddle_planche', 'Band Straddle Planche', 'Band', 'Shoulders', ['Core'], 'duration'],
+      ['cx_band_full_planche', 'Band Full Planche', 'Band', 'Shoulders', ['Core'], 'duration'],
+      ['cx_band_planche_pushup', 'Band Planche Push-Up', 'Band', 'Shoulders', ['Chest'], 'bodyweight_reps'],
+      ['cx_weighted_pullup', 'Weighted Pull-Up', 'Other', 'Back', ['Biceps'], 'weight_reps'],
+      ['cx_weighted_pistol', 'Weighted Pistol Squat', 'Other', 'Quads', ['Glutes'], 'weight_reps'],
+      ['cx_weighted_row', 'Weighted Inverted Row', 'Other', 'Back', ['Biceps'], 'weight_reps']
     ];
     function expandExerciseRow(r) {
       return { id: r[0], name: r[1], equipment: r[2], muscle: r[3], primary: r[3], secondary: (r[4] || []).slice(0, 2), type: r[5], custom: false, fav: false, hidden: false };
@@ -2400,27 +2475,27 @@
        in routines, history, records and the AI connector. A step's target is
        `sets` x `lo`-`hi` reps (or seconds when `hold`); hitting `hi` on every
        set is a pass. `gate` lists [ladder, step ex] that must be passed first.
-       Gear: floor wall box bench bar lowbar dipbars parallettes rings pole.
+       Gear: CALI_GEAR below; `alts` = equal versions for other gear.
        Own wording; knowledge in docs/research/CALISTHENICS_*.md. */
     const CALI_LEVELS = ['Foundation', 'Beginner', 'Intermediate', 'Advanced', 'Elite'];
-    const CALI_GEAR = ['floor', 'wall', 'box', 'bench', 'bar', 'lowbar', 'dipbars', 'parallettes', 'rings', 'pole'];
+    const CALI_GEAR = ['floor', 'wall', 'box', 'bench', 'chairs', 'table', 'door', 'broom', 'books', 'bar', 'lowbar', 'dipbars', 'parallettes', 'rings', 'pole', 'anchor', 'band', 'weight'];
     const CALI_LADDERS = [
-      {"id": "push", "name": "Push-up", "kind": "base", "blurb": "From your first push-up to the planche push-up.", "steps": [{"ex": "ex24", "name": "Knee Push-Up", "hold": false, "level": 0, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "ex98", "name": "Incline Push-Up", "hold": false, "level": 0, "sets": 3, "lo": 8, "hi": 12, "gear": ["box"]}, {"ex": "ex17", "name": "Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "ex99", "name": "Decline Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["box"]}, {"ex": "cx_diamond_pushup", "name": "Diamond Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "cx_archer_pushup", "name": "Archer Push-Up", "hold": false, "level": 2, "sets": 3, "lo": 5, "hi": 8, "gear": ["floor"]}, {"ex": "cx_clap_pushup", "name": "Clap Push-Up", "hold": false, "level": 2, "sets": 3, "lo": 5, "hi": 10, "gear": ["floor"]}, {"ex": "cx_pseudo_planche_pushup", "name": "Pseudo Planche Push-Up", "hold": false, "level": 3, "sets": 3, "lo": 6, "hi": 10, "gear": ["floor"]}, {"ex": "cx_tuck_planche_pushup", "name": "Tuck Planche Push-Up", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 6, "gear": ["parallettes"]}, {"ex": "cx_planche_pushup", "name": "Planche Push-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 5, "gear": ["parallettes"]}], "gate": []},
-      {"id": "pull", "name": "Pull-up", "kind": "base", "blurb": "From hanging on the bar to the one-arm pull-up.", "steps": [{"ex": "cx_dead_hang", "name": "Active Hang", "hold": true, "level": 0, "sets": 3, "lo": 20, "hi": 30, "gear": ["bar"]}, {"ex": "cx_scap_pullup", "name": "Scapula Pull-Up", "hold": false, "level": 0, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"]}, {"ex": "cx_negative_pullup", "name": "Negative Pull-Up", "hold": false, "level": 1, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"]}, {"ex": "ex25", "name": "Pull-Up", "hold": false, "level": 1, "sets": 3, "lo": 5, "hi": 10, "gear": ["bar"]}, {"ex": "cx_lsit_pullup", "name": "L-Sit Pull-Up", "hold": false, "level": 2, "sets": 3, "lo": 4, "hi": 8, "gear": ["bar"]}, {"ex": "cx_chest_to_bar", "name": "Chest-to-Bar Pull-Up", "hold": false, "level": 2, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"]}, {"ex": "cx_archer_pullup", "name": "Archer Pull-Up", "hold": false, "level": 3, "sets": 3, "lo": 4, "hi": 8, "gear": ["bar"]}, {"ex": "cx_one_arm_negative", "name": "One-Arm Negative Pull-Up", "hold": false, "level": 4, "sets": 3, "lo": 2, "hi": 5, "gear": ["bar"]}, {"ex": "cx_one_arm_pullup", "name": "One-Arm Pull-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 4, "gear": ["bar"]}], "gate": []},
-      {"id": "dip", "name": "Dip", "kind": "base", "blurb": "From bench dips to ring and weighted dips.", "steps": [{"ex": "ex54", "name": "Bench Dip", "hold": false, "level": 0, "sets": 3, "lo": 10, "hi": 15, "gear": ["bench"]}, {"ex": "cx_bench_dip_feet_up", "name": "Bench Dip, Feet Raised", "hold": false, "level": 1, "sets": 3, "lo": 12, "hi": 20, "gear": ["box", "bench"]}, {"ex": "cx_support_hold", "name": "Dip Support Hold", "hold": true, "level": 1, "sets": 3, "lo": 20, "hi": 30, "gear": ["dipbars"]}, {"ex": "cx_negative_dip", "name": "Negative Dip", "hold": false, "level": 1, "sets": 3, "lo": 4, "hi": 6, "gear": ["dipbars"]}, {"ex": "ex55", "name": "Triceps Dip", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["dipbars"]}, {"ex": "cx_straight_bar_dip", "name": "Straight-Bar Dip", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"]}, {"ex": "cx_ring_dip", "name": "Ring Dip", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["rings"]}, {"ex": "cx_weighted_dip", "name": "Weighted Dip", "hold": false, "level": 4, "sets": 3, "lo": 5, "hi": 8, "gear": ["dipbars"]}], "gate": []},
-      {"id": "row", "name": "Row", "kind": "base", "blurb": "Horizontal pulling, from upright rows to front-lever rows.", "steps": [{"ex": "cx_incline_row", "name": "Incline Row", "hold": false, "level": 0, "sets": 3, "lo": 10, "hi": 15, "gear": ["lowbar"]}, {"ex": "ex33", "name": "Inverted Row", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["lowbar"]}, {"ex": "cx_wide_row", "name": "Wide-Grip Row", "hold": false, "level": 1, "sets": 3, "lo": 6, "hi": 10, "gear": ["lowbar"]}, {"ex": "cx_feet_up_row", "name": "Feet-Elevated Row", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["lowbar", "box"]}, {"ex": "cx_archer_row", "name": "Archer Row", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 8, "gear": ["rings"]}, {"ex": "cx_tuck_fl_row", "name": "Tuck Front-Lever Row", "hold": false, "level": 3, "sets": 3, "lo": 4, "hi": 6, "gear": ["bar"]}, {"ex": "cx_adv_tuck_fl_row", "name": "Advanced Tuck Front-Lever Row", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"]}], "gate": []},
-      {"id": "legs", "name": "Squat to pistol", "kind": "base", "blurb": "From box squats to the pistol squat.", "steps": [{"ex": "cx_box_squat", "name": "Box Sit-to-Stand", "hold": false, "level": 0, "sets": 3, "lo": 12, "hi": 20, "gear": ["box"]}, {"ex": "ex76", "name": "Bodyweight Squat", "hold": false, "level": 0, "sets": 3, "lo": 15, "hi": 25, "gear": ["floor"]}, {"ex": "cx_jump_squat", "name": "Jump Squat", "hold": false, "level": 1, "sets": 3, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "cx_bulgarian_split", "name": "Bodyweight Split Squat", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["box"]}, {"ex": "cx_cossack_squat", "name": "Cossack Squat", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["floor"]}, {"ex": "cx_box_pistol", "name": "Box Pistol", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["box"]}, {"ex": "cx_assisted_pistol", "name": "Assisted Pistol Squat", "hold": false, "level": 3, "sets": 3, "lo": 8, "hi": 15, "gear": ["pole"]}, {"ex": "cx_pistol_squat", "name": "Pistol Squat", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["floor"]}, {"ex": "cx_shrimp_squat", "name": "Shrimp Squat", "hold": false, "level": 4, "sets": 3, "lo": 5, "hi": 8, "gear": ["floor"]}], "gate": []},
+      {"id": "push", "name": "Push-up", "kind": "base", "blurb": "From your first push-up to the planche push-up.", "steps": [{"ex": "ex24", "name": "Knee Push-Up", "hold": false, "level": 0, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "ex98", "name": "Incline Push-Up", "hold": false, "level": 0, "sets": 3, "lo": 8, "hi": 12, "gear": ["box"], "alts": [{"ex": "cx_wall_pushup", "name": "Wall Push-Up", "gear": ["wall"], "diff": "easier"}]}, {"ex": "ex17", "name": "Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "ex99", "name": "Decline Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["box"]}, {"ex": "cx_diamond_pushup", "name": "Diamond Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "cx_archer_pushup", "name": "Archer Push-Up", "hold": false, "level": 2, "sets": 3, "lo": 5, "hi": 8, "gear": ["floor"]}, {"ex": "cx_clap_pushup", "name": "Clap Push-Up", "hold": false, "level": 2, "sets": 3, "lo": 5, "hi": 10, "gear": ["floor"]}, {"ex": "cx_pseudo_planche_pushup", "name": "Pseudo Planche Push-Up", "hold": false, "level": 3, "sets": 3, "lo": 6, "hi": 10, "gear": ["floor"]}, {"ex": "cx_tuck_planche_pushup", "name": "Tuck Planche Push-Up", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 6, "gear": ["parallettes"], "also": ["chairs"]}, {"ex": "cx_planche_pushup", "name": "Planche Push-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 5, "gear": ["parallettes"], "also": ["chairs"], "band": {"ex": "cx_band_planche_pushup", "name": "Band Planche Push-Up"}}], "gate": []},
+      {"id": "pull", "name": "Pull-up", "kind": "base", "blurb": "From hanging on the bar to the one-arm pull-up.", "steps": [{"ex": "cx_dead_hang", "name": "Active Hang", "hold": true, "level": 0, "sets": 3, "lo": 20, "hi": 30, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_scap_pullup", "name": "Scapula Pull-Up", "hold": false, "level": 0, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_negative_pullup", "name": "Negative Pull-Up", "hold": false, "level": 1, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"], "also": ["rings"]}, {"ex": "ex25", "name": "Pull-Up", "hold": false, "level": 1, "sets": 3, "lo": 5, "hi": 10, "gear": ["bar"], "also": ["rings"], "band": {"ex": "cx_band_pullup", "name": "Band-Assisted Pull-Up"}, "weighted": {"ex": "cx_weighted_pullup", "name": "Weighted Pull-Up", "after": 15}}, {"ex": "cx_lsit_pullup", "name": "L-Sit Pull-Up", "hold": false, "level": 2, "sets": 3, "lo": 4, "hi": 8, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_chest_to_bar", "name": "Chest-to-Bar Pull-Up", "hold": false, "level": 2, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_archer_pullup", "name": "Archer Pull-Up", "hold": false, "level": 3, "sets": 3, "lo": 4, "hi": 8, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_one_arm_negative", "name": "One-Arm Negative Pull-Up", "hold": false, "level": 4, "sets": 3, "lo": 2, "hi": 5, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_one_arm_pullup", "name": "One-Arm Pull-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 4, "gear": ["bar"], "also": ["rings"]}], "gate": [], "note": "No bar yet? Train the Row ladder: about 15 to 20 good rows and your first pull-up is close. Door-frame bars: no swinging."},
+      {"id": "dip", "name": "Dip", "kind": "base", "blurb": "From bench dips to ring and weighted dips.", "steps": [{"ex": "ex54", "name": "Bench Dip", "hold": false, "level": 0, "sets": 3, "lo": 10, "hi": 15, "gear": ["bench"]}, {"ex": "cx_bench_dip_feet_up", "name": "Bench Dip, Feet Raised", "hold": false, "level": 1, "sets": 3, "lo": 12, "hi": 20, "gear": ["box", "bench"]}, {"ex": "cx_support_hold", "name": "Dip Support Hold", "hold": true, "level": 1, "sets": 3, "lo": 20, "hi": 30, "gear": ["dipbars"], "also": ["chairs"]}, {"ex": "cx_negative_dip", "name": "Negative Dip", "hold": false, "level": 1, "sets": 3, "lo": 4, "hi": 6, "gear": ["dipbars"], "also": ["chairs"]}, {"ex": "ex55", "name": "Triceps Dip", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["dipbars"], "also": ["chairs"], "band": {"ex": "cx_band_dip", "name": "Band-Assisted Dip"}}, {"ex": "cx_straight_bar_dip", "name": "Straight-Bar Dip", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"], "also": ["lowbar"], "band": {"ex": "cx_band_straightbar_dip", "name": "Band-Assisted Straight-Bar Dip"}}, {"ex": "cx_ring_dip", "name": "Ring Dip", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["rings"]}, {"ex": "cx_weighted_dip", "name": "Weighted Dip", "hold": false, "level": 4, "sets": 3, "lo": 5, "hi": 8, "gear": ["dipbars", "weight"]}], "gate": []},
+      {"id": "row", "name": "Row", "kind": "base", "blurb": "Horizontal pulling, from upright rows to front-lever rows.", "steps": [{"ex": "cx_incline_row", "name": "Incline Row", "hold": false, "level": 0, "sets": 3, "lo": 10, "hi": 15, "gear": ["lowbar"], "alts": [{"ex": "cx_towel_door_row", "name": "Towel Door Row", "gear": ["door"], "diff": "same"}, {"ex": "cx_table_row", "name": "Table Row", "gear": ["table"], "diff": "harder"}]}, {"ex": "ex33", "name": "Inverted Row", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["lowbar"], "alts": [{"ex": "cx_broom_row", "name": "Broomstick Row", "gear": ["broom", "chairs"], "diff": "same"}, {"ex": "cx_table_row", "name": "Table Row", "gear": ["table"], "diff": "same"}]}, {"ex": "cx_wide_row", "name": "Wide-Grip Row", "hold": false, "level": 1, "sets": 3, "lo": 6, "hi": 10, "gear": ["lowbar"], "alts": [{"ex": "cx_broom_row", "name": "Broomstick Row", "gear": ["broom", "chairs"], "diff": "same"}, {"ex": "cx_table_row", "name": "Table Row", "gear": ["table"], "diff": "same"}]}, {"ex": "cx_feet_up_row", "name": "Feet-Elevated Row", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["lowbar", "box"], "alts": [{"ex": "cx_table_row_feet_up", "name": "Feet-Elevated Table Row", "gear": ["table", "box"], "diff": "same"}], "weighted": {"ex": "cx_weighted_row", "name": "Weighted Inverted Row", "after": 15}}, {"ex": "cx_archer_row", "name": "Archer Row", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 8, "gear": ["lowbar"], "also": ["rings"]}, {"ex": "cx_tuck_fl_row", "name": "Tuck Front-Lever Row", "hold": false, "level": 3, "sets": 3, "lo": 4, "hi": 6, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_adv_tuck_fl_row", "name": "Advanced Tuck Front-Lever Row", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"], "also": ["rings"]}], "gate": []},
+      {"id": "legs", "name": "Squat to pistol", "kind": "base", "blurb": "From box squats to the pistol squat.", "steps": [{"ex": "cx_box_squat", "name": "Box Sit-to-Stand", "hold": false, "level": 0, "sets": 3, "lo": 12, "hi": 20, "gear": ["box"]}, {"ex": "ex76", "name": "Bodyweight Squat", "hold": false, "level": 0, "sets": 3, "lo": 15, "hi": 25, "gear": ["floor"]}, {"ex": "cx_jump_squat", "name": "Jump Squat", "hold": false, "level": 1, "sets": 3, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "cx_bulgarian_split", "name": "Bodyweight Split Squat", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["box"]}, {"ex": "cx_cossack_squat", "name": "Cossack Squat", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["floor"]}, {"ex": "cx_box_pistol", "name": "Box Pistol", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["box"]}, {"ex": "cx_assisted_pistol", "name": "Assisted Pistol Squat", "hold": false, "level": 3, "sets": 3, "lo": 8, "hi": 15, "gear": ["floor"]}, {"ex": "cx_pistol_squat", "name": "Pistol Squat", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["floor"], "weighted": {"ex": "cx_weighted_pistol", "name": "Weighted Pistol Squat", "after": 10}}, {"ex": "cx_shrimp_squat", "name": "Shrimp Squat", "hold": false, "level": 4, "sets": 3, "lo": 5, "hi": 8, "gear": ["floor"]}], "gate": []},
       {"id": "core", "name": "Core", "kind": "base", "blurb": "Floor core strength, from plank to dragon flag readiness.", "steps": [{"ex": "ex60", "name": "Plank", "hold": true, "level": 0, "sets": 3, "lo": 30, "hi": 60, "gear": ["floor"]}, {"ex": "cx_hollow_tuck", "name": "Tuck Hollow Hold", "hold": true, "level": 0, "sets": 3, "lo": 20, "hi": 30, "gear": ["floor"]}, {"ex": "cx_hollow_hold", "name": "Hollow Body Hold", "hold": true, "level": 1, "sets": 3, "lo": 20, "hi": 40, "gear": ["floor"]}, {"ex": "cx_lying_leg_raise", "name": "Lying Leg Raise", "hold": false, "level": 1, "sets": 3, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "cx_v_up", "name": "V-Up", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "cx_hollow_rock", "name": "Hollow Rock", "hold": false, "level": 2, "sets": 3, "lo": 15, "hi": 25, "gear": ["floor"]}], "gate": []},
-      {"id": "hang", "name": "Hanging core", "kind": "base", "blurb": "Core on the bar, from knee raises to toes-to-bar.", "steps": [{"ex": "ex68", "name": "Hanging Knee Raise", "hold": false, "level": 0, "sets": 3, "lo": 10, "hi": 15, "gear": ["bar"]}, {"ex": "ex15", "name": "Hanging Leg Raise", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"]}, {"ex": "cx_hanging_lsit", "name": "Hanging L-Sit", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["bar"]}, {"ex": "cx_toes_to_bar", "name": "Toes-to-Bar", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["bar"]}, {"ex": "cx_windshield_wipers", "name": "Windshield Wipers", "hold": false, "level": 3, "sets": 3, "lo": 4, "hi": 8, "gear": ["bar"]}, {"ex": "cx_around_world", "name": "Around-the-World", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"]}], "gate": []},
-      {"id": "lsit", "name": "L-sit to manna", "kind": "skill", "blurb": "Compression and straight-arm support: L-sit, V-sit, manna.", "steps": [{"ex": "cx_tuck_lsit", "name": "Tuck L-Sit", "hold": true, "level": 1, "sets": 3, "lo": 10, "hi": 20, "gear": ["parallettes"]}, {"ex": "cx_one_leg_lsit", "name": "One-Leg L-Sit", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["parallettes"]}, {"ex": "cx_lsit", "name": "L-Sit", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["parallettes"]}, {"ex": "cx_floor_lsit", "name": "Floor L-Sit", "hold": true, "level": 3, "sets": 3, "lo": 10, "hi": 20, "gear": ["floor"]}, {"ex": "cx_tuck_vsit", "name": "Tucked V-Sit", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 12, "gear": ["parallettes"]}, {"ex": "cx_vsit", "name": "V-Sit", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["parallettes"]}, {"ex": "cx_manna", "name": "Manna", "hold": true, "level": 4, "sets": 3, "lo": 2, "hi": 5, "gear": ["parallettes"]}], "gate": [["core", "cx_hollow_hold"], ["dip", "cx_support_hold"]]},
+      {"id": "hang", "name": "Hanging core", "kind": "base", "blurb": "Core on the bar, from knee raises to toes-to-bar.", "steps": [{"ex": "ex68", "name": "Hanging Knee Raise", "hold": false, "level": 0, "sets": 3, "lo": 10, "hi": 15, "gear": ["bar"], "also": ["rings"], "alts": [{"ex": "cx_support_knee_raise", "name": "Support Knee Raise", "gear": ["dipbars"], "diff": "same"}, {"ex": "cx_support_knee_raise", "name": "Support Knee Raise", "gear": ["chairs"], "diff": "same"}]}, {"ex": "ex15", "name": "Hanging Leg Raise", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"], "also": ["rings"], "alts": [{"ex": "cx_support_leg_raise", "name": "Support Leg Raise", "gear": ["dipbars"], "diff": "same"}, {"ex": "cx_support_leg_raise", "name": "Support Leg Raise", "gear": ["chairs"], "diff": "same"}]}, {"ex": "cx_hanging_lsit", "name": "Hanging L-Sit", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_toes_to_bar", "name": "Toes-to-Bar", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_windshield_wipers", "name": "Windshield Wipers", "hold": false, "level": 3, "sets": 3, "lo": 4, "hi": 8, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_around_world", "name": "Around-the-World", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"], "also": ["rings"]}], "gate": []},
+      {"id": "lsit", "name": "L-sit to manna", "kind": "skill", "blurb": "Compression and straight-arm support: L-sit, V-sit, manna.", "steps": [{"ex": "cx_tuck_lsit", "name": "Tuck L-Sit", "hold": true, "level": 1, "sets": 3, "lo": 10, "hi": 20, "gear": ["parallettes"], "also": ["books", "chairs", "dipbars"]}, {"ex": "cx_one_leg_lsit", "name": "One-Leg L-Sit", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["parallettes"], "also": ["books", "chairs", "dipbars"]}, {"ex": "cx_lsit", "name": "L-Sit", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["parallettes"], "also": ["books", "chairs", "dipbars"]}, {"ex": "cx_floor_lsit", "name": "Floor L-Sit", "hold": true, "level": 3, "sets": 3, "lo": 10, "hi": 20, "gear": ["floor"]}, {"ex": "cx_tuck_vsit", "name": "Tucked V-Sit", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 12, "gear": ["parallettes"], "also": ["books", "chairs", "dipbars"]}, {"ex": "cx_vsit", "name": "V-Sit", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["parallettes"], "also": ["books", "chairs", "dipbars"]}, {"ex": "cx_manna", "name": "Manna", "hold": true, "level": 4, "sets": 3, "lo": 2, "hi": 5, "gear": ["parallettes"]}], "gate": [["core", "cx_hollow_hold"], ["dip", "cx_support_hold"]], "note": "Two chairs or dip bars make each step a little easier, parallettes or books are the standard, the floor is hardest."},
       {"id": "handstand", "name": "Handstand", "kind": "skill", "blurb": "From the pike hold to the freestanding handstand.", "steps": [{"ex": "cx_pike_hold", "name": "Pike Hold", "hold": true, "level": 0, "sets": 3, "lo": 20, "hi": 30, "gear": ["floor"]}, {"ex": "cx_box_pike_hold", "name": "Box Pike Hold", "hold": true, "level": 1, "sets": 3, "lo": 20, "hi": 30, "gear": ["box"]}, {"ex": "cx_wall_walk", "name": "Wall Walk", "hold": false, "level": 1, "sets": 3, "lo": 2, "hi": 4, "gear": ["wall"]}, {"ex": "cx_chest_wall_hs", "name": "Chest-to-Wall Handstand", "hold": true, "level": 2, "sets": 3, "lo": 20, "hi": 45, "gear": ["wall"]}, {"ex": "cx_hs_kickup", "name": "Handstand Kick-Up", "hold": false, "level": 2, "sets": 3, "lo": 5, "hi": 10, "gear": ["wall"]}, {"ex": "cx_wall_toe_pulls", "name": "Wall Toe Pulls", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 15, "gear": ["wall"]}, {"ex": "cx_hs_bail", "name": "Handstand Bail", "hold": false, "level": 2, "sets": 2, "lo": 3, "hi": 5, "gear": ["floor"]}, {"ex": "cx_free_handstand", "name": "Freestanding Handstand", "hold": true, "level": 3, "sets": 3, "lo": 10, "hi": 30, "gear": ["floor"]}], "gate": [["push", "ex17"]]},
       {"id": "hspu", "name": "Handstand push-up", "kind": "skill", "blurb": "From pike push-ups to the freestanding handstand push-up.", "steps": [{"ex": "cx_pike_pushup", "name": "Pike Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 15, "gear": ["floor"]}, {"ex": "cx_box_pike_pushup", "name": "Elevated Pike Push-Up", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 15, "gear": ["box"]}, {"ex": "cx_wall_hspu", "name": "Wall Handstand Push-Up", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["wall"]}, {"ex": "cx_wall_shoulder_taps", "name": "Wall Shoulder Taps", "hold": false, "level": 3, "sets": 3, "lo": 6, "hi": 10, "gear": ["wall"]}, {"ex": "cx_hs_press_negative", "name": "Handstand Press Negative", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 6, "gear": ["floor"]}, {"ex": "cx_free_hspu_negative", "name": "Freestanding HSPU Negative", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 5, "gear": ["floor"]}, {"ex": "cx_free_hspu", "name": "Freestanding Handstand Push-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 5, "gear": ["floor"]}], "gate": [["handstand", "cx_chest_wall_hs"], ["dip", "ex55"]]},
-      {"id": "muscleup", "name": "Muscle-up", "kind": "skill", "blurb": "From high pulls to the strict bar muscle-up.", "steps": [{"ex": "cx_swing", "name": "Hollow-Arch Swing", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"]}, {"ex": "cx_explosive_pullup", "name": "Explosive Pull-Up", "hold": false, "level": 2, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"]}, {"ex": "cx_negative_muscleup", "name": "Negative Muscle-Up", "hold": false, "level": 3, "sets": 3, "lo": 2, "hi": 4, "gear": ["bar"]}, {"ex": "cx_jumping_muscleup", "name": "Jumping Muscle-Up", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["lowbar"]}, {"ex": "cx_muscleup", "name": "Bar Muscle-Up", "hold": false, "level": 3, "sets": 3, "lo": 1, "hi": 5, "gear": ["bar"]}, {"ex": "cx_strict_muscleup", "name": "Strict Muscle-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 3, "gear": ["bar"]}], "gate": [["pull", "ex25"], ["dip", "cx_straight_bar_dip"]]},
-      {"id": "frontlever", "name": "Front lever", "kind": "skill", "blurb": "From the tuck to the full front lever.", "steps": [{"ex": "cx_tuck_fl", "name": "Tuck Front Lever", "hold": true, "level": 2, "sets": 3, "lo": 8, "hi": 15, "gear": ["bar"]}, {"ex": "cx_adv_tuck_fl", "name": "Advanced Tuck Front Lever", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 15, "gear": ["bar"]}, {"ex": "cx_fl_negative", "name": "Front-Lever Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"]}, {"ex": "cx_one_leg_fl", "name": "One-Leg Front Lever", "hold": true, "level": 3, "sets": 3, "lo": 6, "hi": 10, "gear": ["bar"]}, {"ex": "cx_straddle_fl", "name": "Straddle Front Lever", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["bar"]}, {"ex": "cx_full_fl", "name": "Full Front Lever", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 10, "gear": ["bar"]}], "gate": [["pull", "ex25"], ["hang", "cx_hanging_lsit"]]},
-      {"id": "backlever", "name": "Back lever", "kind": "skill", "blurb": "From skin the cat to the full back lever.", "steps": [{"ex": "cx_skin_cat", "name": "Skin the Cat", "hold": false, "level": 2, "sets": 3, "lo": 3, "hi": 5, "gear": ["rings"]}, {"ex": "cx_german_hang", "name": "German Hang", "hold": true, "level": 2, "sets": 3, "lo": 15, "hi": 30, "gear": ["rings"]}, {"ex": "cx_tuck_bl", "name": "Tuck Back Lever", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 15, "gear": ["rings"]}, {"ex": "cx_bl_negative", "name": "Back-Lever Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["rings"]}, {"ex": "cx_straddle_bl", "name": "Straddle Back Lever", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["rings"]}, {"ex": "cx_full_bl", "name": "Full Back Lever", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["rings"]}], "gate": [["pull", "ex25"], ["dip", "ex55"]], "note": "Go slow: hard on elbows and shoulders. Max 3 times a week."},
-      {"id": "planche", "name": "Planche", "kind": "skill", "blurb": "From planche leans to the full planche.", "steps": [{"ex": "cx_scap_pushup", "name": "Scapula Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 12, "hi": 20, "gear": ["floor"]}, {"ex": "cx_planche_lean", "name": "Planche Lean", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["floor"]}, {"ex": "cx_tuck_planche", "name": "Tuck Planche", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 20, "gear": ["parallettes"]}, {"ex": "cx_adv_tuck_planche", "name": "Advanced Tuck Planche", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 15, "gear": ["parallettes"]}, {"ex": "cx_straddle_planche", "name": "Straddle Planche", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 10, "gear": ["parallettes"]}, {"ex": "cx_full_planche", "name": "Full Planche", "hold": true, "level": 4, "sets": 3, "lo": 2, "hi": 10, "gear": ["parallettes"]}], "gate": [["push", "ex17"], ["dip", "cx_support_hold"]], "note": "Go slow: warm the wrists and elbows. Max 3 times a week."},
-      {"id": "flag", "name": "Human flag", "kind": "skill", "blurb": "From side-plank raises to the full human flag.", "steps": [{"ex": "ex66", "name": "Side Plank", "hold": true, "level": 0, "sets": 3, "lo": 30, "hi": 45, "gear": ["floor"]}, {"ex": "cx_side_plank_raise", "name": "Side Plank Raise", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "cx_vertical_flag", "name": "Vertical Flag", "hold": true, "level": 2, "sets": 3, "lo": 5, "hi": 10, "gear": ["pole"]}, {"ex": "cx_tuck_flag", "name": "Tuck Flag", "hold": true, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["pole"]}, {"ex": "cx_straddle_flag", "name": "Straddle Flag", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 8, "gear": ["pole"]}, {"ex": "cx_full_flag", "name": "Human Flag", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 10, "gear": ["pole"]}], "gate": [["pull", "ex25"]]},
-      {"id": "dragon", "name": "Dragon flag", "kind": "skill", "blurb": "From hip raises to the full dragon flag.", "steps": [{"ex": "cx_df_hip_raise", "name": "Dragon Flag Hip Raise", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["bench"]}, {"ex": "cx_df_tuck_negative", "name": "Tuck Dragon Flag Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["bench"]}, {"ex": "cx_df_negative", "name": "Dragon Flag Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["bench"]}, {"ex": "cx_dragon_flag", "name": "Dragon Flag", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 6, "gear": ["bench"]}], "gate": [["core", "cx_hollow_hold"], ["hang", "ex15"]]},
+      {"id": "muscleup", "name": "Muscle-up", "kind": "skill", "blurb": "From high pulls to the strict bar muscle-up.", "steps": [{"ex": "cx_swing", "name": "Hollow-Arch Swing", "hold": false, "level": 2, "sets": 3, "lo": 8, "hi": 12, "gear": ["bar"]}, {"ex": "cx_explosive_pullup", "name": "Explosive Pull-Up", "hold": false, "level": 2, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"]}, {"ex": "cx_negative_muscleup", "name": "Negative Muscle-Up", "hold": false, "level": 3, "sets": 3, "lo": 2, "hi": 4, "gear": ["bar"]}, {"ex": "cx_jumping_muscleup", "name": "Jumping Muscle-Up", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["box", "bar"], "also": ["lowbar"]}, {"ex": "cx_muscleup", "name": "Bar Muscle-Up", "hold": false, "level": 3, "sets": 3, "lo": 1, "hi": 5, "gear": ["bar"]}, {"ex": "cx_strict_muscleup", "name": "Strict Muscle-Up", "hold": false, "level": 4, "sets": 3, "lo": 1, "hi": 3, "gear": ["bar"]}], "gate": [["pull", "ex25", 20], ["dip", "cx_straight_bar_dip", 20], ["lsit", "cx_lsit", 20], ["hang", "cx_toes_to_bar", 10]], "note": "Needs a fixed high bar. Never on a door-frame bar."},
+      {"id": "frontlever", "name": "Front lever", "kind": "skill", "blurb": "From the tuck to the full front lever.", "steps": [{"ex": "cx_tuck_fl", "name": "Tuck Front Lever", "hold": true, "level": 2, "sets": 3, "lo": 8, "hi": 15, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_adv_tuck_fl", "name": "Advanced Tuck Front Lever", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 15, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_inverted_deadlift", "name": "Upside-Down Deadlift", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 8, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_fl_negative", "name": "Front-Lever Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 6, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_one_leg_fl", "name": "One-Leg Front Lever", "hold": true, "level": 3, "sets": 3, "lo": 6, "hi": 10, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_straddle_fl", "name": "Straddle Front Lever", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["bar"], "also": ["rings"], "band": {"ex": "cx_band_front_lever", "name": "Band Front Lever"}}, {"ex": "cx_full_fl", "name": "Full Front Lever", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 10, "gear": ["bar"], "also": ["rings"], "band": {"ex": "cx_band_front_lever", "name": "Band Front Lever"}}], "gate": [["pull", "ex25", 10], ["hang", "cx_hanging_lsit", 20], ["hang", "ex15", 15]]},
+      {"id": "backlever", "name": "Back lever", "kind": "skill", "blurb": "From skin the cat to the full back lever.", "steps": [{"ex": "cx_skin_cat", "name": "Skin the Cat", "hold": false, "level": 2, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_german_hang", "name": "German Hang", "hold": true, "level": 2, "sets": 3, "lo": 15, "hi": 30, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_tuck_bl", "name": "Tuck Back Lever", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 15, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_inverted_hang", "name": "Inverted Hang", "hold": true, "level": 3, "sets": 3, "lo": 10, "hi": 20, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_single_leg_bl_negative", "name": "Single-Leg Back-Lever Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_bl_negative", "name": "Back-Lever Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_straddle_bl", "name": "Straddle Back Lever", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["bar"], "also": ["rings"]}, {"ex": "cx_full_bl", "name": "Full Back Lever", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 10, "gear": ["bar"], "also": ["rings"]}], "gate": [["pull", "cx_dead_hang", 20], ["hang", "ex68", 15], ["pull", "ex25", 10], ["hang", "cx_hanging_lsit", 10]], "note": "Go slow: hard on elbows and shoulders. Max 3 times a week."},
+      {"id": "planche", "name": "Planche", "kind": "skill", "blurb": "From planche leans to the full planche.", "steps": [{"ex": "cx_scap_pushup", "name": "Scapula Push-Up", "hold": false, "level": 1, "sets": 3, "lo": 12, "hi": 20, "gear": ["floor"]}, {"ex": "cx_planche_lean", "name": "Planche Lean", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["floor"]}, {"ex": "cx_reverse_leg_raise", "name": "Reverse Leg Raise", "hold": false, "level": 2, "sets": 3, "lo": 10, "hi": 15, "gear": ["bench"]}, {"ex": "cx_lsit_to_tuck_planche", "name": "L-Sit to Tuck Planche", "hold": false, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["parallettes"], "also": ["chairs"]}, {"ex": "cx_tuck_planche", "name": "Tuck Planche", "hold": true, "level": 3, "sets": 3, "lo": 8, "hi": 20, "gear": ["parallettes"], "also": ["chairs"], "alts": [{"ex": "cx_floor_tuck_planche", "name": "Floor Tuck Planche", "gear": ["floor"], "diff": "harder"}]}, {"ex": "cx_adv_tuck_planche", "name": "Advanced Tuck Planche", "hold": true, "level": 4, "sets": 3, "lo": 5, "hi": 15, "gear": ["parallettes"], "also": ["chairs"]}, {"ex": "cx_straddle_planche", "name": "Straddle Planche", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 10, "gear": ["parallettes"], "also": ["chairs"], "band": {"ex": "cx_band_straddle_planche", "name": "Band Straddle Planche"}}, {"ex": "cx_full_planche", "name": "Full Planche", "hold": true, "level": 4, "sets": 3, "lo": 2, "hi": 10, "gear": ["parallettes"], "also": ["chairs"], "band": {"ex": "cx_band_full_planche", "name": "Band Full Planche"}}], "gate": [["lsit", "cx_lsit", 10], ["push", "ex17", 25], ["pull", "ex25", 10]], "note": "Go slow: warm the wrists and elbows. Max 3 times a week."},
+      {"id": "flag", "name": "Human flag", "kind": "skill", "blurb": "From side-plank raises to the full human flag.", "steps": [{"ex": "ex66", "name": "Side Plank", "hold": true, "level": 0, "sets": 3, "lo": 30, "hi": 45, "gear": ["floor"]}, {"ex": "cx_side_plank_raise", "name": "Side Plank Raise", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}, {"ex": "cx_pole_side_plank", "name": "Pole Side Plank", "hold": true, "level": 2, "sets": 3, "lo": 10, "hi": 20, "gear": ["pole"]}, {"ex": "cx_tuck_flag", "name": "Tuck Flag", "hold": true, "level": 3, "sets": 3, "lo": 5, "hi": 10, "gear": ["pole"]}, {"ex": "cx_straddle_flag", "name": "Straddle Flag", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 8, "gear": ["pole"]}, {"ex": "cx_flag_negative", "name": "Flag Negative", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 5, "gear": ["pole"]}, {"ex": "cx_full_flag", "name": "Human Flag", "hold": true, "level": 4, "sets": 3, "lo": 3, "hi": 10, "gear": ["pole"]}], "gate": [["pull", "ex25"]]},
+      {"id": "dragon", "name": "Dragon flag", "kind": "skill", "blurb": "From hip raises to the full dragon flag.", "steps": [{"ex": "cx_df_hip_raise", "name": "Dragon Flag Hip Raise", "hold": false, "level": 2, "sets": 3, "lo": 6, "hi": 10, "gear": ["anchor"]}, {"ex": "cx_df_tuck_negative", "name": "Tuck Dragon Flag Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["anchor"]}, {"ex": "cx_df_negative", "name": "Dragon Flag Negative", "hold": false, "level": 3, "sets": 3, "lo": 3, "hi": 5, "gear": ["anchor"]}, {"ex": "cx_switch_leg_dragon", "name": "Switching-Leg Dragon Flag", "hold": false, "level": 3, "sets": 3, "lo": 6, "hi": 10, "gear": ["anchor"]}, {"ex": "cx_single_leg_dragon", "name": "Single-Leg Dragon Flag Raise", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 6, "gear": ["anchor"]}, {"ex": "cx_dragon_flag", "name": "Dragon Flag", "hold": false, "level": 4, "sets": 3, "lo": 3, "hi": 6, "gear": ["anchor"]}], "gate": [["lsit", "cx_lsit", 10], ["pull", "ex25", 10]]},
       {"id": "mobility", "name": "Mobility", "kind": "support", "blurb": "Wrists, shoulders and pike flexibility for the skills.", "steps": [{"ex": "cx_wrist_prep", "name": "Wrist Warm-Up", "hold": false, "level": 0, "sets": 2, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "cx_shoulder_dislocate", "name": "Stick Shoulder Pass", "hold": false, "level": 0, "sets": 2, "lo": 10, "hi": 15, "gear": ["floor"]}, {"ex": "cx_pike_stretch", "name": "Pike Stretch", "hold": true, "level": 0, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"]}, {"ex": "cx_active_pike", "name": "Active Pike Lift", "hold": false, "level": 1, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"]}], "gate": []}
     ];
     const CALI_HOWTO = {
@@ -2455,7 +2530,7 @@
       "cx_bulgarian_split": {"setup": "Back foot on a bench, front foot far enough forward.", "move": "Lower until the back knee is near the floor, push up through the front heel.", "avoid": "Front heel lifting off the floor."},
       "cx_cossack_squat": {"setup": "Very wide stance, toes slightly out.", "move": "Sit down over one leg while the other stays straight, toes up, then switch.", "avoid": "Heel of the bent leg lifting."},
       "cx_box_pistol": {"setup": "Stand on one leg in front of a box, other leg straight forward.", "move": "Sit to the box on one leg, then stand up without pushing with the other leg; lower the box over time.", "avoid": "Falling onto the box at the end."},
-      "cx_assisted_pistol": {"setup": "Hold a pole, door frame or band, one leg straight forward.", "move": "Squat all the way down on one leg using the support only as needed, then stand.", "avoid": "Pulling yourself up with the arms."},
+      "cx_assisted_pistol": {"setup": "Stand on one leg beside a door frame, table edge, pole or band you can hold at hip height.", "move": "Sit down on one leg as deep as you can, holding the support only as much as you need, then stand up.", "avoid": "Pulling yourself up with the arm instead of pushing with the leg."},
       "cx_pistol_squat": {"setup": "One leg straight forward, arms forward for balance.", "move": "Squat all the way down on one leg, heel down, then stand through the whole foot.", "avoid": "Heel lifting or the knee caving in."},
       "cx_shrimp_squat": {"setup": "Stand on one leg, hold the other foot behind you.", "move": "Lower until the back knee touches the floor, then stand up.", "avoid": "Falling forward at the bottom."},
       "cx_hollow_tuck": {"setup": "Lie on the back, knees tucked, lower back pressed into the floor.", "move": "Lift the shoulders off the floor and hold, ribs down.", "avoid": "Lower back lifting off the floor."},
@@ -2497,6 +2572,7 @@
       "cx_strict_muscleup": {"setup": "Dead hang, no swing, false grip if needed.", "move": "Pull slowly and strictly over the bar and press out.", "avoid": "Kicking to get over."},
       "cx_tuck_fl": {"setup": "Hang, arms locked, pull the knees to the chest.", "move": "Push the bar toward the hips and lift until the back is level with the floor, hold.", "avoid": "Bending the arms."},
       "cx_adv_tuck_fl": {"setup": "From the tuck, open the hips so the back is flat and the knees are at 90 degrees.", "move": "Hold the flat back level with the floor.", "avoid": "Rounding the back to make it easier."},
+      "cx_inverted_deadlift": {"setup": "Hang upside down from the bar with straight arms, body vertical.", "move": "Lower the straight body forward toward horizontal as far as you can control, then pull back up to vertical.", "avoid": "Bending the arms to help."},
       "cx_fl_negative": {"setup": "Pull into an inverted hang, body straight up.", "move": "Lower the straight body slowly through horizontal, arms locked.", "avoid": "Piking at the hips."},
       "cx_one_leg_fl": {"setup": "Advanced tuck front lever.", "move": "Straighten one leg so it is in line with the body, other knee tucked, hold.", "avoid": "Hips dropping below the line."},
       "cx_straddle_fl": {"setup": "From the one-leg front lever.", "move": "Open both legs wide and straight, body level, hold.", "avoid": "Bending the knees."},
@@ -2504,28 +2580,53 @@
       "cx_skin_cat": {"setup": "Hang from rings or a bar, knees tucked.", "move": "Roll backwards between the arms to a German hang, then return the same way, slowly.", "avoid": "Rushing into the stretch."},
       "cx_german_hang": {"setup": "Skin the cat to the bottom position.", "move": "Relax into the shoulder stretch, feet down, and hold.", "avoid": "Forcing the stretch past what feels safe."},
       "cx_tuck_bl": {"setup": "From the inverted hang, tucked.", "move": "Lower until the back is level with the floor, face down, hold.", "avoid": "Rounded back."},
+      "cx_inverted_hang": {"setup": "Hang from the bar, tuck the knees and turn upside down so the body is vertical, head down.", "move": "Hold the straight upside-down line with the arms straight and the grip tight.", "avoid": "A loose grip while turning over."},
+      "cx_single_leg_bl_negative": {"setup": "From the inverted hang, bend one knee and keep the other leg straight.", "move": "Lower slowly toward a back lever over 3 to 5 seconds, then tuck through to finish.", "avoid": "Arching the lower back instead of keeping the hips straight."},
       "cx_bl_negative": {"setup": "Straight inverted hang, body tight.", "move": "Lower slowly through horizontal with the body locked straight.", "avoid": "Piking at the hips."},
       "cx_straddle_bl": {"setup": "From the tuck back lever.", "move": "Open the legs wide and straight, body level, hold.", "avoid": "Hips bending."},
       "cx_full_bl": {"setup": "Inverted hang, legs together.", "move": "Lower the straight body to level, face down, glutes squeezed, hold.", "avoid": "Arms bending."},
       "cx_scap_pushup": {"setup": "Push-up position, arms locked, thumbs forward.", "move": "Move only the shoulder blades: let them come together, then push them far apart.", "avoid": "Bending the arms."},
       "cx_planche_lean": {"setup": "Push-up position, fingers turned out, upper back rounded.", "move": "Lean forward until the hands are at the waist, arms locked, hold.", "avoid": "Shoulders shrugging or arms bending."},
+      "cx_reverse_leg_raise": {"setup": "Lie face down on a bench or two chairs with the hips at the edge, holding on.", "move": "Lift both straight legs up behind you until in line with the body, hold one second, lower.", "avoid": "Swinging the legs up with momentum."},
+      "cx_lsit_to_tuck_planche": {"setup": "Tuck L-sit on parallettes or two chairs, arms straight.", "move": "Lean forward and swing the tucked knees back under you into a tuck planche, then back to the tuck L-sit.", "avoid": "Bending the arms during the swing."},
       "cx_tuck_planche": {"setup": "Hands on parallettes, arms locked.", "move": "Lean forward and lift the hips to shoulder height with the knees tucked, back flat, hold.", "avoid": "Hips lower than the shoulders."},
       "cx_adv_tuck_planche": {"setup": "From the tuck planche.", "move": "Open the hips so the back is flat and level, knees at 90 degrees, hold.", "avoid": "Rounding the back."},
       "cx_straddle_planche": {"setup": "From the advanced tuck.", "move": "Straighten the legs wide apart, body level, arms locked, hold.", "avoid": "Bent elbows."},
       "cx_full_planche": {"setup": "Parallettes, arms locked, deep lean.", "move": "Body straight and level with the legs together, only the hands touching, hold.", "avoid": "Piking the hips."},
       "cx_side_plank_raise": {"setup": "High side plank on a straight arm, top arm overhead.", "move": "Lower the hip toward the floor and lift it high, repeat.", "avoid": "Hips falling backwards."},
-      "cx_vertical_flag": {"setup": "Pole: top hand pulling, bottom hand pushing at knee height, thumb down.", "move": "Lift the body straight up alongside the pole and hold.", "avoid": "Bending the bottom arm."},
+      "cx_pole_side_plank": {"setup": "Feet on the floor beside the pole, top hand pulling high, bottom hand pushing low, head under the top hand.", "move": "Lean your body out sideways into a straight line and hold, pushing with the bottom arm.", "avoid": "Bending the bottom arm."},
       "cx_tuck_flag": {"setup": "Same grip as the vertical flag.", "move": "Lower to the side with the knees tucked, body level, hold.", "avoid": "Body drifting in front of the pole."},
       "cx_straddle_flag": {"setup": "From the tuck flag.", "move": "Open the legs wide and straight, level, hold.", "avoid": "Hips sagging."},
+      "cx_flag_negative": {"setup": "Kick up into a vertical flag position, legs straight above you.", "move": "Lower the straight body sideways as slowly as you can toward horizontal.", "avoid": "Letting the hips sag or twist toward the pole."},
       "cx_full_flag": {"setup": "Same grip, head between the arms.", "move": "Hold the whole straight body level with the floor, legs together.", "avoid": "Top arm bending."},
       "cx_df_hip_raise": {"setup": "Lie on a bench, hands gripping behind the head.", "move": "Lift the hips and legs into a straight line so only the upper back touches, lower.", "avoid": "Bending at the hips."},
       "cx_df_tuck_negative": {"setup": "Top position with the knees tucked.", "move": "Lower slowly as one piece.", "avoid": "Lower back arching."},
       "cx_df_negative": {"setup": "Top position, body straight.", "move": "Lower the straight body as slowly as you can.", "avoid": "Hips bending on the way down."},
-      "cx_dragon_flag": {"setup": "Lie on a bench, hands gripping behind the head.", "move": "Lower and raise the whole straight body without touching the bench with the hips.", "avoid": "Piking the hips."},
+      "cx_switch_leg_dragon": {"setup": "Dragon flag top position, one knee bent and one leg straight.", "move": "Switch legs in the air while the hips stay up and straight.", "avoid": "Hips dropping while you switch."},
+      "cx_single_leg_dragon": {"setup": "Lying down, gripping behind the head, one knee tucked and one leg straight.", "move": "Lower and raise the body with the hips straight, then switch legs.", "avoid": "Piking at the hips."},
+      "cx_dragon_flag": {"setup": "Lie on your back on the floor or a bench, hands gripping a fixed pole or the bench behind your head.", "move": "Lower and raise the whole straight body, only the upper back touching down.", "avoid": "Piking the hips."},
       "cx_wrist_prep": {"setup": "On hands and knees, fingers forward, then turned back.", "move": "Rock gently forward and back over the hands.", "avoid": "Pushing into pain."},
       "cx_shoulder_dislocate": {"setup": "Hold a stick or band wide with straight arms.", "move": "Lift it over the head and behind the back, then return.", "avoid": "Bending the elbows."},
       "cx_pike_stretch": {"setup": "Sit with straight legs together.", "move": "Fold forward from the hips toward the toes and breathe out to sink deeper.", "avoid": "Rounding the back instead of folding at the hips."},
-      "cx_active_pike": {"setup": "Seated pike, hands beside the knees.", "move": "Lift both straight legs off the floor using the hip flexors, hold one second, lower.", "avoid": "Leaning back."}
+      "cx_active_pike": {"setup": "Seated pike, hands beside the knees.", "move": "Lift both straight legs off the floor using the hip flexors, hold one second, lower.", "avoid": "Leaning back."},
+      "cx_wall_pushup": {"setup": "Hands on the wall at chest height, feet a big step back, body straight.", "move": "Bend the elbows until the nose nears the wall, then push back.", "avoid": "Standing so close that it does nothing."},
+      "cx_towel_door_row": {"setup": "A towel shut in a strong door that closes toward you, door locked; hold both ends and lean back.", "move": "Row your chest to your hands, lower slowly; walk the feet closer to make it harder.", "avoid": "Using a door that opens toward you."},
+      "cx_broom_row": {"setup": "A strong wooden or steel pole across two chairs weighted down; lie under it.", "move": "Pull your chest to the pole and lower slowly, body straight.", "avoid": "Chairs not weighted, so they shift."},
+      "cx_table_row": {"setup": "Lie under a sturdy table, grip the long edge near a leg; test it holds you first.", "move": "Pull your chest to the edge with the body straight, lower slowly.", "avoid": "A table that lifts at the far end."},
+      "cx_table_row_feet_up": {"setup": "Under a sturdy table with the heels up on a chair or box.", "move": "Pull your chest to the edge with the body straight, lower slowly.", "avoid": "Hips sagging."},
+      "cx_support_knee_raise": {"setup": "Straight arms on two chairs (turned sideways) or dip bars, shoulders pushed down.", "move": "Lift the knees to the chest, lower with control.", "avoid": "Shrugging the shoulders up to the ears."},
+      "cx_support_leg_raise": {"setup": "Straight arms on two chairs or dip bars, legs straight down.", "move": "Lift straight legs to hip height, lower slowly; tap the floor if needed.", "avoid": "Bending the knees to cheat."},
+      "cx_floor_tuck_planche": {"setup": "Flat hands on the floor, fingers turned out, wrists warmed up first.", "move": "Lean forward and lift the tucked knees off the floor, arms straight, hips high.", "avoid": "Bending the arms to lift."},
+      "cx_band_pullup": {"setup": "Loop a band tight on the bar, knee or foot in the loop.", "move": "Full pull-up, chin over the bar, lower slowly; move to a thinner band when the reps get easy.", "avoid": "Bouncing out of the bottom on the band."},
+      "cx_band_dip": {"setup": "A band across the dip bars, knees resting in it.", "move": "Full dip down to 90 degrees and back up; thinner band as you get stronger.", "avoid": "Letting the band throw you out of the bottom."},
+      "cx_band_straightbar_dip": {"setup": "A band looped on the bar, knees in it, hands on top of the bar.", "move": "Lean over the bar and dip down, then press out to straight arms.", "avoid": "Staying upright so the bar hits the stomach."},
+      "cx_band_front_lever": {"setup": "Band ends held between palms and bar, band across the waist just above the hips.", "move": "Hold the lever shape straight and level; loosen the wrap, then use a thinner band.", "avoid": "Bending the arms."},
+      "cx_band_straddle_planche": {"setup": "A band hung from a high bar, pulling straight up at the waist.", "move": "Hold the straddle planche straight and level with locked arms.", "avoid": "Band set too far back, tipping you forward."},
+      "cx_band_full_planche": {"setup": "A thicker band from a high bar, pulling straight up at the waist.", "move": "Hold the full planche, legs together, body level.", "avoid": "Band under the knees, which helps too much."},
+      "cx_band_planche_pushup": {"setup": "A band from a high bar around the waist, hands on the floor or parallettes.", "move": "Planche push-up with the band taking some weight.", "avoid": "Piking the hips."},
+      "cx_weighted_pullup": {"setup": "Vest, belt or a backpack of books worn tight and high.", "move": "Strict pull-ups with a load that allows about 8 reps; then drop the weight and finish with bodyweight.", "avoid": "Kipping to get the weight up."},
+      "cx_weighted_pistol": {"setup": "Hold a dumbbell or backpack in front of the chest.", "move": "Full pistol squat; the weight in front helps balance.", "avoid": "Knee caving in."},
+      "cx_weighted_row": {"setup": "Vest or backpack on, under a low bar.", "move": "Row the chest to the bar with the body straight.", "avoid": "Hips sagging under the weight."}
     };
 
     function caliLadder(id) {
@@ -2544,6 +2645,220 @@
     function caliTargetText(step) {
       const unit = step.hold ? ' s' : '';
       return step.sets + ' × ' + (step.lo === step.hi ? step.lo : step.lo + '–' + step.hi) + unit;
+    }
+
+    /* P2-18 step 2: equipment. Everyone ticks what they own; every ladder step
+       then shows the version that fits that gear (the step itself, or an
+       equal alternative from `alts`), or what is missing. Floor is always
+       owned. A box, a bench and two chairs stand in for each other. */
+    const CALI_GEAR_INFO = {
+      floor: ['🟫', 'Floor', 'Room to lie down and stand up'],
+      wall: ['🧱', 'Wall', 'A clear, solid wall for handstands'],
+      box: ['📦', 'Box or step', 'Knee height, does not slide'],
+      bench: ['🛋️', 'Bench', 'Flat, steady, holds your weight'],
+      chairs: ['🪑', '2 sturdy chairs', 'Placed back to back, they must not tip'],
+      table: ['🍽️', 'Sturdy table', 'Holds your full weight; for rows under it'],
+      door: ['🚪', 'Door + towel', 'A strong door that closes toward you, locked'],
+      broom: ['🧹', 'Broomstick', 'Wood or steel, across 2 weighted chairs as a low bar'],
+      books: ['📚', 'Books', 'Two even stacks of hardcovers, for L-sits'],
+      bar: ['➖', 'Pull-up bar', 'High enough to hang with straight arms'],
+      lowbar: ['➰', 'Low bar', 'Waist height, for rows'],
+      dipbars: ['⏸️', 'Dip bars', 'Parallel bars or a dip station'],
+      parallettes: ['🟰', 'Parallettes', 'Small low bars for L-sits and planche'],
+      rings: ['⭕', 'Gymnastic rings', 'Hung from a bar or beam'],
+      pole: ['🗼', 'Pole or wall bars', 'Vertical, fixed top and bottom, for the human flag'],
+      anchor: ['⚓', 'Something fixed to grip', 'Lying down, behind your head: a pole or heavy fixed furniture'],
+      band: ['🎗️', 'Resistance bands', 'Loop bands for assisted steps'],
+      weight: ['🎒', 'Weight vest or backpack', 'To add weight when bodyweight is easy']
+    };
+    const CALI_GEAR_SUBS = { box: ['bench', 'chairs'], bench: ['box', 'chairs'], lowbar: ['rings'], anchor: ['pole', 'bench'] };
+    const CALI_PLACES = {
+      anywhere: ['🌍 Anywhere', ['floor']],
+      home: ['🏠 Home', ['floor', 'wall', 'box', 'chairs', 'table', 'door', 'books']],
+      park: ['🌳 Park', ['floor', 'wall', 'box', 'bench', 'bar', 'lowbar', 'dipbars', 'pole']],
+      gym: ['🏋️ Gym', ['floor', 'wall', 'box', 'bench', 'bar', 'lowbar', 'dipbars', 'parallettes', 'rings', 'band', 'weight']]
+    };
+
+    function normalizeCali(c) {
+      const out = c && typeof c === 'object' && !Array.isArray(c) ? c : {};
+      const g = Array.isArray(out.gear) ? out.gear.filter(x => CALI_GEAR.indexOf(x) >= 0) : [];
+      if (g.indexOf('floor') < 0) g.unshift('floor');
+      out.gear = CALI_GEAR.filter(x => g.indexOf(x) >= 0);
+      if (!Object.prototype.hasOwnProperty.call(CALI_PLACES, out.place)) out.place = '';
+      out.gearSet = out.gearSet === true;
+      return out;
+    }
+
+    function caliGear() {
+      state.cali = normalizeCali(state.cali);
+      return state.cali.gear;
+    }
+
+    function caliHasItem(have, g) {
+      if (have.indexOf(g) >= 0) return true;
+      return (CALI_GEAR_SUBS[g] || []).some(s => have.indexOf(s) >= 0);
+    }
+
+    function caliHas(have, need) {
+      return (need || []).every(g => caliHasItem(have, g));
+    }
+
+    /* The version of a step this gear allows: { ex, name, gear, alt, step }
+       (alt = true when it is a stand-in), or null when nothing fits. */
+    function caliPickStep(step, have) {
+      if (caliHas(have, step.gear)) return { ex: step.ex, name: step.name, gear: step.gear, alt: false, step: step };
+      if (step.also && step.also.some(g => caliHasItem(have, g))) {
+        return { ex: step.ex, name: step.name, gear: step.also.filter(g => caliHasItem(have, g)).slice(0, 1), alt: false, step: step };
+      }
+      for (const a of step.alts || []) {
+        if (caliHas(have, a.gear)) return { ex: a.ex, name: a.name, gear: a.gear, alt: true, diff: a.diff, step: step };
+      }
+      return null;
+    }
+
+    function caliMissingText(step, have) {
+      const miss = (step.gear || []).filter(g => !caliHasItem(have, g));
+      const txt = miss.map(g => CALI_GEAR_INFO[g][1]).join(' + ');
+      return step.also && step.also.length ? txt + ' or ' + step.also.map(g => CALI_GEAR_INFO[g][1]).join(' or ') : txt;
+    }
+
+    function caliGearSummary(have) {
+      const c = normalizeCali(state.cali);
+      const place = c.place ? CALI_PLACES[c.place][0] + ' · ' : '';
+      return place + have.map(g => CALI_GEAR_INFO[g][1]).join(', ');
+    }
+
+    function setWorkoutMode(mode) {
+      state.workoutMode = mode === 'cali' ? 'cali' : 'gym';
+      saveState();
+      applyWorkoutMode();
+    }
+
+    function applyWorkoutMode() {
+      const gym = document.getElementById('gymView');
+      const cali = document.getElementById('caliView');
+      if (!gym || !cali) return;
+      const on = state.workoutMode === 'cali';
+      gym.style.display = on ? 'none' : '';
+      cali.style.display = on ? '' : 'none';
+      const gb = document.getElementById('modeGymBtn');
+      const cb = document.getElementById('modeCaliBtn');
+      if (gb) gb.classList.toggle('on', !on);
+      if (cb) cb.classList.toggle('on', on);
+      if (on) renderCaliHome();
+    }
+
+    function renderCaliHome() {
+      const box = document.getElementById('caliView');
+      if (!box) return;
+      const have = caliGear();
+      const c = state.cali;
+      let html = '<div class="card cali-gear-card">'
+        + '<div class="cali-row"><div style="font-weight:800;">🧰 My equipment</div>'
+        + '<button class="btn" style="min-height:44px;" onclick="openCaliGear()">' + (c.gearSet ? 'Change' : 'Set up') + '</button></div>'
+        + '<div class="cali-sub">' + (c.gearSet ? esc(caliGearSummary(have))
+          : 'Tick what you have. Every move then shows the version you can train with it.') + '</div></div>';
+      ['base', 'skill', 'support'].forEach(kind => {
+        const ls = CALI_LADDERS.filter(l => l.kind === kind);
+        if (!ls.length) return;
+        html += '<div class="cali-kind">' + (kind === 'base' ? 'Strength' : kind === 'skill' ? 'Skills' : 'Support') + '</div>';
+        html += ls.map(l => {
+          const ok = l.steps.filter(st => caliPickStep(st, have)).length;
+          const lv = CALI_LEVELS[l.steps[0].level] + ' → ' + CALI_LEVELS[l.steps[l.steps.length - 1].level];
+          const cls = ok ? '' : ' cali-off';
+          return '<button class="card cali-ladder' + cls + '" data-id="' + esc(l.id) + '" onclick="openCaliLadder(this.getAttribute(\'data-id\'))">'
+            + '<div class="cali-row"><span class="cali-name">' + esc(l.name) + '</span><span class="cali-count">'
+            + (ok === l.steps.length ? l.steps.length + ' steps' : ok + ' of ' + l.steps.length + ' steps') + '</span></div>'
+            + '<div class="cali-sub">' + esc(lv) + (ok ? '' : ' · needs more equipment') + '</div></button>';
+        }).join('');
+      });
+      box.innerHTML = html;
+    }
+
+    function openCaliSheet(title, html) {
+      document.getElementById('caliSheetTitle').textContent = title;
+      document.getElementById('caliSheetBody').innerHTML = html;
+      document.getElementById('caliSheetModal').classList.add('open');
+    }
+
+    let caliGearDraft = null;
+
+    function openCaliGear() {
+      const c = normalizeCali(state.cali);
+      caliGearDraft = { gear: c.gear.slice(), place: c.place };
+      renderCaliGear();
+      document.getElementById('caliSheetModal').classList.add('open');
+    }
+
+    function renderCaliGear() {
+      const d = caliGearDraft;
+      let html = '<div class="cali-sub" style="margin-bottom:8px;">Where do you train? This ticks the usual equipment; change any tick after.</div><div class="cali-places">'
+        + Object.keys(CALI_PLACES).map(p => '<button class="chip' + (d.place === p ? ' on' : '') + '" data-p="' + p + '" onclick="caliPickPlace(this.getAttribute(\'data-p\'))">' + CALI_PLACES[p][0] + '</button>').join('')
+        + '</div><div class="cali-sub" style="margin:12px 0 8px;">What you have:</div>'
+        + CALI_GEAR.map(g => {
+          const on = d.gear.indexOf(g) >= 0;
+          const i = CALI_GEAR_INFO[g];
+          return '<button class="cali-gear' + (on ? ' on' : '') + '" data-g="' + g + '" onclick="caliToggleGear(this.getAttribute(\'data-g\'))"' + (g === 'floor' ? ' disabled' : '') + '>'
+            + '<span class="cali-gear-ico">' + i[0] + '</span><span><b>' + esc(i[1]) + '</b><br><small>' + esc(i[2]) + '</small></span>'
+            + '<span class="cali-tick">' + (on ? '✓' : '') + '</span></button>';
+        }).join('')
+        + '<button class="btn btn-primary btn-block" style="min-height:44px; margin-top:12px;" onclick="saveCaliGear()">Save</button>';
+      document.getElementById('caliSheetTitle').textContent = '🧰 My equipment';
+      document.getElementById('caliSheetBody').innerHTML = html;
+    }
+
+    function caliPickPlace(p) {
+      if (!caliGearDraft || !CALI_PLACES[p]) return;
+      caliGearDraft.place = p;
+      caliGearDraft.gear = CALI_PLACES[p][1].slice();
+      renderCaliGear();
+    }
+
+    function caliToggleGear(g) {
+      if (!caliGearDraft || g === 'floor' || CALI_GEAR.indexOf(g) < 0) return;
+      const i = caliGearDraft.gear.indexOf(g);
+      if (i >= 0) caliGearDraft.gear.splice(i, 1); else caliGearDraft.gear.push(g);
+      renderCaliGear();
+    }
+
+    function saveCaliGear() {
+      if (!caliGearDraft) return;
+      state.cali = normalizeCali(Object.assign({}, state.cali, { gear: caliGearDraft.gear, place: caliGearDraft.place, gearSet: true }));
+      caliGearDraft = null;
+      saveState();
+      closeModal('caliSheetModal');
+      renderCaliHome();
+    }
+
+    function openCaliLadder(id) {
+      const l = caliLadder(id);
+      if (!l) return;
+      const have = caliGear();
+      let html = '<div class="cali-sub" style="margin-bottom:10px;">' + esc(l.blurb) + '</div>';
+      if (l.note) html += '<div class="cali-note">⚠️ ' + esc(l.note) + '</div>';
+      if (l.gate && l.gate.length) {
+        html += '<div class="cali-note">🔒 Before you start: ' + l.gate.map(gt => {
+          const gl = caliLadder(gt[0]);
+          const st = gl && gl.steps.find(s => s.ex === gt[1]);
+          return esc(st ? (gt[2] ? gt[2] + (st.hold ? ' s ' : ' × ') + st.name : st.name + ' (' + caliTargetText(st) + ')') : gt[1]);
+        }).join(', ') + '</div>';
+      }
+      html += l.steps.map((st, i) => {
+        const pick = caliPickStep(st, have);
+        const head = '<span class="cali-num">' + (i + 1) + '</span>';
+        const lvl = '<span class="cali-lvl lv' + st.level + '">' + CALI_LEVELS[st.level] + '</span>';
+        if (!pick) {
+          return '<div class="cali-step cali-off">' + head + '<div class="cali-step-main"><div class="cali-name">' + esc(st.name) + '</div>'
+            + '<div class="cali-sub">' + lvl + ' Needs: ' + esc(caliMissingText(st, have)) + '</div></div></div>';
+        }
+        let sub = pick.alt ? '<div class="cali-alt">Your version of ' + esc(st.name) + (pick.diff && pick.diff !== 'same' ? ' (' + pick.diff + ')' : '') + '</div>' : '';
+        if (st.band && caliHas(have, ['band'])) sub += '<div class="cali-extra" data-ex="' + esc(st.band.ex) + '" onclick="event.stopPropagation(); openExerciseDetail(this.dataset.ex)">🎗️ Easier with a band: ' + esc(st.band.name) + '</div>';
+        if (st.weighted && caliHas(have, ['weight'])) sub += '<div class="cali-extra" data-ex="' + esc(st.weighted.ex) + '" onclick="event.stopPropagation(); openExerciseDetail(this.dataset.ex)">🎒 Harder: ' + esc(st.weighted.name) + ' (after ' + st.weighted.after + ' clean reps)</div>';
+        return '<button class="cali-step" data-ex="' + esc(pick.ex) + '" onclick="openExerciseDetail(this.getAttribute(\'data-ex\'))">' + head
+          + '<div class="cali-step-main"><div class="cali-name">' + esc(pick.name) + '</div>' + sub
+          + '<div class="cali-sub">' + lvl + ' ' + esc(caliTargetText(st)) + '</div></div><span class="cali-chev">›</span></button>';
+      }).join('');
+      openCaliSheet(l.name, html);
     }
 
     /* P2-06 safety: every exercise name shown in HTML goes through esc(). */
@@ -3138,6 +3453,7 @@
       hydrateSettingsControls();
       paintKeepAwakeUi(); // P4-10: note/checkbox reflect this browser
       renderRoutines();
+      applyWorkoutMode(); // P2-18
       renderHistory();
       renderExercisesTab();
       renderProfileStats();
@@ -3592,7 +3908,7 @@
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       if (btn && btn.classList) btn.classList.add('active');
 
-      if (tabId === 'workout') renderRoutines();
+      if (tabId === 'workout') { renderRoutines(); applyWorkoutMode(); }
       if (tabId === 'history') renderHistory();
       if (tabId === 'exercises') renderExercisesTab();
       if (tabId === 'profile') {
@@ -10101,6 +10417,8 @@
       // Routine items are NOT rewritten here: normalizeRoutineItem runs on every
       // read, and baking it in would freeze today's Profile rest default.
       state.plans = normalizePlans(state.plans); // P2-10
+      state.cali = normalizeCali(state.cali); // P2-18
+      if (state.workoutMode !== 'cali') state.workoutMode = 'gym';
       normalizeRoutineFolders(); // P2-15
       state.body = normalizeBodyEntries(state.body); // P5-04
       if (state.profile && typeof state.profile === 'object' && !Array.isArray(state.profile)) {

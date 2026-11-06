@@ -2,6 +2,13 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — Calisthenics mastery, step 2: equipment and the Calisthenics screen (P2-18), in progress
+
+- Owner: "every person get to check what equipment he have, and according to those equipment he get the training he needs". Research: 29 CHRIS HERIA / THENX videos, docs/research/CALISTHENICS_GEAR_ALTERNATIVES.md.
+- Workout tab: Gym | Calisthenics switch. Calisthenics: "My equipment" (18 items, Home/Park/Gym/Anywhere presets, saved in state.cali and synced), ladder cards with "N of M steps for your gear", ladder sheet showing your version of each step, band (easier) and weighted (harder) versions when you own them, gates with counts.
+- Ladders fixed from the videos: back lever on a bar, dragon flag on the floor gripping a fixed anchor, flag starts with Pole Side Plank and adds Flag Negative, new Inverted Hang, Single-Leg Back-Lever Negative, Upside-Down Deadlift, Reverse Leg Raise, L-Sit to Tuck Planche, two dragon-flag steps; muscle-up/front/back lever/planche/dragon gates with the videos' counts. 123 steps, 128 calisthenics exercises (228 total). tests/p2_18_cali_gear.test.mjs; 523 tests pass.
+- Not checked by the videos (general practice): table rows, towel door rows. Pictures for the new steps: not yet.
+
 ## 2026-11-06 — Calisthenics mastery, step 1: the ladders (P2-18), in progress
 
 - Owner: a calisthenics section where every move has its progressions, like Heria Pro but better. Design: docs/research/CALISTHENICS_MASTERY_DESIGN.md (from 19 coaching videos + his Heria Pro screen recording).
