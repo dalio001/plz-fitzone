@@ -1088,6 +1088,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_adv_tuck_bl",
+      "name": "Advanced Tuck Back Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_adv_tuck_fl",
       "name": "Advanced Tuck Front Lever",
       "equipment": "Bodyweight",
@@ -1161,6 +1172,17 @@
       "primary": "Core",
       "secondary": [
         "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_assisted_oap",
+      "name": "Assisted One-Arm Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
       ],
       "type": "bodyweight_reps"
     },
@@ -1253,6 +1275,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_beginner_shrimp",
+      "name": "Beginner Shrimp Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_bench_dip_feet_up",
       "name": "Bench Dip, Feet Raised",
       "equipment": "Bodyweight",
@@ -1331,7 +1364,7 @@
     },
     {
       "id": "cx_bulgarian_split",
-      "name": "Bodyweight Split Squat",
+      "name": "Bodyweight Bulgarian Split Squat",
       "equipment": "Bodyweight",
       "muscle": "Quads",
       "primary": "Quads",
@@ -1480,6 +1513,17 @@
       "primary": "Back",
       "secondary": [
         "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_flag_kickup",
+      "name": "Straddle Flag Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Shoulders"
       ],
       "type": "bodyweight_reps"
     },
@@ -1826,6 +1870,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_one_arm_hang",
+      "name": "One-Arm Hang",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_one_arm_negative",
       "name": "One-Arm Negative Pull-Up",
       "equipment": "Bodyweight",
@@ -1866,6 +1921,17 @@
       "primary": "Core",
       "secondary": [
         "Quads"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_pancake",
+      "name": "Straddle Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Glutes"
       ],
       "type": "duration"
     },
@@ -1978,6 +2044,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_ring_support",
+      "name": "Ring Support Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_scap_pullup",
       "name": "Scapula Pull-Up",
       "equipment": "Bodyweight",
@@ -2007,6 +2084,17 @@
       "primary": "Shoulders",
       "secondary": [],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_shoulder_ext",
+      "name": "Shoulder Extension Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_shrimp_squat",
@@ -2170,6 +2258,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_swing_lsit",
+      "name": "Swing to L-Sit Pull-Back",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_switch_leg_dragon",
       "name": "Switching-Leg Dragon Flag",
       "equipment": "Bodyweight",
@@ -2177,6 +2276,17 @@
       "primary": "Core",
       "secondary": [
         "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_switch_oa_hold",
+      "name": "Switching One-Arm Top Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
       ],
       "type": "bodyweight_reps"
     },
@@ -2329,6 +2439,17 @@
       "primary": "Core",
       "secondary": [
         "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_wall_balance",
+      "name": "Wall Balance Pulses",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
       ],
       "type": "duration"
     },

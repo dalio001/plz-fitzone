@@ -84,4 +84,17 @@ describe('P2-18 calisthenics ladders', () => {
     assert.equal(new Set(names).size, names.length, 'no duplicate names');
     assert.ok(app.api.state.exercises.some((e) => e.id === 'cx_muscleup'));
   });
+
+  it('coach audit: negatives carry a slow tempo, one-sided steps say each side, step locks point at real steps', () => {
+    const ids = {};
+    for (const l of CALI_LADDERS) ids[l.id] = l.steps.map((s) => s.ex);
+    for (const l of CALI_LADDERS) for (const st of l.steps) {
+      if (/egative/.test(st.name)) assert.ok(st.tempo, st.ex + ' tempo');
+      if (/^(Archer|One-Arm|One-Leg|Single-Leg)/.test(st.name)) assert.equal(st.perSide, true, st.ex + ' each side');
+      for (const n of st.needs || []) {
+        assert.ok(ids[n[0]] && ids[n[0]].includes(n[1]), st.ex + ' needs ' + n);
+        assert.ok(n[2] > 0, st.ex + ' needs a count');
+      }
+    }
+  });
 });

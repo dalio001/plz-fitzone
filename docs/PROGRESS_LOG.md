@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — Calisthenics coach audit applied (P2-18), in progress
+
+- Owner: "Be careful about repetitions, durations, how it's done, when it's with holds, when it's with reps". Audit: docs/research/CALISTHENICS_AUDIT.md (88 rows, 11 more videos + 4 research files).
+- Applied all High and most Medium rows: 11 bridge steps (one-arm hang, switching one-arm top hold, assisted one-arm pull-up, ring support, beginner shrimp, wall balance, swing to L-sit, advanced tuck back lever, straddle flag raise, shoulder extension and straddle stretch); "each side" on 30 one-sided steps; slow-lowering tempo on all 12 negatives; 20 step locks with counts; HSPU ladder opened for beginners (pike push-up); wrong shapes fixed (upside-down deadlift, manna, tuck vs advanced tuck planche, tuck flag, front-lever row); 5 push/pull/dip how-tos sharpened. 134 steps, 239 exercises, 523 tests.
+- Left for later (Low/optional): one-arm push-up, L-sit kicks, front-lever raises, handstand press branch, dragon flag flutter kicks.
+
 ## 2026-11-06 — Calisthenics mastery, step 2: equipment and the Calisthenics screen (P2-18), in progress
 
 - Owner: "every person get to check what equipment he have, and according to those equipment he get the training he needs". Research: 29 CHRIS HERIA / THENX videos, docs/research/CALISTHENICS_GEAR_ALTERNATIVES.md.

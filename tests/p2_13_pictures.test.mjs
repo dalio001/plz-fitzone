@@ -244,8 +244,8 @@ describe('P2-13 muscle body chart', () => {
       for (const r of lit) assert.ok(known.has(r), name + ' lit region exists in the drawing');
     }
 
-    // All 202 catalogue rows (100 + 128 calisthenics steps, P2-18) produce a valid chart, and every region used is drawn.
-    assert.equal(app.api.state.exercises.length, 228, 'catalogue size');
+    // All 202 catalogue rows (100 + 139 calisthenics steps, P2-18) produce a valid chart, and every region used is drawn.
+    assert.equal(app.api.state.exercises.length, 239, 'catalogue size');
     for (const ex of app.api.state.exercises) {
       const levels = app.api.muscleChartLevels(ex);
       assert.ok(levels.primary.length > 0 || levels.secondary.length > 0, 'catalogue chart has data: ' + ex.id);

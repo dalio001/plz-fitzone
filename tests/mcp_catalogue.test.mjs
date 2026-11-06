@@ -13,7 +13,7 @@ describe('P4-11 MCP catalogue', () => {
     assert.deepEqual(committed, fresh, 'mcp/catalogue.json matches index.html (run node mcp/build-catalogue.mjs)');
     // Line endings may be CRLF in a Windows checkout; the content must match.
     assert.equal(committedRaw.replace(/\r\n/g, '\n'), catalogueJson(fresh), 'the file is written in the stable format (no timestamps)');
-    assert.equal(fresh.exercises.length, 228, 'every built-in exercise exported (100 + 128 calisthenics)');
+    assert.equal(fresh.exercises.length, 239, 'every built-in exercise exported (100 + 139 calisthenics)');
     assert.deepEqual(Object.keys(fresh.exercises[0]), ['id', 'name', 'equipment', 'muscle', 'primary', 'secondary', 'type']);
     const exIds = fresh.exercises.map((e) => e.id).filter((id) => /^ex\d+$/.test(id));
     assert.deepEqual(exIds, exIds.slice().sort((a, b) =>
