@@ -85,9 +85,12 @@ describe('P2-13 exercise pictures (full size in detail sheet)', () => {
   it('picture-shown-only-for-listed-ids', () => {
     const app = createApp();
     const listed = app.api.EXERCISE_PICTURES;
-    // 100 gym exercises + every P2-18 calisthenics exercise (2026-11-06).
-    const builtin = app.api.DEFAULT_EXERCISES.map((e) => e.id);
-    assert.ok(Array.isArray(listed) && listed.length === builtin.length, 'every built-in exercise has a picture');
+    // 100 gym exercises + every P2-18 calisthenics exercise (2026-11-06), except
+    // the two whose generated pictures showed a wrong body shape: no picture is
+    // better than a wrong one (owner review 2026-11-06).
+    const NO_PICTURE = ['cx_hollow_rock', 'cx_manna'];
+    const builtin = app.api.DEFAULT_EXERCISES.map((e) => e.id).filter((id) => !NO_PICTURE.includes(id));
+    assert.ok(Array.isArray(listed) && listed.length === builtin.length, 'every built-in exercise but the listed ones has a picture');
     assert.deepEqual(
       [...listed].sort(),
       [...builtin].sort(),

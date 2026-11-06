@@ -6,7 +6,7 @@ Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [
 
 - Owner: "start making the photos... focus more on the progressions". 139 start/end (or entry/hold) pictures made in Google Flow (image mode, Nano Banana 2.1, 16:9, x2, PLZ Train character as reference, 0 credits), each take checked for form; prompts docs/research/cali-picture-prompts.tsv, picks docs/research/cali-picture-picks.txt. Every built-in exercise (239) now has a picture and a list thumbnail.
 - Owner caught wrong shapes (upside-down deadlift take, back lever arms). Back-lever family regenerated after studying THENX FZZqbeZti84 frames: arms angled back to the hips, face down.
-- Weak, redo candidates: manna (high V-sit, not full manna), straddle planche and advanced tuck planche (shape not exact), side plank raise (no visible change), hollow rock, negative muscle-up, dip bottoms a little shallow.
+- Owner review + full-size check of all 139: 17 regenerated with sharper prompts (flag negative, tuck/straddle back lever, advanced tuck/straddle/tuck planche, archer push-up, archer row, feet-up row, scapula pull-up and push-up, side plank raise, freestanding HSPU, front-lever negative, negative muscle-up). Hollow rock and manna kept wrong shapes after 3 tries: no picture for them (how-to text only). Left: dip bottoms a little shallow.
 
 ## 2026-11-06 — Calisthenics coach audit applied (P2-18), in progress
 

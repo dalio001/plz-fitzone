@@ -1,6 +1,6 @@
 cx_wall_pushup 1
 cx_diamond_pushup 1
-cx_archer_pushup 1
+cx_archer_pushup 2
 cx_clap_pushup 1
 cx_pseudo_planche_pushup 2
 cx_tuck_planche_pushup 1
@@ -34,9 +34,9 @@ cx_table_row 2
 cx_table_row_feet_up 2
 cx_wide_row 2
 cx_broom_row 1
-cx_feet_up_row 2
+cx_feet_up_row 1
 cx_weighted_row 1
-cx_archer_row 2
+cx_archer_row 1
 cx_tuck_fl_row 2
 cx_adv_tuck_fl_row 2
 cx_box_squat 1
@@ -53,7 +53,7 @@ cx_hollow_tuck 1
 cx_hollow_hold 1
 cx_lying_leg_raise 1
 cx_v_up 2
-cx_hollow_rock 2
+cx_hollow_rock NONE
 cx_support_knee_raise 1
 cx_support_leg_raise 1
 cx_hanging_lsit 1
@@ -100,7 +100,7 @@ cx_full_fl 1
 cx_skin_cat 1
 cx_german_hang 1
 cx_inverted_hang 1
-cx_scap_pushup 2
+cx_scap_pushup 1
 cx_planche_lean 2
 cx_reverse_leg_raise 1
 cx_lsit_to_tuck_planche 1
@@ -112,16 +112,16 @@ cx_single_leg_bl_negative 2
 cx_bl_negative 1
 cx_straddle_bl 2
 cx_full_bl 1
-cx_straddle_planche 2
+cx_straddle_planche 1
 cx_full_planche 1
 cx_band_straddle_planche 1
 cx_band_full_planche 2
-cx_side_plank_raise 1
+cx_side_plank_raise 2
 cx_pole_side_plank 1
 cx_flag_kickup 2
 cx_tuck_flag 1
 cx_straddle_flag 2
-cx_flag_negative 1
+cx_flag_negative 2
 cx_full_flag 2
 cx_df_hip_raise 1
 cx_df_tuck_negative 1
@@ -134,6 +134,6 @@ cx_pike_stretch 2
 cx_active_pike 2
 cx_shoulder_ext 1
 cx_pancake 1
-cx_manna 2
+cx_manna NONE
 cx_shoulder_dislocate 1
-cx_adv_tuck_planche 1
+cx_adv_tuck_planche 2
