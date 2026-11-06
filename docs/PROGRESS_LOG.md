@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — One Google calendar per account (P4-12 follow-up), awaiting owner phone check
+
+- Owner: after stopping the old plan, Push/Pull/Leg Day stayed in Google; Google had three "PLZ Train" calendars (each fresh connection made a new one and forgot the old).
+- The calendar id now rides in the synced state: every phone and computer reuses it, and a device that still remembers its own older copy deletes it on the next sync. Copies nobody remembers must be removed by hand on calendar.google.com (the app-created-calendar permission cannot list calendars).
+- Checks: 3 new tests in `tests/p4_12_gcal_one_calendar.test.mjs`; all 509 tests pass.
+
 ## 2026-11-06 — One program at a time (P2-17 follow-up), awaiting owner phone check
 
 - Owner: sending a second workout plan to the calendar added it next to the first; it should be a switch, Google Calendar too.

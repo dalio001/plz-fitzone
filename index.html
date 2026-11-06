@@ -4489,23 +4489,61 @@
       });
     }
 
-    function gcalEnsureCalendar() {
+    /* One "PLZ Train" calendar per account: its id rides in the synced
+       state, so every phone and computer uses the same one. A device that
+       still knows another one (made before) deletes that copy. Google does
+       not let this permission list calendars, so forgotten copies stay. */
+    function gcalForgetCalendar(id, keepId) {
+      if (!id || id === keepId) return;
+      const old = Array.isArray(state.gcalOldCalendarIds) ? state.gcalOldCalendarIds : [];
+      if (old.indexOf(id) < 0) state.gcalOldCalendarIds = old.concat([id]);
+    }
+
+    function gcalUseCalendar(id) {
       const c = gcalConfig();
+      const before = JSON.stringify([state.gcalCalendarId, state.gcalOldCalendarIds]);
+      gcalForgetCalendar(c.calendarId, id);
+      gcalForgetCalendar(state.gcalCalendarId, id);
+      c.calendarId = id;
+      setGcalConfig(c);
+      state.gcalCalendarId = id;
+      if (JSON.stringify([state.gcalCalendarId, state.gcalOldCalendarIds]) !== before) saveState();
+      return id;
+    }
+
+    async function gcalRemoveOldCalendars(calId) {
+      const old = (Array.isArray(state.gcalOldCalendarIds) ? state.gcalOldCalendarIds : []).filter(id => id && id !== calId);
+      const left = [];
+      for (const id of old) {
+        try { await gcalApi('DELETE', '/calendars/' + encodeURIComponent(id)); } catch (e) {
+          if (e.status !== 404 && e.status !== 410) left.push(id);
+        }
+      }
+      const before = JSON.stringify(state.gcalOldCalendarIds || []);
+      if (left.length) state.gcalOldCalendarIds = left; else delete state.gcalOldCalendarIds;
+      if (JSON.stringify(state.gcalOldCalendarIds || []) !== before) saveState();
+    }
+
+    function gcalEnsureCalendar() {
+      const local = gcalConfig().calendarId;
+      const shared = state.gcalCalendarId;
       const make = function () {
         let tz = 'UTC';
         try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) {}
         return gcalApi('POST', '/calendars', { summary: 'PLZ Train', description: 'Workouts from the PLZ Train app', timeZone: tz }).then(function (cal) {
-          const c2 = gcalConfig();
-          c2.calendarId = cal.id;
-          setGcalConfig(c2);
-          return cal.id;
+          return gcalUseCalendar(cal.id);
         });
       };
-      if (!c.calendarId) return make();
-      return gcalApi('GET', '/calendars/' + encodeURIComponent(c.calendarId)).then(function () { return c.calendarId; }, function (e) {
-        if (e.status === 404 || e.status === 403 || e.status === 410) return make();
-        throw e;
-      });
+      const tryId = function (id, next) {
+        return gcalApi('GET', '/calendars/' + encodeURIComponent(id)).then(function () { return gcalUseCalendar(id); }, function (e) {
+          if (e.status === 404 || e.status === 410) return next();
+          if (e.status === 403) { gcalForgetCalendar(id, null); return next(); }
+          throw e;
+        });
+      };
+      if (shared) return tryId(shared, function () { return local && local !== shared ? tryId(local, make) : make(); });
+      if (local) return tryId(local, make);
+      return make();
     }
 
     /* Make the PLZ Train calendar match the programs: add, change, delete. */
@@ -4516,6 +4554,7 @@
       renderGcalSettings();
       try {
         const calId = await gcalEnsureCalendar();
+        await gcalRemoveOldCalendars(calId);
         const base = '/calendars/' + encodeURIComponent(calId) + '/events';
         const have = {};
         let page = '';
