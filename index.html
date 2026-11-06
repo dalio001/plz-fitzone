@@ -746,6 +746,24 @@
     .cali-lvl.lv3 { color: #f59e0b; }
     .cali-lvl.lv4 { color: #f87171; }
     .cali-chev { color: var(--text-sub); font-size: 20px; }
+    .cali-num.done { background: var(--primary); color: #fff; }
+    .cali-num.here { box-shadow: 0 0 0 2px var(--primary); color: var(--primary); }
+    .cali-here { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 0 10px 40px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 800; color: var(--primary); }
+    .cali-here span { flex: 1 0 100%; }
+    .cali-here .btn { flex: 1; }
+    .cali-here .btn { min-height: 40px; font-size: 13px; }
+    .cali-test-q { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+    .cali-test-q .ex-thumb { flex: 0 0 auto; }
+    .cali-num-pick { display: flex; align-items: center; gap: 10px; margin: 8px 0 16px; }
+    .cali-num-pick .btn { min-width: 52px; min-height: 52px; font-size: 24px; font-weight: 800; }
+    .cali-num-pick input { width: 90px; min-height: 52px; text-align: center; font-size: 24px; font-weight: 800; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text); }
+    .cali-test-next { min-height: 48px; margin-top: 12px; }
+    .cali-level-big { text-align: center; font-size: 30px; font-weight: 900; margin: 6px 0 4px; }
+    .cali-level-big.lv0, .cali-level-big.lv1, .cali-lvl-txt.lv0, .cali-lvl-txt.lv1 { color: #4ade80; }
+    .cali-level-big.lv2, .cali-lvl-txt.lv2 { color: #60a5fa; }
+    .cali-level-big.lv3, .cali-lvl-txt.lv3 { color: #f59e0b; }
+    .cali-level-big.lv4, .cali-lvl-txt.lv4 { color: #f87171; }
+    .cali-res { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--border); }
     .chip {
       flex: 0 0 auto;
       min-height: var(--control-min-height);
@@ -2708,6 +2726,14 @@
       out.gear = CALI_GEAR.filter(x => g.indexOf(x) >= 0);
       if (!Object.prototype.hasOwnProperty.call(CALI_PLACES, out.place)) out.place = '';
       out.gearSet = out.gearSet === true;
+      const pos = {};
+      const src = out.pos && typeof out.pos === 'object' && !Array.isArray(out.pos) ? out.pos : {};
+      CALI_LADDERS.forEach(l => {
+        const n = Number(src[l.id]);
+        if (Number.isInteger(n) && n >= 0) pos[l.id] = Math.min(n, l.steps.length - 1);
+      });
+      out.pos = pos;
+      if (!(out.tested && typeof out.tested.date === 'string' && typeof out.tested.level === 'number')) delete out.tested;
       return out;
     }
 
@@ -2780,6 +2806,12 @@
         + '<button class="btn" style="min-height:44px;" onclick="openCaliGear()">' + (c.gearSet ? 'Change' : 'Set up') + '</button></div>'
         + '<div class="cali-sub">' + (c.gearSet ? esc(caliGearSummary(have))
           : 'Tick what you have. Every move then shows the version you can train with it.') + '</div></div>';
+      html += '<div class="card cali-gear-card">'
+        + '<div class="cali-row"><div style="font-weight:800;">🧪 Level test</div>'
+        + '<button class="btn' + (c.tested ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliTest()">' + (c.tested ? 'Retake' : 'Start') + '</button></div>'
+        + '<div class="cali-sub">' + (c.tested
+          ? 'Your level: <b class="cali-lvl-txt lv' + c.tested.level + '">' + CALI_LEVELS[c.tested.level] + '</b> · tested ' + esc(c.tested.date)
+          : '2 minutes, 7 questions. Puts you on the right step of every move.') + '</div></div>';
       ['base', 'skill', 'support'].forEach(kind => {
         const ls = CALI_LADDERS.filter(l => l.kind === kind);
         if (!ls.length) return;
@@ -2791,10 +2823,18 @@
           return '<button class="card cali-ladder' + cls + '" data-id="' + esc(l.id) + '" onclick="openCaliLadder(this.getAttribute(\'data-id\'))">'
             + '<div class="cali-row"><span class="cali-name">' + esc(l.name) + '</span><span class="cali-count">'
             + (ok === l.steps.length ? l.steps.length + ' steps' : ok + ' of ' + l.steps.length + ' steps') + '</span></div>'
-            + '<div class="cali-sub">' + esc(lv) + (ok ? '' : ' · needs more equipment') + '</div></button>';
+            + '<div class="cali-sub">' + (c.tested && l.kind !== 'support' ? caliHereText(l, have) : esc(lv) + (ok ? '' : ' · needs more equipment')) + '</div></button>';
         }).join('');
       });
       box.innerHTML = html;
+    }
+
+    /* "📍 Step 3: Push-Up · 3 × 10–15" for a ladder card. */
+    function caliHereText(l, have) {
+      const i = state.cali.pos[l.id] || 0;
+      const st = l.steps[i];
+      const pick = caliPickStep(st, have);
+      return '📍 Step ' + (i + 1) + ': ' + esc(pick ? pick.name : st.name) + ' · ' + esc(caliTargetText(st)) + (pick ? '' : ' · needs gear');
     }
 
     function openCaliSheet(title, html) {
@@ -2852,12 +2892,217 @@
       renderCaliHome();
     }
 
+    /* P2-18 step 3: level test. Seven quick questions place you on every
+       ladder: the step you train now is the first one you cannot yet do for
+       its target. `num` questions ask a count (seconds when `unit` is 's'),
+       `pick` questions one choice, `skills` ticks moves you already own.
+       A question whose gear you lack is skipped (you start at step 1). */
+    const CALI_TEST = [
+      { id: 'push', kind: 'num', ex: 'ex17', q: 'How many clean push-ups can you do in a row?', hint: 'Chest to a fist above the floor, body straight, arms locked at the top.' },
+      { id: 'pull', kind: 'num', ex: 'ex25', gear: ['bar'], q: 'How many strict pull-ups can you do in a row?', hint: 'From straight arms, chin over the bar, no swinging.' },
+      { id: 'dip', kind: 'num', ex: 'ex55', gear: ['dipbars'], q: 'How many dips on bars can you do in a row?', hint: 'Down until the upper arms are level with the floor, then lock out.' },
+      { id: 'legs', kind: 'pick', ex: 'ex76', q: 'Which of these can you do today?', opts: [
+        'Standing up from a chair is hard', '20 bodyweight squats, no problem', '10 split squats each leg, back foot on a box',
+        'A pistol squat holding onto something', '5 clean pistol squats each leg'] },
+      { id: 'core', kind: 'num', unit: 's', ex: 'cx_hollow_hold', q: 'How long can you hold a hollow body?', hint: 'Lower back pressed to the floor, arms and legs straight off the floor. Seconds.' },
+      { id: 'hang', kind: 'pick', ex: 'ex15', gear: ['bar'], q: 'Hanging from a bar, what can you do?', opts: [
+        'Fewer than 10 knee raises', '10 knee raises', '10 straight-leg raises', '10 toes-to-bar'] },
+      { id: 'skills', kind: 'skills', q: 'Can you already do any of these, clean?', hint: 'Tick only what you can show today. Skip if none.' }
+    ];
+    /* Skills you can tick: [label, ladder, step you start on]. */
+    const CALI_TEST_SKILLS = [
+      ['Tuck L-sit, 10 s', 'lsit', 1], ['L-sit, 10 s', 'lsit', 3],
+      ['Chest-to-wall handstand, 30 s', 'handstand', 4], ['Freestanding handstand, 10 s', 'handstand', 8],
+      ['10 pike push-ups', 'hspu', 1], ['5 wall handstand push-ups', 'hspu', 3],
+      ['1 bar muscle-up', 'muscleup', 5], ['Tuck front lever, 10 s', 'frontlever', 1],
+      ['Skin the cat', 'backlever', 1], ['Tuck back lever, 10 s', 'backlever', 3],
+      ['Tuck planche, 10 s', 'planche', 5], ['Tuck flag, 5 s', 'flag', 5], ['Dragon flag negative', 'dragon', 2]
+    ];
+
+    /* How many of the cut-offs a number reaches. */
+    function caliCount(n, cuts) {
+      return cuts.filter(c => n >= c).length;
+    }
+
+    /* Answers -> { ladderId: step index }. A missing answer (skipped for
+       lack of gear) leaves that ladder on its first step. */
+    function caliPlaceFromTest(ans) {
+      const a = ans || {};
+      const pos = {};
+      CALI_LADDERS.forEach(l => { pos[l.id] = 0; });
+      const num = k => (typeof a[k] === 'number' && a[k] >= 0 ? a[k] : null);
+      const push = num('push'), pull = num('pull'), dip = num('dip'), core = num('core');
+      if (push !== null) pos.push = caliCount(push, [3, 8, 15, 20, 25, 30]);
+      if (pull !== null) {
+        pos.pull = [1, 2, 3, 5, 6][caliCount(pull, [1, 5, 12, 18])];
+        pos.row = caliCount(pull, [1, 5, 10, 15]);
+      }
+      if (dip !== null) pos.dip = [2, 3, 4, 5][caliCount(dip, [1, 5, 15])];
+      if (typeof a.legs === 'number') pos.legs = [0, 2, 4, 7, 8][a.legs] || 0;
+      if (core !== null) pos.core = caliCount(core, [10, 20, 40, 60]);
+      if (typeof a.hang === 'number') pos.hang = [0, 1, 2, 4][a.hang] || 0;
+      (Array.isArray(a.skills) ? a.skills : []).forEach(i => {
+        const s = CALI_TEST_SKILLS[i];
+        if (s && pos[s[1]] < s[2]) pos[s[1]] = s[2];
+      });
+      CALI_LADDERS.forEach(l => { pos[l.id] = Math.min(pos[l.id], l.steps.length - 1); });
+      return pos;
+    }
+
+    /* Overall level: the middle level of your strength ladders' steps. */
+    function caliOverallLevel(pos) {
+      const lv = CALI_LADDERS.filter(l => l.kind === 'base').map(l => l.steps[(pos && pos[l.id]) || 0].level).sort((x, y) => x - y);
+      return lv.length ? lv[Math.floor(lv.length / 2)] : 0;
+    }
+
+    let caliTestDraft = null;
+
+    function openCaliTest() {
+      caliTestDraft = { i: 0, ans: { skills: [] } };
+      renderCaliTest();
+      document.getElementById('caliSheetModal').classList.add('open');
+    }
+
+    function caliTestQuestions() {
+      const have = caliGear();
+      return CALI_TEST.filter(q => !q.gear || caliHas(have, q.gear));
+    }
+
+    function renderCaliTest() {
+      const d = caliTestDraft;
+      if (!d) return;
+      const qs = caliTestQuestions();
+      if (d.i >= qs.length) { renderCaliTestResult(); return; }
+      const q = qs[d.i];
+      document.getElementById('caliSheetTitle').textContent = '🧪 Level test · ' + (d.i + 1) + ' of ' + qs.length;
+      const ex = q.ex ? (state.exercises || []).find(e => e.id === q.ex) || DEFAULT_EXERCISES.find(e => e.id === q.ex) : null;
+      let html = '<div class="cali-test-q">' + (ex ? exerciseThumbHtml(ex) : '') + '<div><div class="cali-name">' + esc(q.q) + '</div>'
+        + (q.hint ? '<div class="cali-sub">' + esc(q.hint) + '</div>' : '') + '</div></div>';
+      if (q.kind === 'num') {
+        const v = typeof d.ans[q.id] === 'number' ? d.ans[q.id] : 0;
+        const step = q.unit === 's' ? 5 : 1;
+        html += '<div class="cali-num-pick">'
+          + '<button class="btn" data-d="' + (-step) + '" onclick="caliTestBump(+this.dataset.d)" aria-label="Less">−</button>'
+          + '<input id="caliTestNum" type="number" inputmode="numeric" min="0" max="300" value="' + v + '" oninput="caliTestSetNum(this.value)">'
+          + '<button class="btn" data-d="' + step + '" onclick="caliTestBump(+this.dataset.d)" aria-label="More">+</button>'
+          + '<span class="cali-sub">' + (q.unit === 's' ? 'seconds' : 'in a row') + '</span></div>'
+          + '<button class="btn btn-primary btn-block cali-test-next" onclick="caliTestNext()">Next</button>';
+      } else if (q.kind === 'pick') {
+        html += q.opts.map((o, k) => '<button class="cali-gear' + (d.ans[q.id] === k ? ' on' : '') + '" data-k="' + k + '" onclick="caliTestPick(+this.dataset.k)">'
+          + '<span>' + esc(o) + '</span><span class="cali-tick">' + (d.ans[q.id] === k ? '✓' : '') + '</span></button>').join('');
+      } else {
+        html += '<div class="cali-places">' + CALI_TEST_SKILLS.map((s, k) => {
+          const on = d.ans.skills.indexOf(k) >= 0;
+          return '<button class="chip' + (on ? ' on' : '') + '" data-k="' + k + '" onclick="caliTestSkill(+this.dataset.k)">' + (on ? '✓ ' : '') + esc(s[0]) + '</button>';
+        }).join('') + '</div><button class="btn btn-primary btn-block cali-test-next" onclick="caliTestNext()">'
+          + (d.ans.skills.length ? 'See my level' : 'None of these · see my level') + '</button>';
+      }
+      if (d.i > 0) html += '<button class="btn btn-block" style="margin-top:8px; min-height:44px;" onclick="caliTestBack()">‹ Back</button>';
+      document.getElementById('caliSheetBody').innerHTML = html;
+    }
+
+    function caliTestCurrent() {
+      return caliTestDraft ? caliTestQuestions()[caliTestDraft.i] : null;
+    }
+
+    function caliTestSetNum(v) {
+      const q = caliTestCurrent();
+      if (!q) return;
+      caliTestDraft.ans[q.id] = Math.max(0, Math.min(300, Math.floor(Number(v) || 0)));
+    }
+
+    function caliTestBump(dl) {
+      const q = caliTestCurrent();
+      if (!q) return;
+      caliTestSetNum((caliTestDraft.ans[q.id] || 0) + dl);
+      const inp = document.getElementById('caliTestNum');
+      if (inp) inp.value = caliTestDraft.ans[q.id];
+    }
+
+    function caliTestPick(k) {
+      const q = caliTestCurrent();
+      if (!q) return;
+      caliTestDraft.ans[q.id] = k;
+      caliTestNext();
+    }
+
+    function caliTestSkill(k) {
+      if (!caliTestDraft || !CALI_TEST_SKILLS[k]) return;
+      const s = caliTestDraft.ans.skills;
+      const i = s.indexOf(k);
+      if (i >= 0) s.splice(i, 1); else s.push(k);
+      renderCaliTest();
+    }
+
+    function caliTestNext() {
+      const q = caliTestCurrent();
+      if (!q) return;
+      if (q.kind === 'num' && typeof caliTestDraft.ans[q.id] !== 'number') caliTestDraft.ans[q.id] = 0;
+      caliTestDraft.i++;
+      renderCaliTest();
+    }
+
+    function caliTestBack() {
+      if (!caliTestDraft || caliTestDraft.i <= 0) return;
+      caliTestDraft.i--;
+      renderCaliTest();
+    }
+
+    function renderCaliTestResult() {
+      const pos = caliPlaceFromTest(caliTestDraft.ans);
+      const have = caliGear();
+      const lv = caliOverallLevel(pos);
+      document.getElementById('caliSheetTitle').textContent = '🧪 Your level';
+      let html = '<div class="cali-level-big lv' + lv + '">' + CALI_LEVELS[lv] + '</div>'
+        + '<div class="cali-sub" style="text-align:center; margin-bottom:12px;">Your starting step on each move. Too easy or too hard? Move it on the move\'s page.</div>';
+      html += CALI_LADDERS.filter(l => l.kind !== 'support').map(l => {
+        const st = l.steps[pos[l.id]];
+        const pick = caliPickStep(st, have);
+        return '<div class="cali-res"><span class="cali-name">' + esc(l.name) + '</span><span class="cali-sub">Step ' + (pos[l.id] + 1) + ' · '
+          + esc(pick ? pick.name : st.name) + (pick ? '' : ' (needs gear)') + '</span></div>';
+      }).join('');
+      html += '<button class="btn btn-primary btn-block cali-test-next" onclick="saveCaliTest()">Save my level</button>'
+        + '<button class="btn btn-block" style="margin-top:8px; min-height:44px;" onclick="caliTestBack()">‹ Back</button>';
+      document.getElementById('caliSheetBody').innerHTML = html;
+    }
+
+    function saveCaliTest() {
+      if (!caliTestDraft) return;
+      const pos = caliPlaceFromTest(caliTestDraft.ans);
+      state.cali = normalizeCali(Object.assign({}, state.cali, {
+        pos: pos, tested: { date: dayKeyLocal(Date.now()), level: caliOverallLevel(pos) }
+      }));
+      caliTestDraft = null;
+      saveState();
+      closeModal('caliSheetModal');
+      renderCaliHome();
+    }
+
+    /* Ladder page: one step back or forward from your current step. */
+    function caliMoveStep(id, dir) {
+      const l = caliLadder(id);
+      if (!l) return;
+      const c = normalizeCali(state.cali);
+      c.pos[l.id] = Math.max(0, Math.min(l.steps.length - 1, (c.pos[l.id] || 0) + dir));
+      state.cali = c;
+      saveState();
+      openCaliLadder(id);
+      renderCaliHome();
+    }
+
     /* "15 × Inverted Row" / "10 s Tuck Planche" for a [ladder, ex, count] lock. */
     function caliGateText(gt) {
       const gl = caliLadder(gt[0]);
       const st = gl && gl.steps.find(s => s.ex === gt[1]);
       if (!st) return esc(gt[1]);
       return esc(gt[2] ? gt[2] + (st.hold ? ' s ' : ' × ') + st.name : st.name + ' (' + caliTargetText(st) + ')');
+    }
+
+    function caliHereBar(l, i) {
+      return '<div class="cali-here"><span>📍 Your step</span>'
+        + (i > 0 ? '<button class="btn" data-id="' + esc(l.id) + '" onclick="caliMoveStep(this.dataset.id, -1)">‹ Too hard</button>' : '')
+        + (i < l.steps.length - 1 ? '<button class="btn" data-id="' + esc(l.id) + '" onclick="caliMoveStep(this.dataset.id, 1)">I can do it ›</button>' : '')
+        + '</div>';
     }
 
     function openCaliLadder(id) {
@@ -2869,9 +3114,11 @@
       if (l.gate && l.gate.length) {
         html += '<div class="cali-note">🔒 Before you start: ' + l.gate.map(caliGateText).join(', ') + '</div>';
       }
+      const c = state.cali;
+      const here = c.tested || c.pos[l.id] !== undefined ? c.pos[l.id] || 0 : -1;
       html += l.steps.map((st, i) => {
         const pick = caliPickStep(st, have);
-        const head = '<span class="cali-num">' + (i + 1) + '</span>';
+        const head = '<span class="cali-num' + (i < here ? ' done' : i === here ? ' here' : '') + '">' + (i < here ? '✓' : i + 1) + '</span>';
         const lvl = '<span class="cali-lvl lv' + st.level + '">' + CALI_LEVELS[st.level] + '</span>';
         if (!pick) {
           return '<div class="cali-step cali-off">' + head + '<div class="cali-step-main"><div class="cali-name">' + esc(st.name) + '</div>'
@@ -2883,8 +3130,10 @@
         return '<button class="cali-step" data-ex="' + esc(pick.ex) + '" onclick="openExerciseDetail(this.getAttribute(\'data-ex\'))">' + head
           + '<div class="cali-step-main"><div class="cali-name">' + esc(pick.name) + '</div>' + sub
           + '<div class="cali-sub">' + lvl + ' ' + esc(caliTargetText(st)) + (st.tempo ? ' · ' + esc(st.tempo) : '') + '</div>'
-          + (st.needs ? '<div class="cali-sub">🔒 First: ' + st.needs.map(caliGateText).join(', ') + '</div>' : '') + '</div><span class="cali-chev">›</span></button>';
+          + (st.needs ? '<div class="cali-sub">🔒 First: ' + st.needs.map(caliGateText).join(', ') + '</div>' : '') + '</div><span class="cali-chev">›</span></button>'
+          + (i === here ? caliHereBar(l, i) : '');
       }).join('');
+      if (here < 0) html = '<div class="cali-note">🧪 Take the level test on the Calisthenics page to see your step here.</div>' + html;
       openCaliSheet(l.name, html);
     }
 

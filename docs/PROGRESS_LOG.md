@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — Calisthenics level test (P2-18 step 3), in progress
+
+- Owner: "Yes go" (start the level test). Calisthenics screen: "Level test" card, 7 questions (push-ups, pull-ups, dips, squat level, hollow hold, hanging raises, skills you already own); questions for gear you do not have are skipped.
+- Places you on the first step of every ladder you cannot yet do for its target; shows your overall level (middle level of the 7 strength ladders). Ladder cards show "Step N: name · target"; ladder pages tick passed steps, mark "Your step" with "Too hard" / "I can do it" buttons. Saved in state.cali.pos / state.cali.tested.
+- Checks: tests/p2_18_cali_level_test.test.mjs; 532 tests pass. Before/after: Calisthenics screen (no level → "Your level: Beginner", each move shows your step).
+
 ## 2026-11-06 — Calisthenics pictures (P2-18 step 7), in progress
 
 - Owner: "start making the photos... focus more on the progressions". 139 start/end (or entry/hold) pictures made in Google Flow (image mode, Nano Banana 2.1, 16:9, x2, PLZ Train character as reference, 0 credits), each take checked for form; prompts docs/research/cali-picture-prompts.tsv, picks docs/research/cali-picture-picks.txt. Every built-in exercise (239) now has a picture and a list thumbnail.
