@@ -6,11 +6,18 @@ Knowledge base: [CALISTHENICS_PROGRESSIONS.md](CALISTHENICS_PROGRESSIONS.md) (8 
 Heria tutorials watched + public standards). Everything below is our own design and
 wording; no app or creator content is copied.
 
-Heria Pro check: installed on the test phone, but it asks for an account before
-showing anything. The agent may not create accounts, so the app itself is not studied
-yet. Store pictures show: programs, a daily workout, a follow-along screen (reps, timer,
-"next up", Complete) and a calendar. PLZ Train already has programs, calendar and
-Google Calendar.
+Heria Pro check: installed on the test phone, but it asks for an account first (the
+agent may not create accounts). Studied instead from 3 YouTube videos of the app
+([HERIA_PRO_APP_NOTES.md](HERIA_PRO_APP_NOTES.md)): tabs Explore (programs, workouts),
+My Library, Calendar, Profile; a training-place filter (Home, Gym, Park, Home Gym,
+Anywhere); a program is week → day → workout; each workout has a difficulty switch and a
+warm-up on/off; the live screen shows big reps, Next Up, a timer and Complete. No
+level-up or progression system was seen. That is where PLZ Train will be better: real
+ladders that move you up when you hit the target.
+
+Adapted from it (own design): training-place filter, per-session difficulty switch
+(easier step / your step / harder step for every move), warm-up on/off, big "next up"
+in the live workout, "% done" on finish.
 
 ## 1. What the owner gets
 
