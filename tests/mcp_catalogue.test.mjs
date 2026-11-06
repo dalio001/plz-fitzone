@@ -13,10 +13,12 @@ describe('P4-11 MCP catalogue', () => {
     assert.deepEqual(committed, fresh, 'mcp/catalogue.json matches index.html (run node mcp/build-catalogue.mjs)');
     // Line endings may be CRLF in a Windows checkout; the content must match.
     assert.equal(committedRaw.replace(/\r\n/g, '\n'), catalogueJson(fresh), 'the file is written in the stable format (no timestamps)');
-    assert.equal(fresh.exercises.length, 100, 'every built-in exercise exported');
+    assert.equal(fresh.exercises.length, 202, 'every built-in exercise exported (100 + 102 calisthenics)');
     assert.deepEqual(Object.keys(fresh.exercises[0]), ['id', 'name', 'equipment', 'muscle', 'primary', 'secondary', 'type']);
-    assert.deepEqual(fresh.exercises.map((e) => e.id), fresh.exercises.map((e) => e.id).slice().sort((a, b) =>
+    const exIds = fresh.exercises.map((e) => e.id).filter((id) => /^ex\d+$/.test(id));
+    assert.deepEqual(exIds, exIds.slice().sort((a, b) =>
       Number(a.slice(2)) - Number(b.slice(2))), 'sorted by id number');
+    assert.deepEqual(fresh.exercises.slice(0, 100).map((e) => e.id), exIds, 'ex rows first, calisthenics after');
     assert.deepEqual(fresh.exercises[6].secondary, ['Glutes'], 'secondary muscles kept');
     assert.ok(fresh.muscles.includes('Full body') && fresh.equipment.includes('Kettlebell'), 'filters exported');
     assert.ok(fresh.types.includes('duration'), 'exercise types exported');

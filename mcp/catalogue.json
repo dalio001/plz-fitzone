@@ -1075,6 +1075,1110 @@
         "Quads"
       ],
       "type": "weight_reps"
+    },
+    {
+      "id": "cx_active_pike",
+      "name": "Active Pike Lift",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Quads"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_adv_tuck_fl",
+      "name": "Advanced Tuck Front Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_adv_tuck_fl_row",
+      "name": "Advanced Tuck Front-Lever Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_adv_tuck_planche",
+      "name": "Advanced Tuck Planche",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_archer_pullup",
+      "name": "Archer Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_archer_pushup",
+      "name": "Archer Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_archer_row",
+      "name": "Archer Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_around_world",
+      "name": "Around-the-World",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_assisted_pistol",
+      "name": "Assisted Pistol Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_bench_dip_feet_up",
+      "name": "Bench Dip, Feet Raised",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_bl_negative",
+      "name": "Back-Lever Negative",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_box_pike_hold",
+      "name": "Box Pike Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_box_pike_pushup",
+      "name": "Elevated Pike Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_box_pistol",
+      "name": "Box Pistol",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_box_squat",
+      "name": "Box Sit-to-Stand",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_bulgarian_split",
+      "name": "Bodyweight Split Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_chest_to_bar",
+      "name": "Chest-to-Bar Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_chest_wall_hs",
+      "name": "Chest-to-Wall Handstand",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_clap_pushup",
+      "name": "Clap Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_cossack_squat",
+      "name": "Cossack Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_dead_hang",
+      "name": "Active Hang",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_df_hip_raise",
+      "name": "Dragon Flag Hip Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_df_negative",
+      "name": "Dragon Flag Negative",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_df_tuck_negative",
+      "name": "Tuck Dragon Flag Negative",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_diamond_pushup",
+      "name": "Diamond Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_dragon_flag",
+      "name": "Dragon Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_explosive_pullup",
+      "name": "Explosive Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_feet_up_row",
+      "name": "Feet-Elevated Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_fl_negative",
+      "name": "Front-Lever Negative",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_floor_lsit",
+      "name": "Floor L-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Quads"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_free_handstand",
+      "name": "Freestanding Handstand",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_free_hspu",
+      "name": "Freestanding Handstand Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_free_hspu_negative",
+      "name": "Freestanding HSPU Negative",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_full_bl",
+      "name": "Full Back Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_full_fl",
+      "name": "Full Front Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_full_flag",
+      "name": "Human Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_full_planche",
+      "name": "Full Planche",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_german_hang",
+      "name": "German Hang",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_hanging_lsit",
+      "name": "Hanging L-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_hollow_hold",
+      "name": "Hollow Body Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_hollow_rock",
+      "name": "Hollow Rock",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_hollow_tuck",
+      "name": "Tuck Hollow Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_hs_bail",
+      "name": "Handstand Bail",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_hs_kickup",
+      "name": "Handstand Kick-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_hs_press_negative",
+      "name": "Handstand Press Negative",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_incline_row",
+      "name": "Incline Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_jump_squat",
+      "name": "Jump Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_jumping_muscleup",
+      "name": "Jumping Muscle-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_lsit",
+      "name": "L-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Quads"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_lsit_pullup",
+      "name": "L-Sit Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_lying_leg_raise",
+      "name": "Lying Leg Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_manna",
+      "name": "Manna",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_muscleup",
+      "name": "Bar Muscle-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_negative_dip",
+      "name": "Negative Dip",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_negative_muscleup",
+      "name": "Negative Muscle-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_negative_pullup",
+      "name": "Negative Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_one_arm_negative",
+      "name": "One-Arm Negative Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_one_arm_pullup",
+      "name": "One-Arm Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Biceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_one_leg_fl",
+      "name": "One-Leg Front Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_one_leg_lsit",
+      "name": "One-Leg L-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Quads"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_pike_hold",
+      "name": "Pike Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_pike_pushup",
+      "name": "Pike Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_pike_stretch",
+      "name": "Pike Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_pistol_squat",
+      "name": "Pistol Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_planche_lean",
+      "name": "Planche Lean",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_planche_pushup",
+      "name": "Planche Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_pseudo_planche_pushup",
+      "name": "Pseudo Planche Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_ring_dip",
+      "name": "Ring Dip",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_scap_pullup",
+      "name": "Scapula Pull-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_scap_pushup",
+      "name": "Scapula Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_shoulder_dislocate",
+      "name": "Stick Shoulder Pass",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_shrimp_squat",
+      "name": "Shrimp Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_side_plank_raise",
+      "name": "Side Plank Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_skin_cat",
+      "name": "Skin the Cat",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_straddle_bl",
+      "name": "Straddle Back Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_straddle_fl",
+      "name": "Straddle Front Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_straddle_flag",
+      "name": "Straddle Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_straddle_planche",
+      "name": "Straddle Planche",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_straight_bar_dip",
+      "name": "Straight-Bar Dip",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_strict_muscleup",
+      "name": "Strict Muscle-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_support_hold",
+      "name": "Dip Support Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_swing",
+      "name": "Hollow-Arch Swing",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_toes_to_bar",
+      "name": "Toes-to-Bar",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_tuck_bl",
+      "name": "Tuck Back Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_tuck_fl",
+      "name": "Tuck Front Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_tuck_fl_row",
+      "name": "Tuck Front-Lever Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_tuck_flag",
+      "name": "Tuck Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_tuck_lsit",
+      "name": "Tuck L-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_tuck_planche",
+      "name": "Tuck Planche",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_tuck_planche_pushup",
+      "name": "Tuck Planche Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_tuck_vsit",
+      "name": "Tucked V-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_v_up",
+      "name": "V-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_vertical_flag",
+      "name": "Vertical Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_vsit",
+      "name": "V-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_wall_hspu",
+      "name": "Wall Handstand Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wall_shoulder_taps",
+      "name": "Wall Shoulder Taps",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wall_toe_pulls",
+      "name": "Wall Toe Pulls",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Forearms"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wall_walk",
+      "name": "Wall Walk",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_weighted_dip",
+      "name": "Weighted Dip",
+      "equipment": "Bodyweight",
+      "muscle": "Triceps",
+      "primary": "Triceps",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wide_row",
+      "name": "Wide-Grip Row",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_windshield_wipers",
+      "name": "Windshield Wipers",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wrist_prep",
+      "name": "Wrist Warm-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "bodyweight_reps"
     }
   ]
 }

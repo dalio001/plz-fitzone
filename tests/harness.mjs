@@ -347,6 +347,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   gcalEventId, gcalDesiredEvents, programItemTime, setProgramItemTime, gcalSync, gcalPending, renderGcalSettings, GCAL_SCOPE,
   programDayIndex, programFolderOf, programWeekCount, dayPlanChipHtml, programCalendar,
   progCellTap, programAddable, addProgramWorkoutOnDay, otherRunningProgram, normalizeFolders,
+  CALI_LADDERS, CALI_HOWTO, CALI_GEAR, CALI_LEVELS, caliLadder, caliStepOf, caliTargetText,
   ROUTINE_IMPORT, validateRoutineImport, formatRoutineImportErrors,
   decodeRoutineImportHash, renderRoutineImportPreview,
   openRoutineImport, previewRoutineImportText, routineFileChosen,

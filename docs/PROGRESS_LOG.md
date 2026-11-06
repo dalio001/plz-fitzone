@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — Calisthenics mastery, step 1: the ladders (P2-18), in progress
+
+- Owner: a calisthenics section where every move has its progressions, like Heria Pro but better. Design: docs/research/CALISTHENICS_MASTERY_DESIGN.md (from 19 coaching videos + his Heria Pro screen recording).
+- Step 1: `CALI_LADDERS` (17 ladders: push, pull, dip, row, squat→pistol, core, hanging core, L-sit→manna, handstand, HSPU, muscle-up, front lever, back lever, planche, human flag, dragon flag, mobility; 115 steps, 5 levels, gates) and 102 new bodyweight exercises (`cx_*`) with Setup/Move/Avoid how-to. Existing owners get them merged; the MCP catalogue was rebuilt (202 exercises).
+- Checks: new `tests/p2_18_cali_ladders.test.mjs`; catalogue count tests updated; all 515 tests pass. Before/after: Exercises search "pistol" (nothing → 3 pistol steps).
+
 ## 2026-11-06 — One Google calendar per account (P4-12 follow-up), awaiting owner phone check
 
 - Owner: after stopping the old plan, Push/Pull/Leg Day stayed in Google; Google had three "PLZ Train" calendars (each fresh connection made a new one and forgot the old).
