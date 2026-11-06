@@ -122,3 +122,34 @@ describe('P2-17 one plan', () => {
     assert.ok(ev.every((e) => e.rid === undefined));
   });
 });
+
+// Owner, 2026-11-06: "if I want to add workouts to one day from here, it doesn't work".
+describe('P2-17 add a workout from the program calendar', () => {
+  it('tapping an empty spot of a day opens that day sheet; a chip tap does not', () => {
+    const { app, today, f } = programApp();
+    const rts = app.api.state.routines.filter((r) => r.folderId === f.id);
+    const html = app.api.programCalendar(f, rts).innerHTML;
+    assert.match(html, /onclick="progCellTap\(event, this\)"/);
+    const cell = { getAttribute: () => addDays(today, 2) };
+    app.api.progCellTap({ target: { closest: () => null } }, cell);
+    assert.ok(app.document.getElementById('calDayModal').classList.contains('open'));
+    app.document.getElementById('calDayModal').classList.remove('open');
+    app.api.progCellTap({ target: { closest: () => ({}) } }, cell);
+    assert.ok(!app.document.getElementById('calDayModal').classList.contains('open'));
+  });
+
+  it('a day with a plan can still get a program workout; the plan stays', () => {
+    const { app, today, f } = programApp();
+    const key = addDays(today, 3); // cycle day 5, nothing on it
+    app.api.state.plans = { [key]: { routineId: 'rt2', kind: 'routine', createdAt: 1 } };
+    const ids = app.api.programAddable(key).map((x) => x.routine.id);
+    assert.ok(ids.includes('rt3'));
+    app.api.openPlanDay(key);
+    assert.match(app.document.getElementById('calDayBody').innerHTML, /Add a program workout/);
+    assert.equal(app.api.addProgramWorkoutOnDay(key, 'rt3'), true);
+    assert.equal(f.program.days.rt3, 5);
+    assert.equal(app.api.getPlan(key).routineId, 'rt2');
+    assert.ok(!app.api.programAddable(key).some((x) => x.routine.id === 'rt3'));
+    assert.equal(app.api.addProgramWorkoutOnDay(addDays(today, 20), 'rt3'), false, 'outside the cycle');
+  });
+});

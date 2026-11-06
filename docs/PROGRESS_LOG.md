@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-06 — Add a workout from the program calendar (P2-17 follow-up), awaiting owner phone check
+
+- Owner: adding a workout to a day only worked from the Profile calendar.
+- Tapping an empty spot of a day in the program calendar now opens the same day sheet. A day that already has a plan gets "Add a program workout" (the plan stays).
+- Checks: 2 new tests in `tests/p2_17_one_plan.test.mjs`; all 503 tests pass. Before/after screenshots on a local test copy.
+
 ## 2026-11-05 — One plan: week plan and programs speak to each other (P2-17), awaiting owner phone check
 
 - Owner: "everything we put in the new one should appear in the old one and vice versa".

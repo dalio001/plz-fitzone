@@ -3940,11 +3940,11 @@
         d.setDate(d.getDate() + (c - lead));
         const key = dayKeyLocal(d.getTime());
         if (dayIdx < 1 || dayIdx > prog.length) {
-          html += '<div class="prog-cell prog-cell-out"><div class="prog-cell-num">' + d.getDate() + '</div></div>';
+          html += '<div class="prog-cell prog-cell-out" data-pkey="' + esc(key) + '" onclick="progCellTap(event, this)"><div class="prog-cell-num">' + d.getDate() + '</div></div>';
           continue;
         }
         const items = rts.filter(rt => prog.days[rt.id] === dayIdx);
-        html += '<div class="prog-cell' + (key === today ? ' prog-cell-today' : '') + '" data-pday="' + dayIdx + '" data-pkey="' + esc(key) + '">'
+        html += '<div class="prog-cell' + (key === today ? ' prog-cell-today' : '') + '" data-pday="' + dayIdx + '" data-pkey="' + esc(key) + '" onclick="progCellTap(event, this)">'
           + '<div class="prog-cell-num">' + d.getDate() + '</div>'
           + items.map(rt => programChipHtml(fid, prog, rt, today)).join('') + dayPlanChipHtml(key, items) + '</div>';
       }
@@ -3953,7 +3953,7 @@
       if (unplaced.length) {
         html += '<div class="prog-unplaced"><span>No day yet:</span>' + unplaced.map(rt => programChipHtml(fid, prog, rt, today)).join('') + '</div>';
       }
-      html += '<div class="prog-hint">Drag a workout to another day. Tap it to start, tick or skip. Outlined = planned in the Profile calendar.</div>';
+      html += '<div class="prog-hint">Tap a day to add a workout. Drag a workout to another day. Tap it to start, tick or skip. Outlined = planned in the Profile calendar.</div>';
       const box = document.createElement('div');
       box.className = 'card';
       box.style.padding = '10px 8px';
@@ -3984,6 +3984,7 @@
     /* Drag with pointer events (works with a finger, unlike HTML drag and drop).
        A short press without moving is a tap and opens the workout sheet. */
     let progDrag = null;
+    let progDragAt = 0; // when the last drag ended (its click is not a day tap)
     function progChipDown(ev, el) {
       if (ev.button !== undefined && ev.button !== 0) return;
       progDrag = { el: el, fid: el.getAttribute('data-f'), rid: el.getAttribute('data-r'), plan: el.getAttribute('data-plan'), x: ev.clientX, y: ev.clientY, ghost: null, over: null };
@@ -4017,6 +4018,7 @@
       progDrag = null;
       if (!d) return;
       if (!d.ghost) return d.plan ? openPlanDay(d.plan) : openProgramItem(d.fid, d.rid);
+      progDragAt = Date.now();
       d.ghost.remove();
       d.el.style.opacity = '';
       if (d.over) d.over.classList.remove('prog-cell-drop');
@@ -4034,6 +4036,14 @@
         progDrag = null;
       });
     } catch (e) {}
+
+    /* Owner, 2026-11-06: tap an empty spot of a day in the program calendar
+       to add a workout there (opens the same day sheet as the Profile calendar). */
+    function progCellTap(ev, el) {
+      if (ev && ev.target && ev.target.closest && ev.target.closest('.prog-chip')) return;
+      if (Date.now() - progDragAt < 500) return;
+      return openPlanDay(el.getAttribute('data-pkey'));
+    }
 
     /* Put one workout on another cycle day (0 = no day). Ticks are kept. */
     function moveProgramDay(fid, rid, day) {
@@ -4226,6 +4236,38 @@
     }
 
     /* Program workouts placed on one local day (for the training calendar). */
+    /* Workouts of running programs that can still go on this day (its cycle
+       covers the day and they are not on it yet). */
+    function programAddable(key) {
+      const out = [];
+      ensureFolders().forEach(f => {
+        if (f.archived || !f.program) return;
+        const idx = programDayIndex(f.program, key);
+        if (!idx) return;
+        state.routines.forEach(rt => {
+          if (isRoutineHidden(rt) || routineFolderId(rt) !== f.id || f.program.days[rt.id] === idx) return;
+          out.push({ folder: f, routine: rt });
+        });
+      });
+      return out;
+    }
+
+    /* Put a program workout on this day, next to the day's plan (the plan stays). */
+    function addProgramWorkoutOnDay(key, routineId) {
+      const pf = programFolderOf(routineId);
+      const idx = pf ? programDayIndex(pf.program, key) : 0;
+      if (!idx) return false;
+      pf.program.days[routineId] = idx;
+      saveState();
+      afterPlanChange(String(key));
+      return true;
+    }
+
+    function addProgramWorkoutFromSelect(key) {
+      const sel = document.getElementById('progAddSelect');
+      return sel && sel.value ? addProgramWorkoutOnDay(key, String(sel.value)) : false;
+    }
+
     function programItemsOn(key) {
       const out = [];
       const today = todayPlanKey();
@@ -11006,6 +11048,18 @@
               + (PROGRAM_STATUS_TEXT[x.status] ? ' · ' + PROGRAM_STATUS_TEXT[x.status] : '') + '</div>'
               + '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">' + row + '</div>';
           }).join('')
+          + '</div>';
+      }
+
+      /* A day that already has a plan can still get program workouts. */
+      const addable = plan ? programAddable(k) : [];
+      if (addable.length) {
+        html += '<div style="border-top:1px solid var(--border); margin-top:6px; padding-top:10px;">'
+          + '<label style="font-size:12px; color:var(--text-sub);">＋ Add a program workout</label>'
+          + '<select id="progAddSelect" class="input-field" style="max-width:100%; min-height:44px; margin:6px 0 10px;">'
+          + addable.map(x => '<option value="' + esc(x.routine.id) + '">' + esc(x.routine.name) + ' · 📁 ' + esc(x.folder.name) + '</option>').join('')
+          + '</select>'
+          + '<button class="btn btn-block" style="min-height:44px; margin-bottom:10px;" data-key="' + esc(k) + '" onclick="addProgramWorkoutFromSelect(this.getAttribute(\'data-key\'))">＋ Add</button>'
           + '</div>';
       }
 
