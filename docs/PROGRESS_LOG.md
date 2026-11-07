@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-07 — Calisthenics progression engine (P2-18 step 4), in progress
+
+- Owner: "GO" (step 4). Reads saved workouts, nothing extra to log. A clean session = the step's sets all at the top of the range (normal sets; your gear's alternative counts, band/weighted versions do not). Two clean sessions on different days since you reached the step = "Ready": home banner, card badge, "Move up" button, and a "Ready for the next step" sheet right after Finish. Never moves you by itself.
+- Ladder page "Your step": clean sessions 1 of 2, "Train" (adds your step to a workout with its sets, range, 0 kg), "Easier" / "Harder", step-back hint after 3 sessions below the range, first-week EMOM tip, drop-down finisher tip, next-step locks checked against logged bests. Every 6th week from the first test is a light week (one set fewer). state.cali.since / state.cali.start added.
+- Checks: tests/p2_18_cali_progression.test.mjs; 541 tests pass. Real run in the app: Train → 12/12/13 diamond push-ups → Finish → "Ready for the next step: Diamond → Archer".
+
 ## 2026-11-06 — Calisthenics level test (P2-18 step 3), in progress
 
 - Owner: "Yes go" (start the level test). Calisthenics screen: "Level test" card, 7 questions (push-ups, pull-ups, dips, squat level, hollow hold, hanging raises, skills you already own); questions for gear you do not have are skipped.
