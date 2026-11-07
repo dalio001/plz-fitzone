@@ -2,6 +2,13 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-07 — Calisthenics finished: workout tools, progress, guide, phone check (P2-18 steps 6, 8, 9), awaiting owner review
+
+- Owner: "Finish the product... I still don't see how this is useful for me". Calisthenics screen now opens with a "How it works" guide (equipment → level test → my week → train) until all is set up; once the week is built, "My week · Today · Start today's session" leads.
+- In the workout, calisthenics exercises show their ladder line instead of the gym "+1 rep" target: step, today's aim (weakest last set + 1, inside the range), clean sessions so far, ⏱ EMOM timer (10 minutes, beep each minute). Gym workouts with pull-ups keep the gym line. "My week" sessions no longer ask "update the routine" (they are rebuilt from the ladders).
+- After Finish: "Your steps today" sheet: clean session 1 of 2 / aim for next time / Ready with Move up. Progress: every level test kept, every move logged, "My progress" card and sheet (first test → now on every move), test day every 6 weeks.
+- Phone check (owner's Huawei, test origin localhost:8811 via adb, real data untouched): guide → Build my week → Start today's session → typed 12/12/12 diamond push-ups with real taps → EMOM → Finish → "Ready: Archer Push-Up is next" → Move up → routine rebuilt with Archer → My progress shows +2. tests/p2_18_cali_workout.test.mjs; 557 tests pass.
+
 ## 2026-11-07 — Calisthenics weekly plan (P2-18 step 5), in progress
 
 - Owner: "Go" (step 5). Calisthenics screen: "My week" card. Pick a plan (Full body 3 days for Foundation/Beginner, Upper/lower 4 days for Intermediate, Skill focus 4 days for Advanced/Elite; the one for your level is marked) and 1-2 skills (locked skills shown with 🔒; a skill you were placed into counts as open).

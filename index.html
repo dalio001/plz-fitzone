@@ -753,6 +753,15 @@
     .cali-here .btn { flex: 1; white-space: nowrap; padding: 0 8px; }
     .cali-here-info { flex: 1 0 100%; font-size: 12px; font-weight: 600; color: var(--text-sub); line-height: 1.5; }
     .cali-ready { border: 1px solid var(--primary); }
+    .cali-guide { border: 1px solid var(--primary); }
+    .cali-guide-row { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; }
+    .cali-guide-row span:nth-child(2) { flex: 1; }
+    .cali-guide-row.done span:nth-child(2) { color: var(--text-sub); text-decoration: line-through; }
+    .cali-guide-row .btn { min-height: 40px; }
+    .cali-emom { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .cali-emom-card { width: 100%; max-width: 420px; background: var(--bg-card, #1e293b); border-radius: 16px; padding: 18px; text-align: center; }
+    .cali-emom-min { font-size: 16px; font-weight: 800; margin-top: 14px; color: var(--primary); }
+    .cali-emom-clock { font-size: 64px; font-weight: 900; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
     .cali-check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 12px; font-size: 14px; }
     .cali-check input { width: 22px; height: 22px; }
     .cali-up { color: var(--primary); }
@@ -2742,6 +2751,9 @@
       const ssrc = out.since && typeof out.since === 'object' && !Array.isArray(out.since) ? out.since : {};
       CALI_LADDERS.forEach(l => { if (typeof ssrc[l.id] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ssrc[l.id])) since[l.id] = ssrc[l.id]; });
       out.since = since;
+      out.tests = (Array.isArray(out.tests) ? out.tests : []).filter(t => t && typeof t.date === 'string' && typeof t.level === 'number' && t.pos && typeof t.pos === 'object').slice(-50);
+      out.log = (Array.isArray(out.log) ? out.log : []).filter(x => x && caliLadder(x.l) && Number.isInteger(x.from) && Number.isInteger(x.to)
+        && x.from >= 0 && x.to >= 0 && x.from < caliLadder(x.l).steps.length && x.to < caliLadder(x.l).steps.length).slice(-300);
       if (!(out.plan && typeof out.plan === 'object' && CALI_TEMPLATES[out.plan.tpl])) delete out.plan;
       else out.plan = { tpl: out.plan.tpl, skills: (Array.isArray(out.plan.skills) ? out.plan.skills : []).filter(s => CALI_SKILL_ORDER.indexOf(s) >= 0).slice(0, 2) };
       if (!(typeof out.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(out.start))) delete out.start;
@@ -2813,20 +2825,30 @@
       if (!box) return;
       const have = caliGear();
       const c = state.cali;
-      let html = '<div class="card cali-gear-card">'
+      const gearCard = '<div class="card cali-gear-card">'
         + '<div class="cali-row"><div style="font-weight:800;">🧰 My equipment</div>'
         + '<button class="btn" style="min-height:44px;" onclick="openCaliGear()">' + (c.gearSet ? 'Change' : 'Set up') + '</button></div>'
         + '<div class="cali-sub">' + (c.gearSet ? esc(caliGearSummary(have))
           : 'Tick what you have. Every move then shows the version you can train with it.') + '</div></div>';
-      html += '<div class="card cali-gear-card">'
+      const testCard = '<div class="card cali-gear-card">'
         + '<div class="cali-row"><div style="font-weight:800;">🧪 Level test</div>'
-        + '<button class="btn' + (c.tested ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliTest()">' + (c.tested ? 'Retake' : 'Start') + '</button></div>'
+        + '<button class="btn' + (c.tested && !caliTestDue() ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliTest()">' + (c.tested ? 'Retake' : 'Start') + '</button></div>'
         + '<div class="cali-sub">' + (c.tested
           ? 'Your level: <b class="cali-lvl-txt lv' + c.tested.level + '">' + CALI_LEVELS[c.tested.level] + '</b> · tested ' + esc(c.tested.date)
-          : '2 minutes, 7 questions. Puts you on the right step of every move.') + '</div></div>';
+          : '2 minutes, 7 questions. Puts you on the right step of every move.') + '</div>'
+        + (caliTestDue() ? '<div class="cali-note" style="margin:8px 0 0;">🏁 Test day: 6 weeks since your last test. Retake it to see how far you came.</div>' : '') + '</div>';
+      let progCard = '';
+      if (c.tested) {
+        const up = caliStepsUp();
+        progCard = '<div class="card cali-gear-card"><div class="cali-row"><div style="font-weight:800;">📈 My progress</div>'
+          + '<button class="btn" style="min-height:44px;" onclick="openCaliProgress()">See</button></div>'
+          + '<div class="cali-sub">' + (up ? up + (up === 1 ? ' step' : ' steps') + ' up since ' + esc(c.start || c.tested.date) : 'Your first step-up shows here.')
+          + ' · ' + caliSessionsDone() + ' calisthenics ' + (caliSessionsDone() === 1 ? 'session' : 'sessions') + '</div></div>';
+      }
+      let weekCard = '';
       if (c.tested) {
         const td = c.plan ? caliToday() : null;
-        html += '<div class="card cali-gear-card"><div class="cali-row"><div style="font-weight:800;">📅 My week</div>'
+        weekCard = '<div class="card cali-gear-card"><div class="cali-row"><div style="font-weight:800;">📅 My week</div>'
           + '<button class="btn' + (c.plan ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliPlan()">' + (c.plan ? 'Change' : 'Build') + '</button></div>'
           + '<div class="cali-sub">' + (c.plan ? esc(CALI_TEMPLATES[c.plan.tpl].name) + (c.plan.skills.length ? ' · ' + c.plan.skills.map(s => esc(caliLadder(s).name)).join(', ') : '')
             + (td ? '<br>' + (td.today ? (td.done ? '✅ Today: ' + esc(td.name) + ' done' : '👉 Today: ' + esc(td.name)) : 'Rest today · next: ' + esc(td.name) + ' (' + esc(td.label) + ')') : '')
@@ -2834,9 +2856,12 @@
           + (td && td.today && !td.done ? '<button class="btn btn-primary btn-block" style="min-height:48px; margin-top:10px;" data-r="' + esc(td.rid) + '" onclick="startRoutineWorkout(this.dataset.r)">▶ Start today&#39;s session</button>' : '')
           + '</div>';
       }
-      if (c.tested && caliDeloadWeek()) html += '<div class="cali-note">🪶 Light week: same steps, one set fewer. Your body builds back stronger.</div>';
+      let notes = '';
+      if (c.tested && caliDeloadWeek()) notes += '<div class="cali-note">🪶 Light week: same steps, one set fewer. Your body builds back stronger.</div>';
       const ready = c.tested ? caliReadyList() : [];
-      if (ready.length) html += '<div class="cali-note cali-ready">⬆️ Ready to move up: ' + ready.map(id => esc(caliLadder(id).name)).join(', ') + '. Open the move and tap Move up.</div>';
+      if (ready.length) notes += '<div class="cali-note cali-ready">⬆️ Ready to move up: ' + ready.map(id => esc(caliLadder(id).name)).join(', ') + '. Open the move and tap Move up.</div>';
+      // Once the week is built, today's session leads; setting up comes last.
+      let html = caliGuideHtml(c) + (c.plan ? weekCard + notes + progCard + testCard + gearCard : gearCard + testCard + weekCard + notes + progCard);
       ['base', 'skill', 'support'].forEach(kind => {
         const ls = CALI_LADDERS.filter(l => l.kind === kind);
         if (!ls.length) return;
@@ -3102,7 +3127,8 @@
       CALI_LADDERS.forEach(l => { since[l.id] = today; });
       const old = normalizeCali(state.cali);
       state.cali = normalizeCali(Object.assign({}, old, {
-        pos: pos, since: since, start: old.start || today, tested: { date: today, level: caliOverallLevel(pos) }
+        pos: pos, since: since, start: old.start || today, tested: { date: today, level: caliOverallLevel(pos) },
+        tests: old.tests.concat([{ date: today, level: caliOverallLevel(pos), pos: Object.assign({}, pos) }])
       }));
       caliTestDraft = null;
       caliRefreshPlan();
@@ -3117,7 +3143,10 @@
       if (!l) return;
       const c = normalizeCali(state.cali);
       const n = Math.max(0, Math.min(l.steps.length - 1, (c.pos[l.id] || 0) + dir));
-      if (n !== (c.pos[l.id] || 0)) c.since[l.id] = dayKeyLocal(Date.now());
+      if (n !== (c.pos[l.id] || 0)) {
+        c.since[l.id] = dayKeyLocal(Date.now());
+        c.log.push({ d: dayKeyLocal(Date.now()), l: l.id, from: c.pos[l.id] || 0, to: n });
+      }
       c.pos[l.id] = n;
       state.cali = c;
       caliRefreshPlan();
@@ -3230,22 +3259,6 @@
       return CALI_LADDERS.filter(l => { const s = caliLadderStatus(l.id); return s && s.ready; }).map(l => l.id);
     }
 
-    /* After a saved workout: show the ladders that just became ready. */
-    function caliAfterFinish(before) {
-      const now = caliReadyList().filter(id => (before || []).indexOf(id) < 0);
-      if (!now.length) return;
-      const have = caliGear();
-      const html = '<div class="cali-sub" style="margin-bottom:10px;">Two clean sessions at the top of the range. Move up when you are ready.</div>'
-        + now.map(id => {
-          const s = caliLadderStatus(id);
-          const nx = caliPickStep(s.next, have);
-          return '<div class="cali-res"><span class="cali-name">' + esc(caliLadder(id).name) + '</span><span class="cali-sub">'
-            + esc((caliPickStep(s.step, have) || s.step).name) + ' → ' + esc(nx ? nx.name : s.next.name) + '</span>'
-            + '<button class="btn btn-primary" style="min-height:44px; margin-top:6px;" data-id="' + esc(id) + '" onclick="caliMoveStep(this.dataset.id, 1)">⬆️ Move up</button></div>';
-        }).join('');
-      openCaliSheet('⬆️ Ready for the next step', html);
-    }
-
     /* "Train this": your step (your gear's version) into the workout, with
        its sets and target range. */
     function caliAddStep(id) {
@@ -3262,7 +3275,7 @@
         sets.push(st.hold ? { type: 'N', weight: '', durationSec: '', targetSec: st.lo, done: false } : { type: 'N', weight: 0, reps: '', done: false });
       }
       activeWorkout.exercises.push({
-        exId: pick.ex, restSec: st.level >= 3 ? 150 : 90, note: '', sets: sets,
+        exId: pick.ex, cali: true, restSec: st.level >= 3 ? 150 : 90, note: '', sets: sets,
         targetRepsLabel: st.hold ? '' : st.lo + '-' + st.hi
       });
     }
@@ -3498,6 +3511,216 @@
       caliPlanDraft = null;
       closeModal('caliSheetModal');
       renderCaliHome();
+    }
+
+    /* P2-18 step 6: in the workout. A calisthenics step shows its own line
+       instead of the gym "+1 rep" target: ladder, step, the aim for today
+       inside the step's range (double progression: one more rep on the
+       weakest set, never past the top), clean sessions so far, and an EMOM
+       timer for reps steps. */
+    /* A calisthenics exercise of a workout: a cx_ exercise, one added with
+       Train, or any exercise of a "My week" session. Gym workouts with
+       pull-ups keep the gym target line. */
+    function caliWorkoutEx(w, ex) {
+      if (!w || !ex) return false;
+      return String(ex.exId).indexOf('cx_') === 0 || ex.cali === true
+        || String(w.routineId || '').indexOf('rt_cali_') === 0 || w.title === 'Calisthenics';
+    }
+
+    function caliFindStep(exId) {
+      const c = normalizeCali(state.cali);
+      let best = null;
+      CALI_LADDERS.forEach(l => l.steps.forEach((st, i) => {
+        if (caliStepExIds(st).indexOf(exId) < 0) return;
+        const here = (c.pos[l.id] || 0) === i;
+        if (!best || (here && !best.here)) best = { ladder: l, index: i, step: st, here: here };
+      }));
+      return best;
+    }
+
+    /* Today's aim per set: the weakest set of the last session + 1, kept
+       inside the range; the bottom of the range the first time. */
+    function caliAim(st) {
+      const ss = (state.history || []).filter(w => w && Array.isArray(w.exercises))
+        .map(w => w.exercises.find(e => e && caliStepExIds(st).indexOf(e.exId) >= 0)).filter(Boolean);
+      const last = ss[0];
+      const vals = last ? (last.sets || []).filter(s => !s.type || s.type === 'N').map(s => Number(st.hold ? s.durationSec : s.reps) || 0) : [];
+      if (!vals.length) return st.lo;
+      const step = st.hold ? 5 : 1;
+      return Math.max(st.lo, Math.min(st.hi, Math.min.apply(null, vals) + step));
+    }
+
+    function caliTargetLineHtml(exIdx) {
+      const ex = activeWorkout && activeWorkout.exercises[exIdx];
+      if (!ex || !caliWorkoutEx(activeWorkout, ex)) return '';
+      const f = caliFindStep(ex.exId);
+      if (!f) return '';
+      const st = f.step;
+      const unit = st.hold ? ' s' : '';
+      let txt;
+      if (/Finisher/.test(ex.note || '')) txt = '🔽 Finisher: one set to failure, clean form. Stop when the form breaks.';
+      else if (f.ladder.kind === 'support') txt = '🤸 Warm-up · ' + st.lo + '–' + st.hi + unit + ', easy.';
+      else {
+        const s = f.here ? caliLadderStatus(f.ladder.id) : null;
+        txt = '🤸 ' + f.ladder.name + ' · step ' + (f.index + 1) + ' · aim ' + st.sets + ' × ' + caliAim(st) + unit + (st.perSide ? ' each side' : '')
+          + ' (range ' + st.lo + '–' + st.hi + unit + ')' + (st.tempo ? ' · ' + st.tempo : '')
+          + (s ? (s.ready ? ' · ⬆️ ready to move up' : ' · clean sessions ' + s.passes + ' of 2 (every set at ' + st.hi + unit + ')') : '');
+      }
+      const emom = !st.hold && f.ladder.kind !== 'support' && !/Finisher/.test(ex.note || '')
+        ? '<button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" data-i="' + exIdx + '" onclick="caliEmomStart(+this.dataset.i)">⏱ EMOM</button>' : '';
+      return '<div class="target-line cali-line" id="target-line-' + exIdx + '" data-target-kind="cali" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px;">'
+        + '<span style="font-size:12px; color:var(--text-sub); min-width:0; overflow-wrap:anywhere;">' + esc(txt) + '</span>'
+        + '<span style="display:flex; gap:6px; flex-shrink:0;">' + emom
+        + '<button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px;" onclick="hideTargetsForWorkout()">Hide</button></span></div>';
+    }
+
+    /* EMOM: one clean rep (or a small cluster) at the start of every minute,
+       10 minutes; a beep marks each new minute. */
+    const CALI_EMOM_MIN = 10;
+    let caliEmom = null;
+
+    function caliEmomStart(exIdx) {
+      caliEmomStop();
+      const ex = activeWorkout && activeWorkout.exercises[exIdx];
+      const f = ex ? caliFindStep(ex.exId) : null;
+      const name = f ? (caliPickStep(f.step, caliGear()) || f.step).name : 'this exercise';
+      const box = document.createElement('div');
+      box.id = 'caliEmomBox';
+      box.className = 'cali-emom';
+      box.innerHTML = '<div class="cali-emom-card"><div class="cali-name">⏱ EMOM · ' + esc(name) + '</div>'
+        + '<div class="cali-sub">Start of every minute: 1–3 clean reps, then rest until the beep. Log your total as sets after.</div>'
+        + '<div class="cali-emom-min" id="caliEmomMin"></div><div class="cali-emom-clock" id="caliEmomClock"></div>'
+        + '<button class="btn btn-block" style="min-height:48px;" onclick="caliEmomStop()">Stop</button></div>';
+      document.body.appendChild(box);
+      caliEmom = { start: Date.now(), minute: -1, timer: setInterval(caliEmomTick, 250) };
+      caliEmomTick();
+    }
+
+    function caliEmomTick() {
+      if (!caliEmom) return;
+      const el = Date.now() - caliEmom.start;
+      const m = Math.floor(el / 60000);
+      const minEl = document.getElementById('caliEmomMin');
+      const clockEl = document.getElementById('caliEmomClock');
+      if (m >= CALI_EMOM_MIN) {
+        try { playRestEndSound(); } catch (e) {}
+        if (minEl) minEl.textContent = 'Done: ' + CALI_EMOM_MIN + ' minutes';
+        if (clockEl) clockEl.textContent = '✅';
+        clearInterval(caliEmom.timer);
+        caliEmom = null;
+        return;
+      }
+      if (m !== caliEmom.minute) {
+        caliEmom.minute = m;
+        try { playBeep(); } catch (e) {}
+      }
+      const left = 60 - Math.floor((el % 60000) / 1000);
+      if (minEl) minEl.textContent = 'Minute ' + (m + 1) + ' of ' + CALI_EMOM_MIN;
+      if (clockEl) clockEl.textContent = left < 60 ? '0:' + String(left).padStart(2, '0') : '1:00';
+    }
+
+    function caliEmomStop() {
+      if (caliEmom) clearInterval(caliEmom.timer);
+      caliEmom = null;
+      const b = document.getElementById('caliEmomBox');
+      if (b && b.parentNode) b.parentNode.removeChild(b);
+    }
+
+    /* After a saved workout: how each calisthenics step went, and the
+       ladders that just became ready. Shown only when calisthenics steps
+       were trained. */
+    function caliAfterFinish(before) {
+      const c = normalizeCali(state.cali);
+      if (!c.tested) return;
+      const w = (state.history || [])[0];
+      if (!w || !Array.isArray(w.exercises)) return;
+      const have = caliGear();
+      const rows = [];
+      w.exercises.forEach(e => {
+        if (!caliWorkoutEx(w, e)) return;
+        const f = caliFindStep(e.exId);
+        if (!f || !f.here || f.ladder.kind === 'support' || /Finisher/.test(e.note || '')) return;
+        if (rows.some(r => r.id === f.ladder.id)) return;
+        const res = caliJudge(f.step, e.sets);
+        const s = caliLadderStatus(f.ladder.id);
+        const unit = f.step.hold ? ' s' : '';
+        let line;
+        if (s.ready) line = '⬆️ Ready: ' + (caliPickStep(s.next, have) || s.next).name + ' is next';
+        else if (s.mastered) line = '🏆 Top of the ladder';
+        else if (res === 'pass') line = '✅ Clean session, ' + s.passes + ' of 2';
+        else if (res === 'short') line = 'Below ' + f.step.lo + unit + '. Keep going; if it stays hard, try one step back';
+        else line = 'Next time aim ' + caliAim(f.step) + unit + ' on every set; clean = all at ' + f.step.hi + unit;
+        rows.push({ id: f.ladder.id, name: f.ladder.name, step: (caliPickStep(f.step, have) || f.step).name, line: line, ready: s.ready && (before || []).indexOf(f.ladder.id) < 0 });
+      });
+      if (!rows.length) return;
+      const html = rows.map(r => '<div class="cali-res"><span class="cali-name">' + esc(r.name) + ' · ' + esc(r.step) + '</span><span class="cali-sub">' + esc(r.line) + '</span>'
+        + (r.ready ? '<button class="btn btn-primary" style="min-height:44px; margin-top:6px;" data-id="' + esc(r.id) + '" onclick="caliMoveStep(this.dataset.id, 1); this.disabled = true; this.textContent = \'✓ Moved up\'">⬆️ Move up</button>' : '') + '</div>').join('');
+      openCaliSheet(rows.some(r => r.ready) ? '⬆️ Ready for the next step' : '🤸 Your steps today', html);
+    }
+
+    /* P2-18 step 8: progress. Each level test is kept (date, level, steps),
+       each move on a ladder is logged; every 6 weeks a test day is due. */
+    const CALI_TEST_EVERY_DAYS = 42;
+
+    function caliDaysSince(day) {
+      if (!day) return 0;
+      return Math.floor((new Date(dayKeyLocal(Date.now()) + 'T00:00:00') - new Date(day + 'T00:00:00')) / 86400000);
+    }
+
+    function caliTestDue() {
+      const c = normalizeCali(state.cali);
+      return !!c.tested && caliDaysSince(c.tested.date) >= CALI_TEST_EVERY_DAYS;
+    }
+
+    function caliStepsUp() {
+      return normalizeCali(state.cali).log.filter(x => x.to > x.from).length;
+    }
+
+    function openCaliProgress() {
+      const c = normalizeCali(state.cali);
+      const have = caliGear();
+      const first = c.tests[0];
+      let html = '';
+      if (c.tests.length) {
+        html += '<div class="cali-kind" style="margin-top:0;">Level</div>' + c.tests.map(t => '<div class="cali-res"><span class="cali-name">'
+          + '<span class="cali-lvl-txt lv' + t.level + '">' + CALI_LEVELS[t.level] + '</span></span><span class="cali-sub">Level test · ' + esc(t.date) + '</span></div>').join('');
+      }
+      html += '<div class="cali-kind">Every move: first test → now</div>' + CALI_LADDERS.filter(l => l.kind !== 'support').map(l => {
+        const a = first && first.pos[l.id] !== undefined ? first.pos[l.id] : 0;
+        const b = c.pos[l.id] || 0;
+        const nm = i => (caliPickStep(l.steps[i], have) || l.steps[i]).name;
+        return '<div class="cali-res"><span class="cali-name">' + esc(l.name) + (b > a ? ' <span class="cali-up">+' + (b - a) + '</span>' : '') + '</span><span class="cali-sub">'
+          + (b === a ? 'Step ' + (b + 1) + ' · ' + esc(nm(b)) : 'Step ' + (a + 1) + ' ' + esc(nm(a)) + ' → step ' + (b + 1) + ' ' + esc(nm(b))) + '</span></div>';
+      }).join('');
+      if (c.log.length) {
+        html += '<div class="cali-kind">Moves</div>' + c.log.slice().reverse().map(x => {
+          const l = caliLadder(x.l);
+          if (!l) return '';
+          return '<div class="cali-res"><span class="cali-sub">' + esc(x.d) + ' · ' + esc(l.name) + ': ' + (x.to > x.from ? '⬆️ ' : '↩️ ')
+            + esc(l.steps[x.from].name) + ' → ' + esc(l.steps[x.to].name) + '</span></div>';
+        }).join('');
+      }
+      openCaliSheet('📈 My progress', html);
+    }
+
+    /* Start-here guide: what to do, in order, until all of it is set up. */
+    function caliGuideHtml(c) {
+      const steps = [
+        [c.gearSet, 'Tick your equipment', 'openCaliGear()'],
+        [!!c.tested, 'Take the level test (2 min)', 'openCaliTest()'],
+        [!!c.plan, 'Build your week: sessions on your calendar', 'openCaliPlan()'],
+        [caliSessionsDone() > 0, 'Train: the app counts clean sessions and tells you when to move up', '']
+      ];
+      if (steps.every(s => s[0])) return '';
+      const next = steps.findIndex(s => !s[0]);
+      return '<div class="card cali-guide"><div style="font-weight:800; margin-bottom:6px;">How it works</div>'
+        + '<div class="cali-sub" style="margin-bottom:8px;">Every move is a ladder from easy to elite. You train the step that fits you today; two clean sessions and you move up.</div>'
+        + steps.map((s, i) => '<div class="cali-guide-row' + (s[0] ? ' done' : i === next ? ' next' : '') + '"><span class="cali-num' + (s[0] ? ' done' : i === next ? ' here' : '') + '">' + (s[0] ? '✓' : i + 1) + '</span><span>' + esc(s[1]) + '</span>'
+          + (i === next && s[2] ? '<button class="btn btn-primary" onclick="' + s[2] + '">Go</button>' : '') + '</div>').join('') + '</div>';
+    }
+
+    function caliSessionsDone() {
+      return (state.history || []).filter(w => w && Array.isArray(w.exercises) && w.exercises.some(e => e && caliWorkoutEx(w, e) && caliFindStep(e.exId))).length;
     }
 
     /* "15 × Inverted Row" / "10 s Tuck Planche" for a [ladder, ex, count] lock. */
@@ -7139,6 +7362,8 @@
 
     function targetLineHtml(exIdx) {
       if (!showTargetsEnabled() || targetsHiddenForWorkout()) return '';
+      const caliLine = caliTargetLineHtml(exIdx); // P2-18: ladder step, aim inside its range
+      if (caliLine) return caliLine;
       const target = computeNextTarget(exIdx);
       if (!target) return '';
       const useBtn = (target.kind !== 'none' && nextTargetCanFill(exIdx))
@@ -9510,7 +9735,8 @@
       renderProfileStats();
       renderBackupReminder();
       switchTab('history', document.querySelectorAll('.nav-item')[1]);
-      if (finishedRoutineId && performedForUpdate && performedForUpdate.length > 0 &&
+      // P2-18: "My week" routines are rebuilt from the ladders, never updated from a workout.
+      if (finishedRoutineId && String(finishedRoutineId).indexOf('rt_cali_') !== 0 && performedForUpdate && performedForUpdate.length > 0 &&
           state.routines.some(r => r.id === finishedRoutineId)) {
         pendingRoutineUpdate = { routineId: finishedRoutineId, items: performedForUpdate };
         document.getElementById('routineUpdateText').textContent =
