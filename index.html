@@ -753,6 +753,8 @@
     .cali-here .btn { flex: 1; white-space: nowrap; padding: 0 8px; }
     .cali-here-info { flex: 1 0 100%; font-size: 12px; font-weight: 600; color: var(--text-sub); line-height: 1.5; }
     .cali-ready { border: 1px solid var(--primary); }
+    .cali-check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 12px; font-size: 14px; }
+    .cali-check input { width: 22px; height: 22px; }
     .cali-up { color: var(--primary); }
     .cali-here .btn { min-height: 40px; font-size: 13px; }
     .cali-test-q { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
@@ -2740,6 +2742,8 @@
       const ssrc = out.since && typeof out.since === 'object' && !Array.isArray(out.since) ? out.since : {};
       CALI_LADDERS.forEach(l => { if (typeof ssrc[l.id] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ssrc[l.id])) since[l.id] = ssrc[l.id]; });
       out.since = since;
+      if (!(out.plan && typeof out.plan === 'object' && CALI_TEMPLATES[out.plan.tpl])) delete out.plan;
+      else out.plan = { tpl: out.plan.tpl, skills: (Array.isArray(out.plan.skills) ? out.plan.skills : []).filter(s => CALI_SKILL_ORDER.indexOf(s) >= 0).slice(0, 2) };
       if (!(typeof out.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(out.start))) delete out.start;
       if (!(out.tested && typeof out.tested.date === 'string' && typeof out.tested.level === 'number')) delete out.tested;
       return out;
@@ -2820,6 +2824,16 @@
         + '<div class="cali-sub">' + (c.tested
           ? 'Your level: <b class="cali-lvl-txt lv' + c.tested.level + '">' + CALI_LEVELS[c.tested.level] + '</b> · tested ' + esc(c.tested.date)
           : '2 minutes, 7 questions. Puts you on the right step of every move.') + '</div></div>';
+      if (c.tested) {
+        const td = c.plan ? caliToday() : null;
+        html += '<div class="card cali-gear-card"><div class="cali-row"><div style="font-weight:800;">📅 My week</div>'
+          + '<button class="btn' + (c.plan ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliPlan()">' + (c.plan ? 'Change' : 'Build') + '</button></div>'
+          + '<div class="cali-sub">' + (c.plan ? esc(CALI_TEMPLATES[c.plan.tpl].name) + (c.plan.skills.length ? ' · ' + c.plan.skills.map(s => esc(caliLadder(s).name)).join(', ') : '')
+            + (td ? '<br>' + (td.today ? (td.done ? '✅ Today: ' + esc(td.name) + ' done' : '👉 Today: ' + esc(td.name)) : 'Rest today · next: ' + esc(td.name) + ' (' + esc(td.label) + ')') : '')
+            : 'Sessions for your level, gear and skills, on your calendar.') + '</div>'
+          + (td && td.today && !td.done ? '<button class="btn btn-primary btn-block" style="min-height:48px; margin-top:10px;" data-r="' + esc(td.rid) + '" onclick="startRoutineWorkout(this.dataset.r)">▶ Start today&#39;s session</button>' : '')
+          + '</div>';
+      }
       if (c.tested && caliDeloadWeek()) html += '<div class="cali-note">🪶 Light week: same steps, one set fewer. Your body builds back stronger.</div>';
       const ready = c.tested ? caliReadyList() : [];
       if (ready.length) html += '<div class="cali-note cali-ready">⬆️ Ready to move up: ' + ready.map(id => esc(caliLadder(id).name)).join(', ') + '. Open the move and tap Move up.</div>';
@@ -2900,6 +2914,7 @@
       if (!caliGearDraft) return;
       state.cali = normalizeCali(Object.assign({}, state.cali, { gear: caliGearDraft.gear, place: caliGearDraft.place, gearSet: true }));
       caliGearDraft = null;
+      caliRefreshPlan();
       saveState();
       closeModal('caliSheetModal');
       renderCaliHome();
@@ -3090,6 +3105,7 @@
         pos: pos, since: since, start: old.start || today, tested: { date: today, level: caliOverallLevel(pos) }
       }));
       caliTestDraft = null;
+      caliRefreshPlan();
       saveState();
       closeModal('caliSheetModal');
       renderCaliHome();
@@ -3104,6 +3120,7 @@
       if (n !== (c.pos[l.id] || 0)) c.since[l.id] = dayKeyLocal(Date.now());
       c.pos[l.id] = n;
       state.cali = c;
+      caliRefreshPlan();
       saveState();
       openCaliLadder(id);
       renderCaliHome();
@@ -3264,6 +3281,223 @@
         return;
       }
       go();
+    }
+
+    /* P2-18 step 5: session builder. A weekly plan is made of normal routines
+       in the "Calisthenics" folder, built from your step on every ladder and
+       your gear; with "on my calendar" the folder runs as the program (so the
+       calendars and Google Calendar follow). The routines are rebuilt each
+       time a step, the test or the gear changes. Slots: 'warm', 's1' / 's2'
+       (your skills), a ladder id, 'drop:<ladder>' (one set of the step below,
+       to failure). Straight-arm skills stay at 3 sessions a week or fewer. */
+    const CALI_FOLDER_ID = 'fd_cali';
+    const CALI_TEMPLATES = {
+      full3: { name: 'Full body · 3 days', blurb: 'Every session: a skill, push, pull, legs, core.', levels: [0, 1], days: [1, 3, 5], skills: 1, sessions: [
+        { name: 'Full body A', slots: ['warm', 's1', 'push', 'pull', 'legs', 'drop:push', 'core'] },
+        { name: 'Full body B', slots: ['warm', 's1', 'dip', 'row', 'legs', 'drop:dip', 'hang'] },
+        { name: 'Full body C', slots: ['warm', 's1', 'push', 'pull', 'legs', 'drop:pull', 'core'] }] },
+      ul4: { name: 'Upper / lower · 4 days', blurb: 'Two upper days with skill 1, two lower days with skill 2.', levels: [2], days: [1, 2, 4, 5], skills: 2, sessions: [
+        { name: 'Upper A', slots: ['warm', 's1', 'push', 'pull', 'dip', 'drop:push'] },
+        { name: 'Lower A', slots: ['warm', 's2', 'legs', 'core', 'hang'] },
+        { name: 'Upper B', slots: ['warm', 's1', 'dip', 'row', 'pull', 'drop:pull'] },
+        { name: 'Lower B', slots: ['warm', 's2', 'legs', 'hang', 'core'] }] },
+      skill4: { name: 'Skill focus · 4 days', blurb: 'Main skill 3 times a week, second skill twice; strength keeps the base.', levels: [3, 4], days: [1, 2, 4, 5], skills: 2, sessions: [
+        { name: 'Skill day 1', slots: ['warm', 's1', 's2', 'push', 'pull', 'core'] },
+        { name: 'Skill day 2', slots: ['warm', 's1', 'legs', 'dip', 'hang'] },
+        { name: 'Skill day 3', slots: ['warm', 's2', 'row', 'push', 'core'] },
+        { name: 'Skill day 4', slots: ['warm', 's1', 'pull', 'legs', 'drop:pull'] }] }
+    };
+    const CALI_SKILL_ORDER = ['handstand', 'lsit', 'hspu', 'frontlever', 'muscleup', 'backlever', 'planche', 'flag', 'dragon'];
+
+    function caliTemplateFor(level) {
+      return Object.keys(CALI_TEMPLATES).find(k => CALI_TEMPLATES[k].levels.indexOf(level) >= 0) || 'full3';
+    }
+
+    /* A skill ladder you can train now: its locks are open and your step fits your gear. */
+    function caliSkillOpen(id) {
+      const l = caliLadder(id);
+      if (!l || l.kind !== 'skill') return false;
+      const c = normalizeCali(state.cali);
+      // Placed past step 1 (level test or moved up) = the locks are behind you.
+      if (!(c.pos[l.id] > 0) && !(l.gate || []).every(caliNeedMet)) return false;
+      return !!caliPickStep(l.steps[c.pos[l.id] || 0], c.gear);
+    }
+
+    function caliDefaultSkills(tpl) {
+      return CALI_SKILL_ORDER.filter(caliSkillOpen).slice(0, CALI_TEMPLATES[tpl].skills);
+    }
+
+    /* Routine items for one slot. */
+    function caliSlotItems(slot, skills) {
+      const c = normalizeCali(state.cali);
+      if (slot === 'warm') {
+        return ['cx_wrist_prep', 'cx_shoulder_dislocate'].map(ex => ({ exId: ex, sets: 1, targetRepsMin: 10, targetRepsMax: 15, restSec: 30, note: 'Warm-up' }));
+      }
+      let id = slot;
+      let drop = false;
+      if (slot === 's1' || slot === 's2') id = skills[slot === 's1' ? 0 : 1];
+      if (slot.indexOf('drop:') === 0) { id = slot.slice(5); drop = true; }
+      const l = caliLadder(id);
+      if (!l) return [];
+      const i = (c.pos[l.id] || 0) - (drop ? 1 : 0);
+      if (i < 0) return [];
+      const st = l.steps[i];
+      const pick = caliPickStep(st, c.gear);
+      if (!pick) return [];
+      // A slow negative or a hold is no finisher: skip it.
+      if (drop) return st.tempo || st.hold ? [] : [{ exId: pick.ex, sets: 1, restSec: 60, note: 'Finisher: one set to failure, clean form' }];
+      const role = l.kind === 'skill' ? 'Skill, fresh, full rest' : (id === 'core' || id === 'hang') ? 'Core' : 'Strength';
+      const range = st.lo === st.hi ? String(st.lo) : st.lo + '-' + st.hi;
+      const item = {
+        exId: pick.ex, sets: st.sets,
+        restSec: l.kind === 'skill' ? 150 : role === 'Core' ? 60 : 90,
+        note: role + ' · ' + range + (st.hold ? ' s' : '') + (st.perSide ? ' each side' : '') + (st.tempo ? ' · ' + st.tempo : '')
+      };
+      if (st.hold) item.targetDurationSec = st.lo;
+      else { item.targetRepsMin = st.lo; item.targetRepsMax = st.hi; }
+      return [item];
+    }
+
+    /* [{ name, items }] for a template and skills, from your steps today. */
+    function caliBuildSessions(tpl, skills) {
+      const t = CALI_TEMPLATES[tpl] || CALI_TEMPLATES.full3;
+      return t.sessions.map(s => {
+        const items = [];
+        s.slots.forEach(slot => caliSlotItems(slot, skills || []).forEach(it => {
+          if (!items.some(x => x.exId === it.exId && x.note === it.note)) items.push(normalizeRoutineItem(it));
+        }));
+        return { name: s.name, items: items };
+      });
+    }
+
+    function caliPlanRoutineId(tpl, i) { return 'rt_cali_' + tpl + '_' + (i + 1); }
+
+    /* Make (or remake) the plan's routines; with sched, run the folder as the program. */
+    function caliApplyPlan(plan, sched) {
+      const sessions = caliBuildSessions(plan.tpl, plan.skills);
+      ensureFolders();
+      let f = findFolder(CALI_FOLDER_ID);
+      if (!f) {
+        state.folders.push({ id: CALI_FOLDER_ID, name: '🤸 Calisthenics', archived: false, collapsed: false });
+        f = findFolder(CALI_FOLDER_ID);
+      }
+      f.archived = false;
+      const keep = sessions.map((s, i) => caliPlanRoutineId(plan.tpl, i));
+      state.routines = state.routines.filter(rt => !(rt && String(rt.id).indexOf('rt_cali_') === 0 && keep.indexOf(rt.id) < 0));
+      sessions.forEach((s, i) => {
+        const id = keep[i];
+        let rt = state.routines.find(r => r.id === id);
+        if (!rt) { rt = { id: id, name: s.name, folderId: CALI_FOLDER_ID, exercises: [] }; state.routines.push(rt); }
+        rt.name = s.name;
+        rt.folderId = CALI_FOLDER_ID;
+        rt.archived = false;
+        rt.exercises = s.items;
+      });
+      if (sched) {
+        const days = {};
+        keep.forEach((id, i) => { days[id] = CALI_TEMPLATES[plan.tpl].days[i]; });
+        saveProgramSetup(CALI_FOLDER_ID, true, { start: todayPlanKey(), length: 7, days: days });
+      } else if (f.program) {
+        Object.keys(f.program.days).forEach(k => { if (keep.indexOf(k) < 0) delete f.program.days[k]; });
+      }
+      state.cali = normalizeCali(Object.assign({}, state.cali, { plan: { tpl: plan.tpl, skills: plan.skills.slice() } }));
+      saveState();
+      try { renderRoutines(); } catch (e) {}
+      return keep;
+    }
+
+    /* Steps, test or gear changed: rebuild the routines, keep the schedule. */
+    function caliRefreshPlan() {
+      const c = normalizeCali(state.cali);
+      if (!c.plan) return;
+      const skills = c.plan.skills.filter(caliSkillOpen);
+      caliApplyPlan({ tpl: c.plan.tpl, skills: skills.length ? skills : caliDefaultSkills(c.plan.tpl) }, false);
+    }
+
+    /* Today's planned session: { rid, name, done } or the next one, or null. */
+    function caliToday() {
+      const f = findFolder(CALI_FOLDER_ID);
+      if (!f || !f.program) return null;
+      const prog = f.program;
+      const today = todayPlanKey();
+      const idx = programDayIndex(prog, today);
+      const rts = Object.keys(prog.days).map(rid => ({ rid: rid, day: prog.days[rid], rt: state.routines.find(r => r.id === rid) })).filter(x => x.rt);
+      const now = rts.find(x => x.day === idx);
+      if (now) return { rid: now.rid, name: now.rt.name, today: true, done: programItemStatus(prog, now.rt, today) === 'done' };
+      const next = rts.filter(x => x.day > idx).sort((a, b) => a.day - b.day)[0];
+      return next ? { rid: next.rid, name: next.rt.name, today: false, label: programDayLabel(prog, next.day) } : null;
+    }
+
+    let caliPlanDraft = null;
+
+    function openCaliPlan() {
+      const c = normalizeCali(state.cali);
+      const tpl = c.plan ? c.plan.tpl : caliTemplateFor(c.tested ? c.tested.level : 0);
+      caliPlanDraft = { tpl: tpl, skills: c.plan ? c.plan.skills.filter(caliSkillOpen) : caliDefaultSkills(tpl), sched: true };
+      if (!caliPlanDraft.skills.length) caliPlanDraft.skills = caliDefaultSkills(tpl);
+      renderCaliPlan();
+      document.getElementById('caliSheetModal').classList.add('open');
+    }
+
+    function renderCaliPlan() {
+      const d = caliPlanDraft;
+      const c = normalizeCali(state.cali);
+      const rec = caliTemplateFor(c.tested ? c.tested.level : 0);
+      const t = CALI_TEMPLATES[d.tpl];
+      let html = '<div class="cali-sub" style="margin-bottom:8px;">Plan</div>'
+        + Object.keys(CALI_TEMPLATES).map(k => '<button class="cali-gear' + (d.tpl === k ? ' on' : '') + '" data-k="' + k + '" onclick="caliPlanTpl(this.dataset.k)"><span><b>'
+          + esc(CALI_TEMPLATES[k].name) + '</b>' + (k === rec ? ' <small class="cali-up">for your level</small>' : '') + '<br><small>' + esc(CALI_TEMPLATES[k].blurb) + '</small></span><span class="cali-tick">' + (d.tpl === k ? '✓' : '') + '</span></button>').join('');
+      html += '<div class="cali-sub" style="margin:12px 0 8px;">' + (t.skills === 1 ? 'Your skill' : 'Your 2 skills (the first is the main one)') + '</div><div class="cali-places">'
+        + CALI_SKILL_ORDER.map(id => {
+          const open = caliSkillOpen(id);
+          const k = d.skills.indexOf(id);
+          return '<button class="chip' + (k >= 0 ? ' on' : '') + '" data-id="' + id + '" onclick="caliPlanSkill(this.dataset.id)"' + (open ? '' : ' disabled') + '>'
+            + (open ? (k >= 0 ? (t.skills > 1 ? (k + 1) + ' · ' : '✓ ') : '') : '🔒 ') + esc(caliLadder(id).name) + '</button>';
+        }).join('') + '</div>';
+      if (!CALI_SKILL_ORDER.some(caliSkillOpen)) html += '<div class="cali-sub" style="margin-top:6px;">Skills open as your strength steps go up (see 🔒 on each move).</div>';
+      html += '<div class="cali-sub" style="margin:14px 0 6px;">Your week</div>'
+        + caliBuildSessions(d.tpl, d.skills).map((s, i) => '<div class="cali-res"><span class="cali-name">' + esc(s.name) + ' <small class="cali-sub">' + esc(programDayLabel({ start: todayPlanKey(), length: 7 }, t.days[i]).replace(/^Day \d+ · /, '')) + '</small></span><span class="cali-sub">'
+          + s.items.filter(it => it.note !== 'Warm-up').map(it => esc(caliExName(it.exId))).join(' · ') + '</span></div>').join('');
+      const other = otherRunningProgram(CALI_FOLDER_ID);
+      html += '<label class="cali-check"><input type="checkbox" id="caliPlanSched"' + (d.sched ? ' checked' : '') + ' onchange="caliPlanDraft.sched = this.checked; renderCaliPlan()"> Put it on my calendar, starting today</label>';
+      if (d.sched && other) html += '<div class="cali-note">⚠️ One program at a time: this stops "' + esc(other.name) + '". Its days are kept; you can switch it back on later.</div>';
+      html += '<button class="btn btn-primary btn-block cali-test-next" onclick="saveCaliPlan()">' + (c.plan ? 'Update my week' : 'Build my week') + '</button>';
+      document.getElementById('caliSheetTitle').textContent = '📅 My week';
+      document.getElementById('caliSheetBody').innerHTML = html;
+    }
+
+    function caliExName(id) {
+      const e = (state.exercises || []).find(x => x.id === id) || DEFAULT_EXERCISES.find(x => x.id === id);
+      return e ? e.name : id;
+    }
+
+    function caliPlanTpl(k) {
+      if (!caliPlanDraft || !CALI_TEMPLATES[k]) return;
+      caliPlanDraft.tpl = k;
+      const n = CALI_TEMPLATES[k].skills;
+      caliPlanDraft.skills = caliPlanDraft.skills.slice(0, n);
+      caliDefaultSkills(k).forEach(s => { if (caliPlanDraft.skills.length < n && caliPlanDraft.skills.indexOf(s) < 0) caliPlanDraft.skills.push(s); });
+      renderCaliPlan();
+    }
+
+    function caliPlanSkill(id) {
+      if (!caliPlanDraft || !caliSkillOpen(id)) return;
+      const s = caliPlanDraft.skills;
+      const i = s.indexOf(id);
+      if (i >= 0) s.splice(i, 1);
+      else {
+        s.push(id);
+        while (s.length > CALI_TEMPLATES[caliPlanDraft.tpl].skills) s.shift();
+      }
+      renderCaliPlan();
+    }
+
+    function saveCaliPlan() {
+      if (!caliPlanDraft) return;
+      caliApplyPlan({ tpl: caliPlanDraft.tpl, skills: caliPlanDraft.skills }, caliPlanDraft.sched);
+      caliPlanDraft = null;
+      closeModal('caliSheetModal');
+      renderCaliHome();
     }
 
     /* "15 × Inverted Row" / "10 s Tuck Planche" for a [ladder, ex, count] lock. */

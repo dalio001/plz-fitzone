@@ -352,6 +352,8 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   CALI_TEST, CALI_TEST_SKILLS, caliPlaceFromTest, caliOverallLevel, caliMoveStep, openCaliTest, caliTestSetNum,
   caliTestNext, caliTestPick, caliTestSkill, saveCaliTest, renderCaliHome,
   caliJudge, caliSessions, caliLadderStatus, caliNeedMet, caliDeloadWeek, caliReadyList, caliAddStep, caliTrain,
+  CALI_TEMPLATES, CALI_FOLDER_ID, caliTemplateFor, caliSkillOpen, caliDefaultSkills, caliBuildSessions, caliApplyPlan,
+  caliRefreshPlan, caliToday, openCaliPlan, caliPlanTpl, saveCaliPlan,
   ROUTINE_IMPORT, validateRoutineImport, formatRoutineImportErrors,
   decodeRoutineImportHash, renderRoutineImportPreview,
   openRoutineImport, previewRoutineImportText, routineFileChosen,

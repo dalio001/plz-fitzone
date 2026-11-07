@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-07 — Calisthenics weekly plan (P2-18 step 5), in progress
+
+- Owner: "Go" (step 5). Calisthenics screen: "My week" card. Pick a plan (Full body 3 days for Foundation/Beginner, Upper/lower 4 days for Intermediate, Skill focus 4 days for Advanced/Elite; the one for your level is marked) and 1-2 skills (locked skills shown with 🔒; a skill you were placed into counts as open).
+- Builds normal routines in a "🤸 Calisthenics" folder from your step on every ladder and your gear: warm-up (wrists, shoulders), skill (full rest), 3 strength ladders with their ranges, a drop-down finisher (never a negative or a hold), core. Straight-arm skills at most 3 times a week. "On my calendar" runs the folder as the program (one program at a time, with a warning naming the one it stops), so the calendars and Google Calendar follow. Routines are rebuilt when a step, the test or the gear changes; the schedule stays. "Start today's session" on the card.
+- Checks: tests/p2_18_cali_sessions.test.mjs; 549 tests pass. In the app: Build → Full body A/B/C on days 1/3/5 → Start today's session opens Full body A with Wrist Warm-Up … Hollow Body Hold.
+
 ## 2026-11-07 — Calisthenics progression engine (P2-18 step 4), in progress
 
 - Owner: "GO" (step 4). Reads saved workouts, nothing extra to log. A clean session = the step's sets all at the top of the range (normal sets; your gear's alternative counts, band/weighted versions do not). Two clean sessions on different days since you reached the step = "Ready": home banner, card badge, "Move up" button, and a "Ready for the next step" sheet right after Finish. Never moves you by itself.
