@@ -762,6 +762,12 @@
     .cali-emom-card { width: 100%; max-width: 420px; background: var(--bg-card, #1e293b); border-radius: 16px; padding: 18px; text-align: center; }
     .cali-emom-min { font-size: 16px; font-weight: 800; margin-top: 14px; color: var(--primary); }
     .cali-emom-clock { font-size: 64px; font-weight: 900; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
+    .cali-goal { margin-top: 10px; padding: 12px; }
+    .cali-goal-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .cali-goal-row > .cali-sub { width: 70px; flex: 0 0 auto; }
+    .cali-goal-row .chip { min-height: 40px; }
+    .cali-goal-line { padding: 8px 0; border-top: 1px solid var(--border); margin-top: 8px; font-size: 14px; }
+    .cali-ask { width: 100%; max-width: 100%; min-height: 64px; resize: vertical; font: inherit; }
     .cali-check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 12px; font-size: 14px; }
     .cali-check input { width: 22px; height: 22px; }
     .cali-up { color: var(--primary); }
@@ -2754,6 +2760,7 @@
       out.tests = (Array.isArray(out.tests) ? out.tests : []).filter(t => t && typeof t.date === 'string' && typeof t.level === 'number' && t.pos && typeof t.pos === 'object').slice(-50);
       out.log = (Array.isArray(out.log) ? out.log : []).filter(x => x && caliLadder(x.l) && Number.isInteger(x.from) && Number.isInteger(x.to)
         && x.from >= 0 && x.to >= 0 && x.from < caliLadder(x.l).steps.length && x.to < caliLadder(x.l).steps.length).slice(-300);
+      out.goals = normalizeCaliGoals(out.goals);
       if (!(out.plan && typeof out.plan === 'object' && CALI_TEMPLATES[out.plan.tpl])) delete out.plan;
       else out.plan = { tpl: out.plan.tpl, skills: (Array.isArray(out.plan.skills) ? out.plan.skills : []).filter(s => CALI_SKILL_ORDER.indexOf(s) >= 0).slice(0, 2) };
       if (!(typeof out.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(out.start))) delete out.start;
@@ -2856,12 +2863,26 @@
           + (td && td.today && !td.done ? '<button class="btn btn-primary btn-block" style="min-height:48px; margin-top:10px;" data-r="' + esc(td.rid) + '" onclick="startRoutineWorkout(this.dataset.r)">▶ Start today&#39;s session</button>' : '')
           + '</div>';
       }
+      let goalCard = '';
+      if (c.tested) {
+        const gs = normalizeCali(c).goals;
+        goalCard = '<div class="card cali-gear-card"><div class="cali-row"><div style="font-weight:800;">🎯 My skills</div>'
+          + '<button class="btn' + (gs.length ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliGoals()">' + (gs.length ? 'Change' : 'Pick') + '</button></div>'
+          + (gs.length ? gs.map(g => {
+            const s = caliLadderStatus(g.skill);
+            return '<div class="cali-goal-line"><b>' + esc(caliLadder(g.skill).name) + '</b> · ' + g.per + '× a week · ' + esc(caliGoalWhereText(g))
+              + '<br><span class="cali-sub">Step ' + (s.index + 1) + ': ' + esc((caliPickStep(s.step, have) || s.step).name) + ' · ' + (s.ready ? '⬆️ ready to move up' : 'clean sessions ' + s.passes + ' of 2') + '</span></div>';
+          }).join('') : '<div class="cali-sub">Choose skills to develop: the coach adds them to your gym days or gives them their own day.</div>')
+          + '</div>';
+      }
       let notes = '';
       if (c.tested && caliDeloadWeek()) notes += '<div class="cali-note">🪶 Light week: same steps, one set fewer. Your body builds back stronger.</div>';
       const ready = c.tested ? caliReadyList() : [];
       if (ready.length) notes += '<div class="cali-note cali-ready">⬆️ Ready to move up: ' + ready.map(id => esc(caliLadder(id).name)).join(', ') + '. Open the move and tap Move up.</div>';
       // Once the week is built, today's session leads; setting up comes last.
-      let html = caliGuideHtml(c) + (c.plan ? weekCard + notes + progCard + testCard + gearCard : gearCard + testCard + weekCard + notes + progCard);
+      const planned = c.plan || normalizeCali(c).goals.length;
+      let html = caliGuideHtml(c) + (planned ? goalCard + (c.plan ? weekCard : '') + notes + progCard + testCard + gearCard + (c.plan ? '' : weekCard)
+        : gearCard + testCard + goalCard + weekCard + notes + progCard);
       ['base', 'skill', 'support'].forEach(kind => {
         const ls = CALI_LADDERS.filter(l => l.kind === kind);
         if (!ls.length) return;
@@ -3422,6 +3443,7 @@
     /* Steps, test or gear changed: rebuild the routines, keep the schedule. */
     function caliRefreshPlan() {
       const c = normalizeCali(state.cali);
+      if (c.goals.length) caliApplyGoals(c.goals, true);
       if (!c.plan) return;
       const skills = c.plan.skills.filter(caliSkillOpen);
       caliApplyPlan({ tpl: c.plan.tpl, skills: skills.length ? skills : caliDefaultSkills(c.plan.tpl) }, false);
@@ -3523,7 +3545,7 @@
        pull-ups keep the gym target line. */
     function caliWorkoutEx(w, ex) {
       if (!w || !ex) return false;
-      return String(ex.exId).indexOf('cx_') === 0 || ex.cali === true
+      return String(ex.exId).indexOf('cx_') === 0 || ex.cali === true || String(ex.note || '').indexOf('🤸 ') === 0
         || String(w.routineId || '').indexOf('rt_cali_') === 0 || w.title === 'Calisthenics';
     }
 
@@ -3708,7 +3730,7 @@
       const steps = [
         [c.gearSet, 'Tick your equipment', 'openCaliGear()'],
         [!!c.tested, 'Take the level test (2 min)', 'openCaliTest()'],
-        [!!c.plan, 'Build your week: sessions on your calendar', 'openCaliPlan()'],
+        [!!c.plan || c.goals.length > 0, 'Pick your skills (on your gym days or their own days), or build a full-body week', 'openCaliGoals()'],
         [caliSessionsDone() > 0, 'Train: the app counts clean sessions and tells you when to move up', '']
       ];
       if (steps.every(s => s[0])) return '';
@@ -3721,6 +3743,378 @@
 
     function caliSessionsDone() {
       return (state.history || []).filter(w => w && Array.isArray(w.exercises) && w.exercises.some(e => e && caliWorkoutEx(w, e) && caliFindStep(e.exId))).length;
+    }
+
+    /* P2-19 skill goals: the coaching brain. You pick skills; for each, how
+       many sessions a week and where: a block at the start of one of your gym
+       workouts (the coach picks the gym days that train the same muscles),
+       its own focus day, or inside the full-body calisthenics plan. Rules:
+       - fit: handstand and HSPU with shoulder / push days, front lever,
+         back lever, muscle-up and flag with back / pull days, planche with
+         chest / push days, L-sit and dragon flag with any day (core);
+       - straight-arm skills (levers, planche, flag) at most 3 a week and
+         never on two days in a row;
+       - a gym block goes first (fresh): skill warm-up + the skill step;
+       - a focus day: warm-up, the skill with one extra set, its two support
+         ladders, core;
+       - locked skills are not offered (their lock shows what comes first).
+       Items the coach adds carry a note starting with "🤸 " so they can be
+       rebuilt when a step changes and removed when a goal is dropped. */
+    const CALI_COACH = {
+      handstand: { fit: { Shoulders: 3, Triceps: 1, Chest: 1 }, prep: ['cx_wrist_prep'], support: ['hspu', 'core'], words: 'HS, handstand balance', pairs: 'shoulder or push days' },
+      hspu: { fit: { Shoulders: 3, Triceps: 2, Chest: 1 }, prep: ['cx_wrist_prep'], support: ['dip', 'push'], words: 'handstand push-up, HSPU, pike push-up', pairs: 'shoulder or push days' },
+      planche: { straight: true, fit: { Chest: 3, Shoulders: 2, Triceps: 1 }, prep: ['cx_wrist_prep', 'cx_scap_pushup'], support: ['push', 'dip'], words: 'planche lean, tuck planche', pairs: 'chest or push days' },
+      frontlever: { straight: true, fit: { Back: 3, Biceps: 1, Core: 1 }, prep: ['cx_scap_pullup'], support: ['row', 'hang'], words: 'front lever, FL', pairs: 'back or pull days' },
+      backlever: { straight: true, fit: { Back: 2, Chest: 1, Biceps: 1, Shoulders: 1 }, prep: ['cx_shoulder_dislocate'], support: ['pull', 'dip'], words: 'back lever, BL, skin the cat', pairs: 'back or pull days' },
+      muscleup: { fit: { Back: 3, Triceps: 1, Chest: 1 }, prep: ['cx_scap_pullup'], support: ['pull', 'dip'], words: 'muscle up, MU', pairs: 'back or pull days' },
+      flag: { straight: true, fit: { Back: 2, Core: 2, Shoulders: 1 }, prep: ['cx_shoulder_dislocate'], support: ['pull', 'core'], words: 'human flag, flag', pairs: 'back or pull days' },
+      lsit: { fit: { Core: 3, Triceps: 1, Quads: 1 }, prep: ['cx_wrist_prep'], support: ['core', 'hang'], words: 'L-sit, V-sit, manna', pairs: 'any day' },
+      dragon: { fit: { Core: 3, Back: 1 }, prep: [], support: ['core', 'hang'], words: 'dragon flag', pairs: 'any day' }
+    };
+    const CALI_GOAL_WHERE = { gym: 'Gym day', focus: 'Own day', full: 'Full-body plan' };
+    const CALI_SKILL_MARK = '🤸 ';
+
+    function normalizeCaliGoals(list) {
+      const out = [];
+      (Array.isArray(list) ? list : []).forEach(g => {
+        if (!g || !CALI_COACH[g.skill] || out.some(x => x.skill === g.skill)) return;
+        const per = Math.max(1, Math.min(3, parseInt(g.per, 10) || 1));
+        const where = CALI_GOAL_WHERE[g.where] ? g.where : 'focus';
+        const routines = (Array.isArray(g.routines) ? g.routines : []).filter(r => typeof r === 'string').slice(0, per);
+        out.push({ skill: g.skill, per: per, where: where, routines: routines });
+      });
+      return out.slice(0, 6);
+    }
+
+    /* Your own gym workouts (not the coach's sessions), visible ones only. */
+    function caliGymRoutines() {
+      return (state.routines || []).filter(rt => rt && !isRoutineHidden(rt) && String(rt.id).indexOf('rt_cali_') !== 0
+        && String(rt.id).indexOf('rt_cskill_') !== 0 && Array.isArray(rt.exercises) && rt.exercises.length);
+    }
+
+    /* Primary muscles a gym workout trains: { Chest: 3, Triceps: 1 }. */
+    function caliRoutineMuscles(rt) {
+      const m = {};
+      (rt.exercises || []).forEach(it => {
+        if (String(it.note || '').indexOf(CALI_SKILL_MARK) === 0) return;
+        const ex = (state.exercises || []).find(e => e.id === it.exId);
+        if (!ex) return;
+        const p = exPrimary(ex);
+        m[p] = (m[p] || 0) + 1;
+      });
+      return m;
+    }
+
+    function caliMusclesText(rt) {
+      const m = caliRoutineMuscles(rt);
+      return Object.keys(m).sort((a, b) => m[b] - m[a]).slice(0, 3).join(', ');
+    }
+
+    /* How well a skill belongs with a gym workout (0 = not at all). */
+    function caliRoutineFit(skill, rt) {
+      const fit = CALI_COACH[skill].fit;
+      const m = caliRoutineMuscles(rt);
+      const total = Object.keys(m).reduce((s, k) => s + m[k], 0) || 1;
+      return Object.keys(m).reduce((s, k) => s + (fit[k] || 0) * m[k], 0) / total;
+    }
+
+    /* The day (1..length) a routine has in the running program, or 0. */
+    function caliRoutineDay(rid) {
+      const f = programFolderOf(rid);
+      return f && f.program && f.program.days[rid] ? f.program.days[rid] : 0;
+    }
+
+    /* Best gym workouts for a skill: highest fit first, days apart for
+       straight-arm skills. Keeps your own picks. */
+    function caliPickGymDays(goal) {
+      const rts = caliGymRoutines();
+      const chosen = goal.routines.filter(id => rts.some(r => r.id === id));
+      const ranked = rts.filter(r => chosen.indexOf(r.id) < 0).map(r => ({ r: r, fit: caliRoutineFit(goal.skill, r) }))
+        .sort((a, b) => b.fit - a.fit);
+      for (const x of ranked) {
+        if (chosen.length >= goal.per) break;
+        const d = caliRoutineDay(x.r.id);
+        if (CALI_COACH[goal.skill].straight && d && chosen.some(id => Math.abs(caliRoutineDay(id) - d) <= 1 && caliRoutineDay(id))) continue;
+        chosen.push(x.r.id);
+      }
+      for (const x of ranked) { if (chosen.length >= goal.per) break; if (chosen.indexOf(x.r.id) < 0) chosen.push(x.r.id); }
+      return chosen.slice(0, goal.per);
+    }
+
+    /* Coach notes for a set of goals: why each pick, and what is too much. */
+    function caliCoachNotes(goals) {
+      const notes = [];
+      const rts = caliGymRoutines();
+      if (goals.length > 3) notes.push('⚠️ ' + goals.length + ' skills at once: progress is faster with 2 or 3. Keep the others for the next block.');
+      goals.forEach(g => {
+        const sk = CALI_COACH[g.skill];
+        const nm = caliLadder(g.skill).name;
+        if (sk.straight && g.per > 3) notes.push('⚠️ ' + nm + ': 3 sessions a week at most.');
+        if (g.where === 'gym') {
+          if (!rts.length) notes.push('⚠️ ' + nm + ': you have no gym workouts yet; it gets its own day.');
+          g.routines.forEach(id => {
+            const rt = rts.find(r => r.id === id);
+            if (!rt) return;
+            const fit = caliRoutineFit(g.skill, rt);
+            notes.push((fit >= 1.5 ? '✅ ' : fit >= 0.7 ? '🆗 ' : '⚠️ ') + nm + ' on ' + rt.name + (fit >= 1.5 ? ': same muscles, it belongs there.' : fit >= 0.7 ? ': works.' : ': different muscles; ' + sk.pairs + ' suit it better.'));
+          });
+          const days = g.routines.map(caliRoutineDay).filter(Boolean).sort((a, b) => a - b);
+          if (sk.straight && days.some((d, i) => i && d - days[i - 1] <= 1)) notes.push('⚠️ ' + nm + ' on two days in a row: tendons need a day off between straight-arm sessions.');
+        }
+        if (g.where === 'full' && !normalizeCali(state.cali).plan) notes.push('⚠️ ' + nm + ': build the full-body plan first (My week), or pick Own day.');
+      });
+      return notes;
+    }
+
+    /* Items of a skill block. mode 'gym' = warm-up + skill; 'focus' = full session. */
+    function caliSkillItems(skill, mode) {
+      const c = normalizeCali(state.cali);
+      const sk = CALI_COACH[skill];
+      const l = caliLadder(skill);
+      const nm = l.name;
+      const items = sk.prep.map(ex => ({ exId: ex, sets: 1, targetRepsMin: 10, targetRepsMax: 15, restSec: 30, note: CALI_SKILL_MARK + nm + ' warm-up' }));
+      const add = (lid, role, extraSet) => {
+        const ll = caliLadder(lid);
+        const st = ll.steps[c.pos[ll.id] || 0];
+        const pick = caliPickStep(st, c.gear);
+        if (!pick || items.some(x => x.exId === pick.ex)) return;
+        const it = { exId: pick.ex, sets: st.sets + (extraSet ? 1 : 0), restSec: ll.kind === 'skill' ? 150 : 90,
+          note: CALI_SKILL_MARK + nm + ' · ' + role + ' · ' + st.lo + '-' + st.hi + (st.hold ? ' s' : '') + (st.perSide ? ' each side' : '') };
+        if (st.hold) it.targetDurationSec = st.lo; else { it.targetRepsMin = st.lo; it.targetRepsMax = st.hi; }
+        items.push(it);
+      };
+      add(skill, 'skill', mode === 'focus');
+      if (mode === 'focus') {
+        sk.support.forEach(lid => add(lid, 'support', false));
+        if (sk.support.indexOf('core') < 0 && skill !== 'lsit' && skill !== 'dragon') add('core', 'core', false);
+      }
+      return items.map(normalizeRoutineItem);
+    }
+
+    /* A free day in a program for a focus session: not taken, and for
+       straight-arm skills not next to another day of the same skill. */
+    function caliFreeDay(prog, avoid) {
+      const used = Object.keys(prog.days).map(k => prog.days[k]);
+      const ok = d => used.indexOf(d) < 0 && !(avoid || []).some(a => Math.abs(a - d) <= 1);
+      for (let d = 1; d <= prog.length; d++) if (ok(d)) return d;
+      for (let d = 1; d <= prog.length; d++) if (used.indexOf(d) < 0) return d;
+      return prog.length;
+    }
+
+    /* Put the goals into your week: blocks into gym workouts, focus
+       routines into the running program (a free day), skills into the
+       full-body plan. Removes what the coach added before. */
+    function caliApplyGoals(goals, keepDays) {
+      goals = normalizeCaliGoals(goals);
+      ensureFolders();
+      (state.routines || []).forEach(rt => {
+        if (rt && Array.isArray(rt.exercises)) rt.exercises = rt.exercises.filter(it => String(it.note || '').indexOf(CALI_SKILL_MARK) !== 0);
+      });
+      const oldDays = {};
+      ensureFolders().forEach(f => { if (f.program) Object.keys(f.program.days).forEach(k => { if (k.indexOf('rt_cskill_') === 0) oldDays[k] = f.program.days[k]; }); });
+      const wantFocus = [];
+      goals.forEach(g => {
+        if (!caliSkillOpen(g.skill)) return;
+        if (g.where === 'gym' && caliGymRoutines().length) {
+          g.routines = caliPickGymDays(g);
+          g.routines.forEach(id => {
+            const rt = state.routines.find(r => r.id === id);
+            if (rt) rt.exercises = caliSkillItems(g.skill, 'gym').concat(rt.exercises);
+          });
+        } else if (g.where === 'full' && normalizeCali(state.cali).plan) {
+          // handled with the plan below
+        } else {
+          for (let n = 1; n <= g.per; n++) wantFocus.push({ id: 'rt_cskill_' + g.skill + '_' + n, skill: g.skill, n: n, per: g.per });
+        }
+      });
+      // Focus routines: in the running program's folder (your gym program), else the Calisthenics folder.
+      const running = ensureFolders().find(f => f && !f.archived && f.program) || null;
+      let host = running;
+      if (!host) {
+        if (!findFolder(CALI_FOLDER_ID)) state.folders.push({ id: CALI_FOLDER_ID, name: '🤸 Calisthenics', archived: false, collapsed: false });
+        host = findFolder(CALI_FOLDER_ID);
+      }
+      state.routines = state.routines.filter(rt => !(String(rt.id).indexOf('rt_cskill_') === 0 && !wantFocus.some(w => w.id === rt.id)));
+      ensureFolders().forEach(f => { if (f.program) Object.keys(f.program.days).forEach(k => { if (k.indexOf('rt_cskill_') === 0 && !wantFocus.some(w => w.id === k)) delete f.program.days[k]; }); });
+      wantFocus.forEach(w => {
+        let rt = state.routines.find(r => r.id === w.id);
+        const name = caliLadder(w.skill).name + ' focus' + (w.per > 1 ? ' ' + w.n : '');
+        if (!rt) { rt = { id: w.id, name: name, folderId: host.id, exercises: [] }; state.routines.push(rt); }
+        rt.name = name;
+        rt.archived = false;
+        rt.exercises = caliSkillItems(w.skill, 'focus');
+        rt.folderId = host.id;
+      });
+      if (!running && wantFocus.length) {
+        const f = findFolder(CALI_FOLDER_ID);
+        if (!f.program) saveProgramSetup(CALI_FOLDER_ID, true, { start: todayPlanKey(), length: 7, days: {} });
+      }
+      const prog = (findFolder(host.id) || {}).program;
+      if (prog) {
+        wantFocus.forEach(w => {
+          if (prog.days[w.id]) return;
+          if (keepDays && oldDays[w.id] && oldDays[w.id] <= prog.length) { prog.days[w.id] = oldDays[w.id]; return; }
+          const same = CALI_COACH[w.skill].straight ? Object.keys(prog.days).filter(k => k.indexOf('rt_cskill_' + w.skill + '_') === 0).map(k => prog.days[k]) : [];
+          const gymSame = goals.filter(g => g.skill === w.skill && g.where === 'gym').reduce((a, g) => a.concat(g.routines.map(caliRoutineDay).filter(Boolean)), []);
+          prog.days[w.id] = caliFreeDay(prog, same.concat(gymSame));
+        });
+      }
+      const c = normalizeCali(state.cali);
+      const fullSkills = goals.filter(g => g.where === 'full').map(g => g.skill).slice(0, 2);
+      state.cali = normalizeCali(Object.assign({}, c, { goals: goals }));
+      if (c.plan && fullSkills.length) caliApplyPlan({ tpl: c.plan.tpl, skills: fullSkills }, false);
+      saveState();
+      try { renderRoutines(); } catch (e) {}
+      try { renderTrainingCalendar(); } catch (e) {}
+      return goals;
+    }
+
+    /* Where each goal lands, for the home card and the sheet. */
+    function caliGoalWhereText(g) {
+      if (g.where === 'gym') {
+        const names = g.routines.map(id => (state.routines.find(r => r.id === id) || {}).name).filter(Boolean);
+        return names.length ? 'on ' + names.join(', ') : 'on a gym day';
+      }
+      if (g.where === 'full') return 'in the full-body plan';
+      return g.per > 1 ? 'own days' : 'own day';
+    }
+
+    /* ---- Sheet ---- */
+    let caliGoalDraft = null;
+
+    function openCaliGoals() {
+      const c = normalizeCali(state.cali);
+      caliGoalDraft = { goals: JSON.parse(JSON.stringify(c.goals)), ask: '', heard: '' };
+      renderCaliGoals();
+      document.getElementById('caliSheetModal').classList.add('open');
+    }
+
+    function caliGoalFill(g) {
+      if (g.where === 'gym' && caliGymRoutines().length) g.routines = caliPickGymDays(g);
+      else g.routines = [];
+      return g;
+    }
+
+    function renderCaliGoals() {
+      const d = caliGoalDraft;
+      if (!d) return;
+      const rts = caliGymRoutines();
+      const c = normalizeCali(state.cali);
+      let html = '';
+      if (isAiPaired()) {
+        html += '<div class="cali-sub" style="margin-bottom:6px;">Tell the coach (or tap below)</div>'
+          + '<textarea id="caliAskText" class="input-field cali-ask" rows="2" maxlength="600" placeholder="Front lever twice a week on its own day, handstand on my shoulder day">' + esc(d.ask) + '</textarea>'
+          + '<button class="btn btn-primary btn-block" style="min-height:44px; margin-top:6px;" id="caliAskBtn" onclick="caliAskCoach()">🧠 Ask the coach</button>'
+          + (d.heard ? '<div class="cali-note" style="margin-top:8px;">' + d.heard + '</div>' : '');
+      }
+      html += '<div class="cali-sub" style="margin:12px 0 8px;">Skills to develop</div><div class="cali-places">'
+        + CALI_SKILL_ORDER.map(id => {
+          const open = caliSkillOpen(id);
+          const on = d.goals.some(g => g.skill === id);
+          return '<button class="chip' + (on ? ' on' : '') + '" data-id="' + id + '" onclick="caliGoalToggle(this.dataset.id)"' + (open ? '' : ' disabled') + '>'
+            + (open ? (on ? '✓ ' : '') : '🔒 ') + esc(caliLadder(id).name) + '</button>';
+        }).join('') + '</div>';
+      d.goals.forEach(g => {
+        const nm = caliLadder(g.skill).name;
+        const st = caliLadder(g.skill).steps[c.pos[g.skill] || 0];
+        html += '<div class="card cali-goal"><div class="cali-name">' + esc(nm) + ' <small class="cali-sub">step ' + ((c.pos[g.skill] || 0) + 1) + ' · ' + esc((caliPickStep(st, c.gear) || st).name) + '</small></div>'
+          + '<div class="cali-goal-row"><span class="cali-sub">Per week</span>' + [1, 2, 3].map(n => '<button class="chip' + (g.per === n ? ' on' : '') + '" data-s="' + g.skill + '" data-n="' + n + '" onclick="caliGoalSet(this.dataset.s, \'per\', +this.dataset.n)">' + n + '×</button>').join('') + '</div>'
+          + '<div class="cali-goal-row"><span class="cali-sub">Where</span>' + Object.keys(CALI_GOAL_WHERE).filter(w => w !== 'full' || c.plan).map(w => '<button class="chip' + (g.where === w ? ' on' : '') + '" data-s="' + g.skill + '" data-w="' + w + '" onclick="caliGoalSet(this.dataset.s, \'where\', this.dataset.w)">' + CALI_GOAL_WHERE[w] + '</button>').join('') + '</div>';
+        if (g.where === 'gym' && rts.length) {
+          html += '<div class="cali-goal-row wrap"><span class="cali-sub">Gym days</span>' + rts.map(rt => {
+            const on = g.routines.indexOf(rt.id) >= 0;
+            const fit = caliRoutineFit(g.skill, rt);
+            return '<button class="chip' + (on ? ' on' : '') + '" data-s="' + g.skill + '" data-r="' + esc(rt.id) + '" onclick="caliGoalDay(this.dataset.s, this.dataset.r)">' + (on ? '✓ ' : fit >= 1.5 ? '★ ' : '') + esc(rt.name) + '</button>';
+          }).join('') + '</div>';
+        }
+        html += '</div>';
+      });
+      const notes = caliCoachNotes(d.goals);
+      if (notes.length) html += '<div class="cali-note" style="margin-top:10px;">' + notes.map(esc).join('<br>') + '</div>';
+      if (d.goals.length) html += '<div class="cali-sub" style="margin-top:8px;">★ = same muscles as the skill. A gym block goes first in the workout, while you are fresh.</div>';
+      html += '<button class="btn btn-primary btn-block cali-test-next" onclick="saveCaliGoals()">' + (d.goals.length ? 'Put it in my week' : 'Save') + '</button>';
+      document.getElementById('caliSheetTitle').textContent = '🎯 My skills';
+      document.getElementById('caliSheetBody').innerHTML = html;
+    }
+
+    function caliGoalToggle(id) {
+      if (!caliGoalDraft || !caliSkillOpen(id)) return;
+      const i = caliGoalDraft.goals.findIndex(g => g.skill === id);
+      if (i >= 0) caliGoalDraft.goals.splice(i, 1);
+      else caliGoalDraft.goals.push(caliGoalFill({ skill: id, per: CALI_COACH[id].straight ? 2 : 2, where: caliGymRoutines().length ? 'gym' : 'focus', routines: [] }));
+      renderCaliGoals();
+    }
+
+    function caliGoalSet(id, field, val) {
+      const g = caliGoalDraft && caliGoalDraft.goals.find(x => x.skill === id);
+      if (!g) return;
+      if (field === 'per') g.per = Math.max(1, Math.min(3, val));
+      if (field === 'where' && CALI_GOAL_WHERE[val]) g.where = val;
+      g.routines = g.routines.slice(0, g.per);
+      caliGoalFill(g);
+      renderCaliGoals();
+    }
+
+    function caliGoalDay(id, rid) {
+      const g = caliGoalDraft && caliGoalDraft.goals.find(x => x.skill === id);
+      if (!g) return;
+      const i = g.routines.indexOf(rid);
+      if (i >= 0) g.routines.splice(i, 1);
+      else { g.routines.push(rid); while (g.routines.length > g.per) g.routines.shift(); }
+      renderCaliGoals();
+    }
+
+    function saveCaliGoals() {
+      if (!caliGoalDraft) return;
+      caliApplyGoals(caliGoalDraft.goals, true);
+      caliGoalDraft = null;
+      closeModal('caliSheetModal');
+      renderCaliHome();
+    }
+
+    /* Ask the coach: Jev reads what you said and picks from the options;
+       the rules above fill the gaps; you check and press "Put it in my week". */
+    async function caliAskCoach() {
+      const d = caliGoalDraft;
+      const ta = document.getElementById('caliAskText');
+      const btn = document.getElementById('caliAskBtn');
+      if (!d || !ta) return;
+      d.ask = ta.value.trim();
+      if (!d.ask) return;
+      if (btn) { btn.disabled = true; btn.textContent = '🧠 Thinking…'; }
+      const rts = caliGymRoutines();
+      const skills = CALI_SKILL_ORDER.filter(caliSkillOpen).map(id => ({ id: id, name: caliLadder(id).name, words: CALI_COACH[id].words }));
+      try {
+        const res = await fetch('/api/coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAiToken() },
+          body: JSON.stringify({ text: d.ask, skills: skills, routines: rts.map(r => ({ id: r.id, name: r.name, muscles: caliMusclesText(r) })) })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || ('error ' + res.status));
+        d.heard = caliMergePicks(d, data.picks || {});
+      } catch (e) {
+        d.heard = '⚠️ ' + esc(e.message || 'The coach is not reachable') + '. Tap your choices below instead.';
+      }
+      renderCaliGoals();
+    }
+
+    /* Jev's picks -> draft goals; what it did not say, the rules decide. */
+    function caliMergePicks(d, picks) {
+      const heard = [];
+      Object.keys(picks).forEach(id => {
+        if (!CALI_COACH[id] || !caliSkillOpen(id)) return;
+        const p = picks[id] || {};
+        let g = d.goals.find(x => x.skill === id);
+        if (!g) { g = { skill: id, per: 2, where: caliGymRoutines().length ? 'gym' : 'focus', routines: [] }; d.goals.push(g); }
+        if (p.per) g.per = Math.max(1, Math.min(3, p.per));
+        else if (p.routineId) g.per = 1; // "on my shoulder day" = that one day
+        if (p.where && CALI_GOAL_WHERE[p.where]) g.where = p.where;
+        if (p.routineId && caliGymRoutines().some(r => r.id === p.routineId)) { g.where = 'gym'; g.routines = [p.routineId]; } else g.routines = [];
+        caliGoalFill(g);
+        heard.push(esc(caliLadder(id).name) + ': ' + g.per + '× · ' + esc(caliGoalWhereText(g)));
+      });
+      return heard.length ? '🧠 Understood: ' + heard.join(' · ') + '. Check it, then put it in your week.' : '🧠 No skill heard. Try: "front lever twice a week on my back day".';
     }
 
     /* "15 × Inverted Row" / "10 s Tuck Planche" for a [ladder, ex, count] lock. */

@@ -2,6 +2,12 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-07 — Skill goals with a coaching brain + Ask the coach (Jev) (P2-19), built, Jev key pending
+
+- Owner: choose skills, how many sessions a week, and where: own focus day, full body, or added to his gym days ("handstand on my shoulder day"); "a coaching brain in the app", with TypeSafe Jev for fast picking.
+- "🎯 My skills" card and sheet: skills, 1-3× a week, Gym day / Own day / Full-body plan; the coach picks the gym days with the same muscles (★), spreads straight-arm skills, writes notes (too many skills, two days in a row, wrong muscles). Gym blocks go first in the workout (skill warm-up + current step); focus days join the running program on a free day. Everything is rebuilt when a step changes. Phone-checked on the test origin: Front lever 2 own days (days 3 and 6 between Chest/Back/Legs/Shoulders), Handstand on Shoulders + Push; Shoulders day opens with Wrist Warm-Up → Handstand Kick-Up.
+- api/coach.js: paired app only, rate-limited, key TYPESAFE_API_KEY from Vercel env, Jev 1.14 typed questions (noul + choice) built from the app's options; low-confidence picks left to the rules. Not tried against the real Jev yet (no key on the server). Tests: tests/p2_19_skill_coach.test.mjs; 569 pass.
+
 ## 2026-11-07 — Calisthenics finished: workout tools, progress, guide, phone check (P2-18 steps 6, 8, 9), awaiting owner review
 
 - Owner: "Finish the product... I still don't see how this is useful for me". Calisthenics screen now opens with a "How it works" guide (equipment → level test → my week → train) until all is set up; once the week is built, "My week · Today · Start today's session" leads.
