@@ -4003,9 +4003,9 @@
       let html = '';
       if (isAiPaired()) {
         html += '<div class="cali-sub" style="margin-bottom:6px;">Tell the coach (or tap below)</div>'
-          + '<textarea id="caliAskText" class="input-field cali-ask" rows="2" maxlength="600" placeholder="Front lever twice a week on its own day, handstand on my shoulder day">' + esc(d.ask) + '</textarea>'
+          + '<textarea id="caliAskText" class="input-field cali-ask" rows="2" maxlength="600" placeholder="Front lever twice a week on its own day, handstand on my shoulder day" oninput="caliGoalDraft.ask = this.value">' + esc(d.ask) + '</textarea>'
           + '<button class="btn btn-primary btn-block" style="min-height:44px; margin-top:6px;" id="caliAskBtn" onclick="caliAskCoach()">🧠 Ask the coach</button>'
-          + (d.heard ? '<div class="cali-note" style="margin-top:8px;">' + d.heard + '</div>' : '');
+          + (d.heard ? '<div class="cali-note" id="caliHeard" style="margin-top:8px;">' + d.heard + '</div>' : '');
       }
       html += '<div class="cali-sub" style="margin:12px 0 8px;">Skills to develop</div><div class="cali-places">'
         + CALI_SKILL_ORDER.map(id => {
@@ -4080,7 +4080,12 @@
       const btn = document.getElementById('caliAskBtn');
       if (!d || !ta) return;
       d.ask = ta.value.trim();
-      if (!d.ask) return;
+      if (!d.ask) {
+        d.heard = '✍️ First type what you want in the box above, for example: "front lever twice a week on its own day, handstand on my shoulder day".';
+        renderCaliGoals();
+        caliShowHeard();
+        return;
+      }
       if (btn) { btn.disabled = true; btn.textContent = '🧠 Thinking…'; }
       const rts = caliGymRoutines();
       const skills = CALI_SKILL_ORDER.filter(caliSkillOpen).map(id => ({ id: id, name: caliLadder(id).name, words: CALI_COACH[id].words }));
@@ -4097,6 +4102,12 @@
         d.heard = '⚠️ ' + esc(e.message || 'The coach is not reachable') + '. Tap your choices below instead.';
       }
       renderCaliGoals();
+      caliShowHeard();
+    }
+
+    function caliShowHeard() {
+      const el = document.getElementById('caliHeard');
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
 
     /* Jev's picks -> draft goals; what it did not say, the rules decide. */

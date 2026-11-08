@@ -149,7 +149,10 @@ export default async function handler(req, res) {
       clearTimeout(timer);
     }
     if (!r.ok) {
-      sendJson(res, 502, { error: 'The coach AI did not answer (' + r.status + ')' });
+      // Jev's own reason (never contains the key) helps fix a bad question.
+      let why = '';
+      try { why = clean(await r.text(), 200); } catch (e) {}
+      sendJson(res, 502, { error: 'The coach AI did not answer (' + r.status + (why ? ': ' + why : '') + ')' });
       return;
     }
     const data = await r.json();
