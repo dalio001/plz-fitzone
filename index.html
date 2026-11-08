@@ -3653,6 +3653,50 @@
         || String(w.routineId || '').indexOf('rt_cali_') === 0 || w.title === 'Calisthenics';
     }
 
+    /* Replace in a calisthenics workout: moves of the same family only: the
+       skill the block is for and the skills that build it (handstand <->
+       handstand push-up) first, then the move's own ladder, each around your step, with the version your equipment
+       allows. */
+    function caliRelatedSkills(skill) {
+      const out = [skill];
+      Object.keys(CALI_COACH).forEach(id => {
+        if (CALI_COACH[id].support.indexOf(skill) >= 0 && out.indexOf(id) < 0) out.push(id);
+      });
+      (CALI_COACH[skill] ? CALI_COACH[skill].support : []).forEach(id => {
+        if (CALI_COACH[id] && out.indexOf(id) < 0) out.push(id);
+      });
+      return out;
+    }
+
+    function caliSwapSuggestions(item) {
+      const c = normalizeCali(state.cali);
+      const out = [];
+      const seen = {};
+      seen[item.exId] = true;
+      const add = (l, i, why) => {
+        if (!l || i < 0 || i >= l.steps.length) return;
+        const pick = caliPickStep(l.steps[i], c.gear);
+        if (!pick || seen[pick.ex]) return;
+        const ex = state.exercises.find(e => e.id === pick.ex);
+        if (!ex) return;
+        seen[pick.ex] = true;
+        const at = c.pos[l.id] || 0;
+        out.push({ exId: pick.ex, name: ex.name, reason: why + ' · step ' + (i + 1) + (i === at ? ' (your step)' : i < at ? ' (easier)' : ' (harder)') });
+      };
+      const near = (l, why) => {
+        if (!l) return;
+        const at = c.pos[l.id] || 0;
+        [at, at - 1, at + 1, at - 2, at + 2].forEach(i => add(l, i, why));
+      };
+      const f = caliFindStep(item.exId);
+      const m = /^🤸 (.+?)(?: · | warm-up)/.exec(String(item.note || ''));
+      let skill = m ? CALI_SKILL_ORDER.find(id => caliLadder(id).name === m[1]) : null;
+      if (!skill && f && f.ladder.kind === 'skill') skill = f.ladder.id;
+      if (skill) caliRelatedSkills(skill).forEach(id => near(caliLadder(id), caliLadder(id).name));
+      if (f) near(f.ladder, f.ladder.name);
+      return out.slice(0, 12);
+    }
+
     function caliFindStep(exId) {
       const c = normalizeCali(state.cali);
       let best = null;
@@ -11052,13 +11096,14 @@
       if (swapSectionEl) {
         if (pickerTarget === 'replace' && activeWorkout && replaceTargetIdx !== null && activeWorkout.exercises[replaceTargetIdx]) {
           const curItem = activeWorkout.exercises[replaceTargetIdx];
-          const suggestions = getSwapSuggestions(curItem.exId, swapAvoidEquip);
-          let chipsHtml = '<div style="margin-bottom:8px;"><div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:4px;">Can&#39;t use right now (tap to change):</div><div class="chips">';
-          EQUIPMENT.forEach(equip => {
+          const caliSugs = (caliWorkoutEx(activeWorkout, curItem) || caliFindStep(curItem.exId)) ? caliSwapSuggestions(curItem).filter(s => !activeWorkout.exercises.some(e => e.exId === s.exId)) : [];
+          const suggestions = caliSugs.length ? caliSugs : getSwapSuggestions(curItem.exId, swapAvoidEquip);
+          let chipsHtml = caliSugs.length ? '' : '<div style="margin-bottom:8px;"><div style="font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:4px;">Can&#39;t use right now (tap to change):</div><div class="chips">';
+          if (!caliSugs.length) EQUIPMENT.forEach(equip => {
             const isAvoided = swapAvoidEquip.indexOf(equip) >= 0;
             chipsHtml += '<button class="chip' + (isAvoided ? ' on' : '') + '" onclick="toggleSwapAvoidEquip(\'' + chipVal(equip) + '\')">' + esc(equip) + '</button>';
           });
-          chipsHtml += '</div></div>';
+          if (!caliSugs.length) chipsHtml += '</div></div>';
 
           let sugsHtml = '';
           if (suggestions.length > 0) {
@@ -11076,8 +11121,9 @@
           const curDef = state.exercises.find(e => e.id === curItem.exId);
           const curMuscle = curDef ? exPrimary(curDef) : '';
           swapSectionEl.innerHTML = '<div style="border:2px solid var(--primary); border-radius:12px; padding:10px 10px 4px; margin:4px 0 12px; background:rgba(59,130,246,0.08);">' +
-            '<h3 style="margin-top:0;">Same muscle, other equipment</h3>' +
-            (curMuscle ? '<div style="font-size:13px; color:var(--text-sub); margin:-4px 0 8px;">Suggested swaps that also train ' + esc(curMuscle) + '</div>' : '') +
+            (caliSugs.length ? '<h3 style="margin-top:0;">Same skill, other steps</h3><div style="font-size:13px; color:var(--text-sub); margin:-4px 0 8px;">Moves from the same ladders, with your equipment</div>'
+              : '<h3 style="margin-top:0;">Same muscle, other equipment</h3>') +
+            (caliSugs.length ? '' : curMuscle ? '<div style="font-size:13px; color:var(--text-sub); margin:-4px 0 8px;">Suggested swaps that also train ' + esc(curMuscle) + '</div>' : '') +
             chipsHtml + sugsHtml + '</div>';
           swapSectionEl.style.display = 'block';
         } else {

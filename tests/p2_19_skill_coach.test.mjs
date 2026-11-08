@@ -236,3 +236,18 @@ describe('P2-19 manage workouts', () => {
     assert.ok(list.includes('rt_cskill_handstand_1'));
   });
 });
+
+describe('P2-19 replace in a calisthenics workout', () => {
+  it('suggests moves of the same skill family, not gym presses', () => {
+    const api = setup(true);
+    api.state.cali.pos.hspu = 3;
+    const push = api.caliLadder('push');
+    const item = { exId: push.steps[6].ex, note: '🤸 Handstand push-up · support · 5-10' };
+    const sugs = api.caliSwapSuggestions(item);
+    const ladders = new Set(sugs.map((s) => s.reason.split(' · ')[0]));
+    assert.ok(ladders.has('Handstand push-up'), 'HSPU steps');
+    assert.ok(ladders.has('Handstand'), 'handstand steps');
+    assert.ok(sugs.every((s) => !String(s.exId).startsWith('ex') || api.caliFindStep(s.exId)), 'only ladder moves');
+    assert.ok(!sugs.some((s) => s.exId === item.exId));
+  });
+});
