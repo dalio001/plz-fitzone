@@ -768,6 +768,7 @@
     .cali-goal-row > .cali-sub { width: 70px; flex: 0 0 auto; }
     .cali-goal-row .chip { min-height: 40px; }
     .cali-goal-line { padding: 8px 0; border-top: 1px solid var(--border); margin-top: 8px; font-size: 14px; cursor: pointer; }
+    .cali-edited { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
     .cali-goal-go { float: right; color: var(--primary, #3b82f6); font-weight: 700; margin-left: 8px; }
     .cali-ask { width: 100%; max-width: 100%; min-height: 64px; resize: vertical; font: inherit; }
     .cali-check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 12px; font-size: 14px; }
@@ -2832,6 +2833,7 @@
     function renderCaliHome() {
       const box = document.getElementById('caliView');
       if (!box) return;
+      if (caliLinkPlan()) saveState();
       const have = caliGear();
       const c = state.cali;
       const gearCard = '<div class="card cali-gear-card">'
@@ -2883,8 +2885,9 @@
       if (ready.length) notes += '<div class="cali-note cali-ready">⬆️ Ready to move up: ' + ready.map(id => esc(caliLadder(id).name)).join(', ') + '. Open the move and tap Move up.</div>';
       // Once the week is built, today's session leads; setting up comes last.
       const planned = c.plan || normalizeCali(c).goals.length;
-      let html = caliGuideHtml(c) + (planned ? goalCard + (c.plan ? weekCard : '') + notes + progCard + testCard + gearCard + (c.plan ? '' : weekCard)
-        : gearCard + testCard + goalCard + weekCard + notes + progCard);
+      const wkSlot = '<div data-cali-workouts></div>';
+      let html = caliGuideHtml(c) + (planned ? goalCard + (c.plan ? weekCard : '') + wkSlot + notes + progCard + testCard + gearCard + (c.plan ? '' : weekCard)
+        : gearCard + testCard + goalCard + weekCard + wkSlot + notes + progCard);
       ['base', 'skill', 'support'].forEach(kind => {
         const ls = CALI_LADDERS.filter(l => l.kind === kind);
         if (!ls.length) return;
@@ -2900,6 +2903,44 @@
         }).join('');
       });
       box.innerHTML = html;
+      const wk = caliWorkoutsCard();
+      const at = box.querySelector('[data-cali-workouts]');
+      if (wk && at) at.appendChild(wk);
+    }
+
+    /* "My workouts": every calisthenics workout (My week days, skill days,
+       gym days with a skill block), with Start and the same menu as the gym
+       list (edit, duplicate, move, archive, delete). */
+    function caliWorkoutList() {
+      const out = [];
+      ensureFolders().filter(f => !f.archived).forEach(f => {
+        state.routines.filter(rt => rt && !isRoutineHidden(rt) && routineFolderId(rt) === f.id).forEach(rt => {
+          const block = (rt.exercises || []).some(it => String(it.note || '').indexOf(CALI_SKILL_MARK) === 0);
+          if (f.id === CALI_FOLDER_ID || caliCoachRoutine(rt) || block) out.push({ rt: rt, folder: f });
+        });
+      });
+      const day = x => x.folder.program && x.folder.program.days[x.rt.id] ? x.folder.program.days[x.rt.id] : 99;
+      return out.sort((a, b) => day(a) - day(b));
+    }
+
+    function caliWorkoutsCard() {
+      const list = caliWorkoutList();
+      if (!list.length) return null;
+      const box = document.createElement('div');
+      box.className = 'card cali-gear-card';
+      box.innerHTML = '<div style="font-weight:800;">🗂 My workouts</div>'
+        + '<div class="cali-sub">Tap ⋯ to edit, move or delete. Your edits stay; the coach only moves each move to your current step.</div>';
+      list.forEach(x => {
+        const card = routineCard(x.rt, x.folder);
+        if (x.rt.edited) {
+          const r = document.createElement('div');
+          r.className = 'cali-sub cali-edited';
+          r.innerHTML = '✏️ Your version · <button class="btn" style="min-height:44px;" data-r="' + esc(x.rt.id) + '" onclick="caliResetRoutine(this.dataset.r)">↺ Coach version</button>';
+          card.appendChild(r);
+        }
+        box.appendChild(card);
+      });
+      return box;
     }
 
     /* "📍 Step 3: Push-Up · 3 × 10–15" for a ladder card. */
@@ -3408,6 +3449,39 @@
 
     function caliPlanRoutineId(tpl, i) { return 'rt_cali_' + tpl + '_' + (i + 1); }
 
+    /* A coach-made workout you edited keeps your list: on a rebuild only each
+       ladder move swaps to your current step (finishers stay one below).
+       Untouched workouts take the coach's new list. */
+    function caliCoachRoutine(rt) {
+      return !!rt && (String(rt.id).indexOf('rt_cali_') === 0 || String(rt.id).indexOf('rt_cskill_') === 0);
+    }
+
+    function caliSetItems(rt, items) {
+      if (!rt.edited) { rt.exercises = items; return; }
+      const c = normalizeCali(state.cali);
+      rt.exercises = (rt.exercises || []).map(it => {
+        if (/^Finisher/.test(String(it.note || ''))) return it;
+        const f = caliFindStep(it.exId);
+        if (!f || f.here) return it;
+        const st = f.ladder.steps[c.pos[f.ladder.id] || 0];
+        const pick = caliPickStep(st, c.gear);
+        if (!pick) return it;
+        const n = Object.assign({}, it, { exId: pick.ex });
+        if (st.hold) { n.targetDurationSec = st.lo; n.targetRepsMin = null; n.targetRepsMax = null; }
+        else { n.targetRepsMin = st.lo; n.targetRepsMax = st.hi; n.targetDurationSec = null; }
+        return normalizeRoutineItem(n);
+      });
+    }
+
+    function caliResetRoutine(id) {
+      const rt = state.routines.find(r => r.id === id);
+      if (!rt) return;
+      delete rt.edited;
+      caliRefreshPlan();
+      saveState();
+      renderCaliHome();
+    }
+
     /* Make (or remake) the plan's routines; with sched, run the folder as the program. */
     function caliApplyPlan(plan, sched) {
       const sessions = caliBuildSessions(plan.tpl, plan.skills);
@@ -3424,10 +3498,10 @@
         const id = keep[i];
         let rt = state.routines.find(r => r.id === id);
         if (!rt) { rt = { id: id, name: s.name, folderId: CALI_FOLDER_ID, exercises: [] }; state.routines.push(rt); }
-        rt.name = s.name;
+        if (!rt.edited) rt.name = s.name;
         rt.folderId = CALI_FOLDER_ID;
         rt.archived = false;
-        rt.exercises = s.items;
+        caliSetItems(rt, s.items);
       });
       if (sched) {
         const days = {};
@@ -3443,9 +3517,31 @@
     }
 
     /* Steps, test or gear changed: rebuild the routines, keep the schedule. */
+    /* My week and My skills are one list: the week's skills are the skills
+       set to "My week". Older saves had them apart; join them once (a skill
+       already on a gym day or its own day leaves the week). */
+    function caliLinkPlan() {
+      const c = normalizeCali(state.cali);
+      if (c.linked) return false;
+      c.linked = true;
+      if (!c.plan || !c.goals.length) return false;
+      const goals = c.goals.slice();
+      c.plan.skills.forEach((s, i) => {
+        if (!goals.some(g => g.skill === s)) goals.push({ skill: s, per: caliPlanPer(c.plan.tpl, i), where: 'full', routines: [] });
+      });
+      caliApplyGoals(goals, true);
+      return true;
+    }
+
+    /* Sessions a week the plan gives skill 1 or skill 2. */
+    function caliPlanPer(tpl, i) {
+      const slot = i === 1 ? 's2' : 's1';
+      return Math.max(1, Math.min(3, CALI_TEMPLATES[tpl].sessions.filter(s => s.slots.indexOf(slot) >= 0).length));
+    }
+
     function caliRefreshPlan() {
       const c = normalizeCali(state.cali);
-      if (c.goals.length) caliApplyGoals(c.goals, true);
+      if (c.goals.length) { caliApplyGoals(c.goals, true); return; }
       if (!c.plan) return;
       const skills = c.plan.skills.filter(caliSkillOpen);
       caliApplyPlan({ tpl: c.plan.tpl, skills: skills.length ? skills : caliDefaultSkills(c.plan.tpl) }, false);
@@ -3532,6 +3628,12 @@
     function saveCaliPlan() {
       if (!caliPlanDraft) return;
       caliApplyPlan({ tpl: caliPlanDraft.tpl, skills: caliPlanDraft.skills }, caliPlanDraft.sched);
+      // The week's skills show in My skills as "My week".
+      const c = normalizeCali(state.cali);
+      const skills = caliPlanDraft.skills.slice(0, 2);
+      const goals = c.goals.filter(g => g.where !== 'full' && skills.indexOf(g.skill) < 0)
+        .concat(skills.map((s, i) => ({ skill: s, per: caliPlanPer(caliPlanDraft.tpl, i), where: 'full', routines: [] })));
+      caliApplyGoals(goals, true);
       caliPlanDraft = null;
       closeModal('caliSheetModal');
       renderCaliHome();
@@ -3773,7 +3875,7 @@
       lsit: { fit: { Core: 3, Triceps: 1, Quads: 1 }, prep: ['cx_wrist_prep'], support: ['core', 'hang'], words: 'L-sit, V-sit, manna', pairs: 'any day' },
       dragon: { fit: { Core: 3, Back: 1 }, prep: [], support: ['core', 'hang'], words: 'dragon flag', pairs: 'any day' }
     };
-    const CALI_GOAL_WHERE = { gym: 'Gym day', focus: 'Own day', full: 'Full-body plan' };
+    const CALI_GOAL_WHERE = { gym: 'Gym day', focus: 'Own day', full: 'My week' };
     const CALI_SKILL_MARK = '🤸 ';
 
     function normalizeCaliGoals(list) {
@@ -3910,7 +4012,7 @@
       goals = normalizeCaliGoals(goals);
       ensureFolders();
       (state.routines || []).forEach(rt => {
-        if (rt && Array.isArray(rt.exercises)) rt.exercises = rt.exercises.filter(it => String(it.note || '').indexOf(CALI_SKILL_MARK) !== 0);
+        if (rt && Array.isArray(rt.exercises) && !caliCoachRoutine(rt)) rt.exercises = rt.exercises.filter(it => String(it.note || '').indexOf(CALI_SKILL_MARK) !== 0);
       });
       const oldDays = {};
       ensureFolders().forEach(f => { if (f.program) Object.keys(f.program.days).forEach(k => { if (k.indexOf('rt_cskill_') === 0) oldDays[k] = f.program.days[k]; }); });
@@ -3942,9 +4044,9 @@
         let rt = state.routines.find(r => r.id === w.id);
         const name = caliLadder(w.skill).name + ' focus' + (w.per > 1 ? ' ' + w.n : '');
         if (!rt) { rt = { id: w.id, name: name, folderId: host.id, exercises: [] }; state.routines.push(rt); }
-        rt.name = name;
+        if (!rt.edited) rt.name = name;
         rt.archived = false;
-        rt.exercises = caliSkillItems(w.skill, 'focus');
+        caliSetItems(rt, caliSkillItems(w.skill, 'focus'));
         rt.folderId = host.id;
       });
       if (!running && wantFocus.length) {
@@ -3962,9 +4064,9 @@
         });
       }
       const c = normalizeCali(state.cali);
-      const fullSkills = goals.filter(g => g.where === 'full').map(g => g.skill).slice(0, 2);
-      state.cali = normalizeCali(Object.assign({}, c, { goals: goals }));
-      if (c.plan && fullSkills.length) caliApplyPlan({ tpl: c.plan.tpl, skills: fullSkills }, false);
+      const fullSkills = goals.filter(g => g.where === 'full' && caliSkillOpen(g.skill)).map(g => g.skill).slice(0, 2);
+      state.cali = normalizeCali(Object.assign({}, c, { goals: goals, linked: true }));
+      if (c.plan) caliApplyPlan({ tpl: c.plan.tpl, skills: fullSkills }, false);
       saveState();
       try { renderRoutines(); } catch (e) {}
       try { renderTrainingCalendar(); } catch (e) {}
@@ -3977,7 +4079,12 @@
         const names = g.routines.map(id => (state.routines.find(r => r.id === id) || {}).name).filter(Boolean);
         return names.length ? 'on ' + names.join(', ') : 'on a gym day';
       }
-      if (g.where === 'full') return 'in the full-body plan';
+      if (g.where === 'full') {
+        const c = normalizeCali(state.cali);
+        const i = c.plan ? c.plan.skills.indexOf(g.skill) : -1;
+        const names = i < 0 ? [] : CALI_TEMPLATES[c.plan.tpl].sessions.filter(s => s.slots.indexOf(i === 1 ? 's2' : 's1') >= 0).map(s => s.name);
+        return names.length ? 'in My week (' + names.join(', ') + ')' : 'in My week';
+      }
       return g.per > 1 ? 'own days' : 'own day';
     }
 
@@ -5345,6 +5452,11 @@
         }
       });
       renderRoutineArchive(container);
+      // Edits, deletes and moves from the Calisthenics tab show there at once.
+      if (state.workoutMode === 'cali' && !renderRoutines.inCali) {
+        renderRoutines.inCali = true;
+        try { renderCaliHome(); } catch (e) {} finally { renderRoutines.inCali = false; }
+      }
     }
 
     /* Compact card (owner, 2026-11-03): no exercise names, no big buttons.
@@ -6914,6 +7026,7 @@
         const rt = state.routines.find(r => r.id === editingRoutineId);
         if (!rt) return;
         rt.name = name;
+        if (caliCoachRoutine(rt) && JSON.stringify(rt.exercises) !== JSON.stringify(items)) rt.edited = true;
         rt.exercises = items;
         rt.folderId = builderFolderChoice();
       } else {

@@ -196,3 +196,43 @@ describe('P2-19 home card', () => {
     assert.ok(app.document.getElementById('caliGoal_handstand'), 'sheet has the skill card');
   });
 });
+
+describe('P2-19 manage workouts', () => {
+  it('an edited skill day keeps your changes when the coach moves you up', () => {
+    const api = setup(true);
+    api.caliApplyGoals([{ skill: 'handstand', per: 1, where: 'focus', routines: [] }]);
+    const rt = api.state.routines.find((r) => r.id === 'rt_cskill_handstand_1');
+    const n = rt.exercises.length;
+    api.editRoutine(rt.id);
+    rt.exercises = rt.exercises.slice(0, n - 1);
+    rt.edited = true;
+    const skillBefore = rt.exercises.find((e) => /skill/.test(e.note)).exId;
+    api.caliMoveStep('handstand', 1);
+    const after = api.state.routines.find((r) => r.id === 'rt_cskill_handstand_1');
+    assert.equal(after.exercises.length, n - 1, 'removed move stays removed');
+    assert.notEqual(after.exercises.find((e) => /skill/.test(e.note)).exId, skillBefore, 'skill swapped to the new step');
+    api.caliResetRoutine(after.id);
+    assert.equal(api.state.routines.find((r) => r.id === 'rt_cskill_handstand_1').exercises.length, n, 'coach version back');
+  });
+
+  it('My week skills show in My skills, and dropping one there drops it from the week', () => {
+    const api = setup(true);
+    api.state.cali.plan = { tpl: 'ul4', skills: ['handstand', 'lsit'] };
+    api.state.cali.goals = [{ skill: 'handstand', per: 1, where: 'gym', routines: [] }];
+    api.caliLinkPlan();
+    const g = api.state.cali.goals;
+    assert.ok(g.some((x) => x.skill === 'lsit' && x.where === 'full' && x.per === 2));
+    assert.deepEqual(JSON.parse(JSON.stringify(api.state.cali.plan.skills)), ['lsit'], 'handstand only on its gym day');
+    api.caliApplyGoals(g.filter((x) => x.skill !== 'lsit'));
+    assert.equal(api.state.cali.plan.skills.length, 0);
+  });
+
+  it('the Calisthenics tab lists the workouts with start and menu', () => {
+    const app = createApp();
+    const api = app.api;
+    Object.assign(api.state, setup(true).state);
+    api.caliApplyGoals([{ skill: 'handstand', per: 1, where: 'focus', routines: [] }]);
+    const list = api.caliWorkoutList().map((x) => x.rt.id);
+    assert.ok(list.includes('rt_cskill_handstand_1'));
+  });
+});

@@ -436,3 +436,5 @@ From `docs/reviews/2026-11-01-cleanup-review.md`, no visible change:
 - Application source and the existing README were preserved. No dependencies installed, features implemented, services provisioned, commits created, or deployment performed.
 
 - 2026-11-08 P2-19 fix: each skill line on the My skills home card is tappable ("Edit ›") and opens the sheet at that skill (per week, where, gym days). Owner could not open a saved skill. Phone-checked on the test phone.
+
+- 2026-11-08 P2-19 fix: calisthenics workouts are managed like gym ones. The Calisthenics tab lists them in "My workouts" (start, edit, duplicate, change day, move, archive, delete). An edited coach workout keeps your edits; a step-up only swaps each ladder move to the new step ("Coach version" resets it). My week and My skills are one list: the week's skills show in My skills as "in My week", and removing one there removes it from the week (older saves joined once). Phone-checked on the test phone.
