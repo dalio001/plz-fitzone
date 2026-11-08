@@ -763,6 +763,7 @@
     .cali-emom-min { font-size: 16px; font-weight: 800; margin-top: 14px; color: var(--primary); }
     .cali-emom-clock { font-size: 64px; font-weight: 900; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
     .cali-goal { margin-top: 10px; padding: 12px; }
+    .chip.cali-locked { opacity: .6; }
     .cali-goal-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
     .cali-goal-row > .cali-sub { width: 70px; flex: 0 0 auto; }
     .cali-goal-row .chip { min-height: 40px; }
@@ -4003,7 +4004,7 @@
       let html = '';
       if (isAiPaired()) {
         html += '<div class="cali-sub" style="margin-bottom:6px;">Tell the coach (or tap below)</div>'
-          + '<textarea id="caliAskText" class="input-field cali-ask" rows="2" maxlength="600" placeholder="Front lever twice a week on its own day, handstand on my shoulder day" oninput="caliGoalDraft.ask = this.value">' + esc(d.ask) + '</textarea>'
+          + '<textarea id="caliAskText" class="input-field cali-ask" rows="2" maxlength="600" placeholder="' + esc(caliAskExample()) + '" oninput="caliGoalDraft.ask = this.value">' + esc(d.ask) + '</textarea>'
           + '<button class="btn btn-primary btn-block" style="min-height:44px; margin-top:6px;" id="caliAskBtn" onclick="caliAskCoach()">🧠 Ask the coach</button>'
           + (d.heard ? '<div class="cali-note" id="caliHeard" style="margin-top:8px;">' + d.heard + '</div>' : '');
       }
@@ -4011,9 +4012,10 @@
         + CALI_SKILL_ORDER.map(id => {
           const open = caliSkillOpen(id);
           const on = d.goals.some(g => g.skill === id);
-          return '<button class="chip' + (on ? ' on' : '') + '" data-id="' + id + '" onclick="caliGoalToggle(this.dataset.id)"' + (open ? '' : ' disabled') + '>'
+          return '<button class="chip' + (on ? ' on' : '') + (open ? '' : ' cali-locked') + '" data-id="' + id + '" onclick="caliGoalToggle(this.dataset.id)">'
             + (open ? (on ? '✓ ' : '') : '🔒 ') + esc(caliLadder(id).name) + '</button>';
         }).join('') + '</div>';
+      if (d.lockNote) html += '<div class="cali-note" style="margin-top:8px;">' + d.lockNote + '</div>';
       d.goals.forEach(g => {
         const nm = caliLadder(g.skill).name;
         const st = caliLadder(g.skill).steps[c.pos[g.skill] || 0];
@@ -4037,8 +4039,28 @@
       document.getElementById('caliSheetBody').innerHTML = html;
     }
 
+    function caliAskExample() {
+      const open = CALI_SKILL_ORDER.filter(caliSkillOpen).map(id => caliLadder(id).name.toLowerCase());
+      if (!open.length) return 'Example: handstand twice a week on its own day';
+      return 'Example: ' + open[0] + ' twice a week on its own day' + (open[1] ? ', ' + open[1] + ' on my shoulder day' : '');
+    }
+
+    /* Why a skill is locked: the safety locks not met yet (HTML). */
+    function caliLockText(id) {
+      const l = caliLadder(id);
+      const miss = (l.gate || []).filter(nd => !caliNeedMet(nd));
+      return '🔒 ' + esc(l.name) + ' opens after: ' + miss.map(caliGateText).join(', ')
+        + '. Log them in a workout, or if you can already do them, tap "Harder" on those moves (or retake the level test).';
+    }
+
     function caliGoalToggle(id) {
-      if (!caliGoalDraft || !caliSkillOpen(id)) return;
+      if (!caliGoalDraft) return;
+      if (!caliSkillOpen(id)) {
+        caliGoalDraft.lockNote = caliLockText(id);
+        renderCaliGoals();
+        return;
+      }
+      caliGoalDraft.lockNote = '';
       const i = caliGoalDraft.goals.findIndex(g => g.skill === id);
       if (i >= 0) caliGoalDraft.goals.splice(i, 1);
       else caliGoalDraft.goals.push(caliGoalFill({ skill: id, per: CALI_COACH[id].straight ? 2 : 2, where: caliGymRoutines().length ? 'gym' : 'focus', routines: [] }));
@@ -4088,7 +4110,7 @@
       }
       if (btn) { btn.disabled = true; btn.textContent = '🧠 Thinking…'; }
       const rts = caliGymRoutines();
-      const skills = CALI_SKILL_ORDER.filter(caliSkillOpen).map(id => ({ id: id, name: caliLadder(id).name, words: CALI_COACH[id].words }));
+      const skills = CALI_SKILL_ORDER.map(id => ({ id: id, name: caliLadder(id).name, words: CALI_COACH[id].words }));
       try {
         const res = await fetch('/api/coach', {
           method: 'POST',
@@ -4113,8 +4135,10 @@
     /* Jev's picks -> draft goals; what it did not say, the rules decide. */
     function caliMergePicks(d, picks) {
       const heard = [];
+      const locked = [];
       Object.keys(picks).forEach(id => {
-        if (!CALI_COACH[id] || !caliSkillOpen(id)) return;
+        if (!CALI_COACH[id]) return;
+        if (!caliSkillOpen(id)) { locked.push(caliLockText(id)); return; }
         const p = picks[id] || {};
         let g = d.goals.find(x => x.skill === id);
         if (!g) { g = { skill: id, per: 2, where: caliGymRoutines().length ? 'gym' : 'focus', routines: [] }; d.goals.push(g); }
@@ -4125,7 +4149,9 @@
         caliGoalFill(g);
         heard.push(esc(caliLadder(id).name) + ': ' + g.per + '× · ' + esc(caliGoalWhereText(g)));
       });
-      return heard.length ? '🧠 Understood: ' + heard.join(' · ') + '. Check it, then put it in your week.' : '🧠 No skill heard. Try: "front lever twice a week on my back day".';
+      const lockPart = locked.length ? '<br>' + locked.join('<br>') : '';
+      if (heard.length) return '🧠 Understood: ' + heard.join(' · ') + '. Check it, then put it in your week.' + lockPart;
+      return locked.length ? locked.join('<br>') : '🧠 No skill heard. ' + esc(caliAskExample()) + '.';
     }
 
     /* "15 × Inverted Row" / "10 s Tuck Planche" for a [ladder, ex, count] lock. */

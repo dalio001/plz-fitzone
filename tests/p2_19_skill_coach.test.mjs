@@ -103,6 +103,18 @@ describe('P2-19 coaching rules', () => {
     assert.deepEqual(JSON.parse(JSON.stringify(hs.routines)), ['rt_shoulders']);
   });
 
+  it('a locked skill says what opens it, in the sheet and from the coach', () => {
+    const api = setup(true);
+    api.state.cali.pos.frontlever = 0;
+    api.state.cali.pos.hang = 0;
+    api.openCaliGoals();
+    assert.equal(api.caliSkillOpen('frontlever'), false);
+    const d = { goals: [], ask: 'x', heard: '' };
+    const msg = api.caliMergePicks(d, { frontlever: { per: 2, where: 'focus' } });
+    assert.match(msg, /Front lever opens after: .*Hanging L-Sit/);
+    assert.equal(d.goals.length, 0, 'never added while locked');
+  });
+
   it('the Jev key never appears in the app', () => {
     const html = loadIndexHtml();
     assert.ok(!html.includes('TYPESAFE_API_KEY'));
