@@ -185,3 +185,14 @@ describe('P2-19 /api/coach', () => {
     delete process.env.TYPESAFE_API_KEY;
   });
 });
+
+describe('P2-19 home card', () => {
+  it('each skill line opens the sheet at that skill', () => {
+    const app = createApp();
+    const api = app.api;
+    api.state.cali = { gear: GEAR, gearSet: true, pos: { handstand: 4 }, tested: { date: '2026-11-01', level: 2 },
+      goals: [{ skill: 'handstand', per: 2, where: 'focus', routines: [] }] };
+    api.openCaliGoals('handstand');
+    assert.ok(app.document.getElementById('caliGoal_handstand'), 'sheet has the skill card');
+  });
+});

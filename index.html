@@ -767,7 +767,8 @@
     .cali-goal-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
     .cali-goal-row > .cali-sub { width: 70px; flex: 0 0 auto; }
     .cali-goal-row .chip { min-height: 40px; }
-    .cali-goal-line { padding: 8px 0; border-top: 1px solid var(--border); margin-top: 8px; font-size: 14px; }
+    .cali-goal-line { padding: 8px 0; border-top: 1px solid var(--border); margin-top: 8px; font-size: 14px; cursor: pointer; }
+    .cali-goal-go { float: right; color: var(--primary, #3b82f6); font-weight: 700; margin-left: 8px; }
     .cali-ask { width: 100%; max-width: 100%; min-height: 64px; resize: vertical; font: inherit; }
     .cali-check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-top: 12px; font-size: 14px; }
     .cali-check input { width: 22px; height: 22px; }
@@ -2871,7 +2872,7 @@
           + '<button class="btn' + (gs.length ? '' : ' btn-primary') + '" style="min-height:44px;" onclick="openCaliGoals()">' + (gs.length ? 'Change' : 'Pick') + '</button></div>'
           + (gs.length ? gs.map(g => {
             const s = caliLadderStatus(g.skill);
-            return '<div class="cali-goal-line"><b>' + esc(caliLadder(g.skill).name) + '</b> · ' + g.per + '× a week · ' + esc(caliGoalWhereText(g))
+            return '<div class="cali-goal-line" role="button" data-s="' + g.skill + '" onclick="openCaliGoals(this.dataset.s)"><span class="cali-goal-go">Edit ›</span><b>' + esc(caliLadder(g.skill).name) + '</b> · ' + g.per + '× a week · ' + esc(caliGoalWhereText(g))
               + '<br><span class="cali-sub">Step ' + (s.index + 1) + ': ' + esc((caliPickStep(s.step, have) || s.step).name) + ' · ' + (s.ready ? '⬆️ ready to move up' : 'clean sessions ' + s.passes + ' of 2') + '</span></div>';
           }).join('') : '<div class="cali-sub">Choose skills to develop: the coach adds them to your gym days or gives them their own day.</div>')
           + '</div>';
@@ -3983,11 +3984,14 @@
     /* ---- Sheet ---- */
     let caliGoalDraft = null;
 
-    function openCaliGoals() {
+    /* Tapping a skill line on the home card opens the sheet at that skill. */
+    function openCaliGoals(skill) {
       const c = normalizeCali(state.cali);
       caliGoalDraft = { goals: JSON.parse(JSON.stringify(c.goals)), ask: '', heard: '' };
       renderCaliGoals();
       document.getElementById('caliSheetModal').classList.add('open');
+      const el = skill && document.getElementById('caliGoal_' + skill);
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
     }
 
     function caliGoalFill(g) {
@@ -4019,7 +4023,7 @@
       d.goals.forEach(g => {
         const nm = caliLadder(g.skill).name;
         const st = caliLadder(g.skill).steps[c.pos[g.skill] || 0];
-        html += '<div class="card cali-goal"><div class="cali-name">' + esc(nm) + ' <small class="cali-sub">step ' + ((c.pos[g.skill] || 0) + 1) + ' · ' + esc((caliPickStep(st, c.gear) || st).name) + '</small></div>'
+        html += '<div class="card cali-goal" id="caliGoal_' + g.skill + '"><div class="cali-name">' + esc(nm) + ' <small class="cali-sub">step ' + ((c.pos[g.skill] || 0) + 1) + ' · ' + esc((caliPickStep(st, c.gear) || st).name) + '</small></div>'
           + '<div class="cali-goal-row"><span class="cali-sub">Per week</span>' + [1, 2, 3].map(n => '<button class="chip' + (g.per === n ? ' on' : '') + '" data-s="' + g.skill + '" data-n="' + n + '" onclick="caliGoalSet(this.dataset.s, \'per\', +this.dataset.n)">' + n + '×</button>').join('') + '</div>'
           + '<div class="cali-goal-row"><span class="cali-sub">Where</span>' + Object.keys(CALI_GOAL_WHERE).filter(w => w !== 'full' || c.plan).map(w => '<button class="chip' + (g.where === w ? ' on' : '') + '" data-s="' + g.skill + '" data-w="' + w + '" onclick="caliGoalSet(this.dataset.s, \'where\', this.dataset.w)">' + CALI_GOAL_WHERE[w] + '</button>').join('') + '</div>';
         if (g.where === 'gym' && rts.length) {

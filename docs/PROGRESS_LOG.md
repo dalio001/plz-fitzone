@@ -434,3 +434,5 @@ From `docs/reviews/2026-11-01-cleanup-review.md`, no visible change:
 - Created eight tailored pillar files, a master plan, audit/reference report, workflow, shared AGENTS.md, and four IDE pointers. All future application work remains unchecked and explicitly gated.
 - Verified all local Markdown links, code fences, required pillar sections and 70 future task IDs; no unresolved scaffold placeholders. Confirmed no diff to `index.html` or `README.md`.
 - Application source and the existing README were preserved. No dependencies installed, features implemented, services provisioned, commits created, or deployment performed.
+
+- 2026-11-08 P2-19 fix: each skill line on the My skills home card is tappable ("Edit ›") and opens the sheet at that skill (per week, where, gym days). Owner could not open a saved skill. Phone-checked on the test phone.
