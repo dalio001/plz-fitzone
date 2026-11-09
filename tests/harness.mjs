@@ -357,6 +357,7 @@ const EXPORT_SNIPPET = `;globalThis.__app = {
   caliWorkoutEx, caliFindStep, caliAim, caliTargetLineHtml, targetLineHtml, caliAfterFinish, caliTestDue, caliStepsUp,
   openCaliProgress, caliGuideHtml, caliSessionsDone, caliEmomStart, caliEmomStop,
   CALI_COACH, normalizeCaliGoals, caliGymRoutines, caliRoutineFit, caliPickGymDays, caliCoachNotes, caliSkillItems,
+  CALI_CARE, CALI_LADDER_VER, caliMapOldIndex, caliDrills, caliFindDrill, caliPassNeed, caliToggleCare, openCaliGear, saveCaliGear,
   caliApplyGoals, caliSwapSuggestions, caliLadder, caliFindStep, caliLinkPlan, caliResetRoutine, caliWorkoutList, editRoutine, openCaliGoals, caliMergePicks, caliGoalToggle, saveCaliGoals,
   ROUTINE_IMPORT, validateRoutineImport, formatRoutineImportErrors,
   decodeRoutineImportHash, renderRoutineImportPreview,

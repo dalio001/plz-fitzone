@@ -88,7 +88,11 @@ describe('P2-13 exercise pictures (full size in detail sheet)', () => {
     // 100 gym exercises + every P2-18 calisthenics exercise (2026-11-06), except
     // the two whose generated pictures showed a wrong body shape: no picture is
     // better than a wrong one (owner review 2026-11-06).
-    const NO_PICTURE = ['cx_hollow_rock', 'cx_manna'];
+    // P2-20 (2026-11-09): 12 new coach-review moves wait for their Flow
+    // pictures (prompts in docs/research/cali-picture-prompts-p2-20.tsv).
+    const NO_PICTURE = ['cx_hollow_rock', 'cx_manna', 'cx_split_squat', 'cx_straddle_lsit', 'cx_wall_hspu_negative',
+      'cx_deficit_wall_hspu', 'cx_low_bar_transition', 'cx_one_leg_bl', 'cx_frog_stand', 'cx_half_lay_planche',
+      'cx_vertical_flag', 'cx_adv_tuck_flag', 'cx_tuck_dragon_hold', 'cx_ankle_stretch'];
     const builtin = app.api.DEFAULT_EXERCISES.map((e) => e.id).filter((id) => !NO_PICTURE.includes(id));
     assert.ok(Array.isArray(listed) && listed.length === builtin.length, 'every built-in exercise but the listed ones has a picture');
     assert.deepEqual(
@@ -249,8 +253,8 @@ describe('P2-13 muscle body chart', () => {
       for (const r of lit) assert.ok(known.has(r), name + ' lit region exists in the drawing');
     }
 
-    // All 202 catalogue rows (100 + 139 calisthenics steps, P2-18) produce a valid chart, and every region used is drawn.
-    assert.equal(app.api.state.exercises.length, 239, 'catalogue size');
+    // All 202 catalogue rows (100 + 151 calisthenics steps, P2-18) produce a valid chart, and every region used is drawn.
+    assert.equal(app.api.state.exercises.length, 251, 'catalogue size');
     for (const ex of app.api.state.exercises) {
       const levels = app.api.muscleChartLevels(ex);
       assert.ok(levels.primary.length > 0 || levels.secondary.length > 0, 'catalogue chart has data: ' + ex.id);

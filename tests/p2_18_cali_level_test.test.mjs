@@ -32,19 +32,21 @@ describe('P2-18 level test', () => {
     assert.equal(exAt(caliPlaceFromTest({ pull: 20 }), 'pull'), 'cx_archer_pullup');
     assert.equal(exAt(caliPlaceFromTest({ push: 15 }), 'push'), 'ex99');
     assert.equal(exAt(caliPlaceFromTest({ dip: 10 }), 'dip'), 'ex55');
-    assert.equal(exAt(caliPlaceFromTest({ legs: 4 }), 'legs'), 'cx_beginner_shrimp');
+    assert.equal(exAt(caliPlaceFromTest({ legs: 4 }), 'legs'), 'cx_shrimp_squat');
+    assert.equal(exAt(caliPlaceFromTest({ legs: 3 }), 'legs'), 'cx_pistol_squat');
+    assert.equal(exAt(caliPlaceFromTest({ dip: 0 }), 'dip'), 'cx_support_hold');
   });
 
   it('ticked skills lift only their own ladder, never down', () => {
-    const lsit = CALI_TEST_SKILLS.findIndex((s) => s[1] === 'lsit' && s[2] === 3);
-    const tuck = CALI_TEST_SKILLS.findIndex((s) => s[1] === 'lsit' && s[2] === 1);
+    const lsit = CALI_TEST_SKILLS.findIndex((s) => s[1] === 'lsit' && s[2] === 'cx_lsit');
+    const tuck = CALI_TEST_SKILLS.findIndex((s) => s[1] === 'lsit' && s[2] === 'cx_one_leg_lsit');
     const pos = caliPlaceFromTest({ skills: [lsit, tuck] });
-    assert.equal(exAt(pos, 'lsit'), 'cx_floor_lsit');
+    assert.equal(exAt(pos, 'lsit'), 'cx_lsit');
     assert.equal(pos.planche, 0);
   });
 
   it('every skill tick points at a real step; every question is well formed', () => {
-    for (const s of CALI_TEST_SKILLS) assert.ok(lad(s[1]) && s[2] < lad(s[1]).steps.length, s[0]);
+    for (const s of CALI_TEST_SKILLS) assert.ok(lad(s[1]) && lad(s[1]).steps.some((st) => st.ex === s[2]), s[0]);
     for (const q of CALI_TEST) {
       assert.ok(['num', 'pick', 'skills'].includes(q.kind), q.id);
       if (q.kind === 'pick') assert.ok(q.opts.length >= 2, q.id);

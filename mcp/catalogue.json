@@ -1121,6 +1121,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_adv_tuck_flag",
+      "name": "Advanced Tuck Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_adv_tuck_planche",
       "name": "Advanced Tuck Planche",
       "equipment": "Bodyweight",
@@ -1128,6 +1139,17 @@
       "primary": "Shoulders",
       "secondary": [
         "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_ankle_stretch",
+      "name": "Knee-to-Wall Ankle Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [
+        "Quads"
       ],
       "type": "duration"
     },
@@ -1429,6 +1451,17 @@
       "type": "duration"
     },
     {
+      "id": "cx_deficit_wall_hspu",
+      "name": "Deficit Wall Handstand Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_df_hip_raise",
       "name": "Dragon Flag Hip Raise",
       "equipment": "Bodyweight",
@@ -1594,6 +1627,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_frog_stand",
+      "name": "Frog Stand",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_full_bl",
       "name": "Full Back Lever",
       "equipment": "Bodyweight",
@@ -1645,6 +1689,17 @@
       "primary": "Shoulders",
       "secondary": [
         "Chest"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_half_lay_planche",
+      "name": "Half-Lay Planche",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Core"
       ],
       "type": "duration"
     },
@@ -1764,6 +1819,17 @@
     {
       "id": "cx_jumping_muscleup",
       "name": "Jumping Muscle-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_low_bar_transition",
+      "name": "Low-Bar Muscle-Up Transition",
       "equipment": "Bodyweight",
       "muscle": "Back",
       "primary": "Back",
@@ -1901,6 +1967,17 @@
         "Biceps"
       ],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_one_leg_bl",
+      "name": "One-Leg Back Lever",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_one_leg_fl",
@@ -2152,6 +2229,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_split_squat",
+      "name": "Split Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_straddle_bl",
       "name": "Straddle Back Lever",
       "equipment": "Bodyweight",
@@ -2181,6 +2269,17 @@
       "primary": "Back",
       "secondary": [
         "Core"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_straddle_lsit",
+      "name": "Straddle L-Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Triceps"
       ],
       "type": "duration"
     },
@@ -2346,6 +2445,17 @@
       "type": "duration"
     },
     {
+      "id": "cx_tuck_dragon_hold",
+      "name": "Tuck Dragon Flag Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Core",
+      "primary": "Core",
+      "secondary": [
+        "Back"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_tuck_fl",
       "name": "Tuck Front Lever",
       "equipment": "Bodyweight",
@@ -2432,6 +2542,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_vertical_flag",
+      "name": "Vertical Flag",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_vsit",
       "name": "V-Sit",
       "equipment": "Bodyweight",
@@ -2456,6 +2577,17 @@
     {
       "id": "cx_wall_hspu",
       "name": "Wall Handstand Push-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Triceps"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wall_hspu_negative",
+      "name": "Wall Handstand Push-Up Negative",
       "equipment": "Bodyweight",
       "muscle": "Shoulders",
       "primary": "Shoulders",

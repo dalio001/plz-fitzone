@@ -2,6 +2,13 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-09 — Coach review of every calisthenics ladder (P2-20)
+
+- Owner: progressions "a little bit not accurate"; research every movement, act as a coach, more personal. Research: docs/research/CALISTHENICS_COACH_REVIEW.md (Heria + Overcoming Gravity charts + r/bodyweightfitness + Antranik).
+- Reordered back lever, handstand, HSPU, flag, planche, dip, legs, core; 12 new moves (wall HSPU negative, deficit wall HSPU, straddle L-sit, frog stand, half-lay planche, one-leg back lever, vertical flag, advanced tuck flag, tuck dragon flag hold, low-bar muscle-up transition, split squat, ankle stretch) with how-to; 11 drills moved out of the ladders into "Coach drills" (added on skill days). Locks fixed: human flag could never open; muscle-up lock lowered to Heria's standard.
+- Personal: joints that need care (equipment sheet) or age 40+ = 3 clean sessions to move up, extra warm-up, straight-arm max 2×/week; aims refresh after each workout. Saved places migrate by exercise (CALI_LADDER_VER 2).
+- Tests: tests/p2_20_coach_ladders.test.mjs; 588 pass. Phone (test Huawei, localhost:8811) before/after checked. Pictures for the 12 new moves pending (Flow project not reachable in Chrome this session).
+
 ## 2026-11-07 — Skill goals with a coaching brain + Ask the coach (Jev) (P2-19), built, Jev key pending
 
 - Owner: choose skills, how many sessions a week, and where: own focus day, full body, or added to his gym days ("handstand on my shoulder day"); "a coaching brain in the app", with TypeSafe Jev for fast picking.

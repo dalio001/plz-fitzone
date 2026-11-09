@@ -50,7 +50,7 @@ describe('P2-06 normalisation (no schema bump)', () => {
       routines: [], history: [],
     }));
     const app = createApp({ store });
-    assert.equal(app.api.DEFAULT_EXERCISES.length, 239, '100 built-ins + 139 calisthenics exercises (P2-18)');
+    assert.equal(app.api.DEFAULT_EXERCISES.length, 251, '100 built-ins + 151 calisthenics exercises (P2-18, P2-20)');
     const byId = {};
     app.api.state.exercises.forEach((e) => { byId[e.id] = e; });
     assert.equal(byId.ex1.equipment, 'Barbell', 'ex1 equipment filled from built-in');
@@ -61,7 +61,7 @@ describe('P2-06 normalisation (no schema bump)', () => {
     assert.equal(byId.ex_222.primary, 'Quads', 'custom Legs -> Quads');
     assert.equal(byId.ex_222.equipment, 'Other', 'custom equipment defaults to Other');
     assert.deepEqual(plain(byId.ex_333.secondary), ['Forearms', 'Chest'], 'custom secondaries capped at 2');
-    assert.equal(app.api.state.exercises.length, 242, '4 kept + 99 merged built-ins + 139 calisthenics');
+    assert.equal(app.api.state.exercises.length, 254, '4 kept + 99 merged built-ins + 151 calisthenics');
     assert.deepEqual(plain(app.api.state.routines), [], 'routines untouched');
     assert.deepEqual(plain(app.api.state.history), [], 'history untouched');
     const snap = JSON.stringify(app.api.state.exercises);
@@ -83,7 +83,7 @@ describe('P2-06 normalisation (no schema bump)', () => {
     const ids = app.api.state.exercises.map((e) => e.id);
     assert.ok(ids.indexOf('ex_999') >= 0, 'owner custom kept');
     assert.ok(ids.indexOf('ex70') < 0, 'built-in Goblet Squat skipped (name clash, owner wins)');
-    assert.equal(ids.length, 239, '2 kept + 98 merged + 139 calisthenics');
+    assert.equal(ids.length, 251, '2 kept + 98 merged + 151 calisthenics');
   });
 });
 
@@ -351,7 +351,7 @@ describe('P2-06 restore compatibility', () => {
     assert.equal(r.data.exercises.length, 1, 'preview counts describe the backup file');
     app.api.pendingRestore = r.data;
     app.api.confirmRestore();
-    assert.equal(app.api.state.exercises.length, 239, 'built-ins merged on restore');
+    assert.equal(app.api.state.exercises.length, 251, 'built-ins merged on restore');
   });
 
   it('restore-accepts-new-backup-with-new-fields', () => {
