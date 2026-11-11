@@ -71,7 +71,19 @@ describe('P2-21 Exercises: Mobility section with a body-part filter', () => {
     const neck = app.el('exercisesDirectory').innerHTML;
     assert.ok(neck.includes('Chin Tuck') && !neck.includes('Pigeon Stretch'));
     assert.equal(app.el('exMuscleChips').style.display, 'none');
-    api.setExSection('all');
+    api.setExSection('');
     assert.ok(app.el('exercisesDirectory').innerHTML.includes('Bench Press'));
+  });
+
+  it('the kind row: Gym, Calisthenics and Mobility combine with the muscle filter', () => {
+    const app = createApp();
+    const api = app.api;
+    api.setExSection('gym');
+    let html = app.el('exercisesDirectory').innerHTML;
+    assert.ok(html.includes('Bench Press') && !html.includes('Tuck Planche') && !html.includes('Pigeon Stretch'));
+    api.setExSection('cali');
+    html = app.el('exercisesDirectory').innerHTML;
+    assert.ok(html.includes('Tuck Planche') && !html.includes('Bench Press (Barbell)') && !html.includes('Pigeon Stretch'));
+    assert.ok(app.el('exTypeChips').innerHTML.includes('🧘 Mobility'));
   });
 });
