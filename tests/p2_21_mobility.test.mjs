@@ -58,3 +58,20 @@ describe('P2-21 mobility areas', () => {
     assert.equal(app.api.caliFindMobility('cx_pigeon').area.id, 'hips');
   });
 });
+
+describe('P2-21 Exercises: Mobility section with a body-part filter', () => {
+  it('lists only mobility moves, grouped by area, and the area chip filters them', () => {
+    const app = createApp();
+    const api = app.api;
+    api.setExSection('mobility');
+    const all = app.el('exercisesDirectory').innerHTML;
+    for (const a of api.CALI_MOBILITY) assert.ok(all.includes(a.name.replace('&', '&amp;')), a.id + ' heading');
+    assert.ok(!all.includes('Bench Press'), 'gym moves stay in All exercises');
+    api.setExMobArea('neck');
+    const neck = app.el('exercisesDirectory').innerHTML;
+    assert.ok(neck.includes('Chin Tuck') && !neck.includes('Pigeon Stretch'));
+    assert.equal(app.el('exMuscleChips').style.display, 'none');
+    api.setExSection('all');
+    assert.ok(app.el('exercisesDirectory').innerHTML.includes('Bench Press'));
+  });
+});

@@ -726,6 +726,8 @@
     .cali-name { font-weight: 800; font-size: 15px; }
     .cali-count { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; }
     .cali-off { opacity: .55; }
+    .ex-sections { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); margin-bottom: var(--space-12); }
+    .ex-sections .btn { min-height: 44px; }
     .cali-mob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); }
     .cali-mob { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 88px; text-align: left; color: var(--text); cursor: pointer; font: inherit; margin: 0; }
     .cali-mob-ico { font-size: 22px; }
@@ -1028,10 +1030,12 @@
         <h2 class="section-title" style="margin:0;">Exercises</h2>
         <button class="btn btn-primary" onclick="openCustomExModal()">+ Create</button>
       </div>
+      <div class="ex-sections" id="exSections"></div>
       <input type="text" id="exSearchInput" class="input-field" placeholder="🔍 Search exercise or muscle..." oninput="onExSearchInput()" style="margin-bottom:var(--space-12);">
+      <div class="chips" id="exMobChips" style="margin-bottom:var(--space-12); display:none;"></div>
       <div class="chips" id="exMuscleChips" style="margin-bottom:var(--space-8);"></div>
       <div class="chips" id="exEquipChips" style="margin-bottom:var(--space-12);"></div>
-      <label style="display:flex; align-items:center; gap:var(--space-8); font-size:var(--font-14); color:var(--text-sub); margin-bottom:var(--space-16); min-height:var(--control-min-height); cursor:pointer;">
+      <label id="exHiddenRow" style="display:flex; align-items:center; gap:var(--space-8); font-size:var(--font-14); color:var(--text-sub); margin-bottom:var(--space-16); min-height:var(--control-min-height); cursor:pointer;">
         <input type="checkbox" id="showHiddenChk" style="width:22px; height:22px;" onchange="toggleShowHidden()"> Show hidden
       </label>
       <div id="exercisesDirectory"></div>
@@ -10798,7 +10802,33 @@
       return html;
     }
 
+    /* P2-21: Exercises has two sections, every exercise or Mobility, and
+       Mobility filters by body area (the same areas as the Calisthenics page). */
+    let exSection = 'all';
+    let exMobArea = '';
+
+    function setExSection(sec) {
+      exSection = sec === 'mobility' ? 'mobility' : 'all';
+      renderExercisesTab();
+    }
+
+    function setExMobArea(id) {
+      exMobArea = exMobArea === id ? '' : id;
+      renderExercisesTab();
+    }
+
     function renderExChips() {
+      const mob = exSection === 'mobility';
+      const sw = document.getElementById('exSections');
+      if (sw) sw.innerHTML = '<button class="btn' + (mob ? '' : ' btn-primary') + '" data-s="all" onclick="setExSection(this.dataset.s)">💪 All exercises</button>'
+        + '<button class="btn' + (mob ? ' btn-primary' : '') + '" data-s="mobility" onclick="setExSection(this.dataset.s)">🧘 Mobility</button>';
+      const mb = document.getElementById('exMobChips');
+      if (mb) {
+        mb.style.display = mob ? '' : 'none';
+        mb.innerHTML = '<button class="chip' + (exMobArea ? '' : ' on') + '" data-a="" onclick="setExMobArea(this.dataset.a)">All</button>'
+          + CALI_MOBILITY.map(a => '<button class="chip' + (exMobArea === a.id ? ' on' : '') + '" data-a="' + esc(a.id) + '" onclick="setExMobArea(this.dataset.a)">' + a.icon + ' ' + esc(a.name) + '</button>').join('');
+      }
+      ['exMuscleChips', 'exEquipChips', 'exHiddenRow'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = mob ? 'none' : ''; });
       const mc = document.getElementById('exMuscleChips');
       if (mc) mc.innerHTML = chipRowHtml(MUSCLES, exFilterMuscle, 'setExFilter', 'muscle');
       const ec = document.getElementById('exEquipChips');
@@ -11734,30 +11764,47 @@
       const q = (document.getElementById('exSearchInput')?.value || '').toLowerCase();
       const container = document.getElementById('exercisesDirectory');
       if (!container) return;
+      if (exSection === 'mobility') {
+        container.innerHTML = exMobilityListHtml(q);
+        return;
+      }
       const list = getFilteredExercises(q, exFilterMuscle, exFilterEquip, showHiddenExercises);
       if (list.length === 0) {
         container.innerHTML = '<div class="card">' + emptyStateHtml('No exercises match', 'Adjust your search or filters.') + '</div>';
         return;
       }
-      container.innerHTML = list
-        .map(e => {
-          const bestKg = getBest1RM(e.id);
-          const bestStr = bestKg > 0 ? formatDisplayWeight(bestKg) + ' ' + state.unit : '—';
-          const flags = (e.custom ? ' <span class="badge">custom</span>' : '') + (e.hidden ? ' <span class="badge">hidden</span>' : '') + (e.fav ? ' <span class="badge">★</span>' : '');
-          return `
-            <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-12); cursor:pointer; padding:var(--space-16);" onclick="openExerciseDetail('${e.id}')">
-              ${exerciseThumbHtml(e)}
-              <div style="flex:1; min-width:0;">
-                <div style="font-weight:700; font-size:var(--font-16); word-break:break-word;">${esc(e.name)}${flags}</div>
-                <div style="margin-top:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-4);">${exerciseBadgesHtml(e)}</div>
-              </div>
-              <div style="display:flex; align-items:center; gap:var(--space-8); flex:0 0 auto;">
-                <div style="font-weight:800; font-size:var(--font-14); color:var(--primary); white-space:nowrap;">${bestStr}</div>
-                ${favStarHtml(e)}
-              </div>
-            </div>
-          `;
-        }).join('');
+      container.innerHTML = list.map(exListCardHtml).join('');
+    }
+
+    /* Mobility section: the moves of every area (or the chosen one), under area headings. */
+    function exMobilityListHtml(q) {
+      const query = String(q || '').trim().toLowerCase();
+      let html = '';
+      CALI_MOBILITY.filter(a => !exMobArea || a.id === exMobArea).forEach(a => {
+        const list = a.moves.map(m => state.exercises.find(e => e.id === m.ex)).filter(e => e && (!query || e.name.toLowerCase().indexOf(query) >= 0));
+        if (!list.length) return;
+        html += '<div class="cali-kind">' + a.icon + ' ' + esc(a.name) + ' · ' + list.length + '</div>' + list.map(exListCardHtml).join('');
+      });
+      return html || '<div class="card">' + emptyStateHtml('No exercises match', 'Adjust your search or the body part.') + '</div>';
+    }
+
+    function exListCardHtml(e) {
+      const bestKg = getBest1RM(e.id);
+      const bestStr = bestKg > 0 ? formatDisplayWeight(bestKg) + ' ' + state.unit : '—';
+      const flags = (e.custom ? ' <span class="badge">custom</span>' : '') + (e.hidden ? ' <span class="badge">hidden</span>' : '') + (e.fav ? ' <span class="badge">★</span>' : '');
+      return `
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-12); cursor:pointer; padding:var(--space-16);" onclick="openExerciseDetail('${e.id}')">
+          ${exerciseThumbHtml(e)}
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:var(--font-16); word-break:break-word;">${esc(e.name)}${flags}</div>
+            <div style="margin-top:var(--space-4); display:flex; flex-wrap:wrap; gap:var(--space-4);">${exerciseBadgesHtml(e)}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:var(--space-8); flex:0 0 auto;">
+            <div style="font-weight:800; font-size:var(--font-14); color:var(--primary); white-space:nowrap;">${bestStr}</div>
+            ${favStarHtml(e)}
+          </div>
+        </div>
+      `;
     }
 
     function renderExercisesTab(skipChips = false) {
