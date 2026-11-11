@@ -1077,6 +1077,15 @@
       "type": "weight_reps"
     },
     {
+      "id": "cx_90_90",
+      "name": "90/90 Hip Switch",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_active_pike",
       "name": "Active Pike Lift",
       "equipment": "Bodyweight",
@@ -1143,6 +1152,15 @@
       "type": "duration"
     },
     {
+      "id": "cx_ankle_circles",
+      "name": "Ankle Circles",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_ankle_stretch",
       "name": "Knee-to-Wall Ankle Stretch",
       "equipment": "Bodyweight",
@@ -1184,6 +1202,15 @@
       "secondary": [
         "Biceps"
       ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_arm_circles",
+      "name": "Arm Circles",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
       "type": "bodyweight_reps"
     },
     {
@@ -1319,6 +1346,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_bench_tspine",
+      "name": "Bench T-Spine Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_bl_negative",
       "name": "Back-Lever Negative",
       "equipment": "Bodyweight",
@@ -1374,6 +1412,18 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_bridge",
+      "name": "Bridge",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders",
+        "Glutes"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_broom_row",
       "name": "Broomstick Row",
       "equipment": "Bodyweight",
@@ -1392,6 +1442,35 @@
       "primary": "Quads",
       "secondary": [
         "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_butterfly",
+      "name": "Butterfly Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_calf_stretch",
+      "name": "Wall Calf Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_cat_cow",
+      "name": "Cat-Cow",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
       ],
       "type": "bodyweight_reps"
     },
@@ -1418,6 +1497,26 @@
       "type": "duration"
     },
     {
+      "id": "cx_childs_pose",
+      "name": "Child's Pose",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_chin_tuck",
+      "name": "Chin Tuck",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_clap_pushup",
       "name": "Clap Push-Up",
       "equipment": "Bodyweight",
@@ -1427,6 +1526,17 @@
         "Triceps"
       ],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_cobra",
+      "name": "Cobra Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Core"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_cossack_squat",
@@ -1440,6 +1550,15 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_couch_stretch",
+      "name": "Couch Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
       "id": "cx_dead_hang",
       "name": "Active Hang",
       "equipment": "Bodyweight",
@@ -1447,6 +1566,18 @@
       "primary": "Back",
       "secondary": [
         "Forearms"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_deep_squat_hold",
+      "name": "Deep Squat Hold",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes",
+        "Calves"
       ],
       "type": "duration"
     },
@@ -1504,6 +1635,17 @@
         "Chest"
       ],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_doorway_stretch",
+      "name": "Doorway Chest Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Chest",
+      "primary": "Chest",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_dragon_flag",
@@ -1594,6 +1736,17 @@
       "type": "duration"
     },
     {
+      "id": "cx_forward_fold",
+      "name": "Standing Forward Fold",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Back"
+      ],
+      "type": "duration"
+    },
+    {
       "id": "cx_free_handstand",
       "name": "Freestanding Handstand",
       "equipment": "Bodyweight",
@@ -1635,6 +1788,15 @@
       "secondary": [
         "Core"
       ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_frog_stretch",
+      "name": "Frog Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [],
       "type": "duration"
     },
     {
@@ -1693,6 +1855,15 @@
       "type": "duration"
     },
     {
+      "id": "cx_half_kneel_ham",
+      "name": "Half-Kneeling Hamstring Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
       "id": "cx_half_lay_planche",
       "name": "Half-Lay Planche",
       "equipment": "Bodyweight",
@@ -1713,6 +1884,26 @@
         "Back"
       ],
       "type": "duration"
+    },
+    {
+      "id": "cx_heel_sit",
+      "name": "Kneeling Heel Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_hip_cars",
+      "name": "Hip Circles (CARs)",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Core"
+      ],
+      "type": "bodyweight_reps"
     },
     {
       "id": "cx_hollow_hold",
@@ -1806,6 +1997,17 @@
       "type": "duration"
     },
     {
+      "id": "cx_jefferson_curl",
+      "name": "Jefferson Curl",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_jump_squat",
       "name": "Jump Squat",
       "equipment": "Bodyweight",
@@ -1826,6 +2028,50 @@
         "Triceps"
       ],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_kneeling_hip_flexor",
+      "name": "Half-Kneeling Hip Flexor Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_kot_split_squat",
+      "name": "Knee-Over-Toe Split Squat",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_lizard",
+      "name": "Lizard Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [
+        "Quads"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_look_armpit_stretch",
+      "name": "Look-to-Armpit Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_low_bar_transition",
@@ -1872,6 +2118,15 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_lying_ham_stretch",
+      "name": "Lying Hamstring Stretch (towel)",
+      "equipment": "Bodyweight",
+      "muscle": "Hamstrings",
+      "primary": "Hamstrings",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
       "id": "cx_lying_leg_raise",
       "name": "Lying Leg Raise",
       "equipment": "Bodyweight",
@@ -1879,6 +2134,17 @@
       "primary": "Core",
       "secondary": [],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_lying_twist",
+      "name": "Lying Spinal Twist",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Glutes"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_manna",
@@ -1901,6 +2167,28 @@
         "Triceps"
       ],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_neck_cars",
+      "name": "Neck Circles",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_neck_side_stretch",
+      "name": "Neck Side Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "duration"
     },
     {
       "id": "cx_negative_dip",
@@ -2002,6 +2290,17 @@
       "type": "duration"
     },
     {
+      "id": "cx_open_book",
+      "name": "Open Book",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_pancake",
       "name": "Straddle Stretch",
       "equipment": "Bodyweight",
@@ -2010,6 +2309,24 @@
       "secondary": [
         "Glutes"
       ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_peterson_step",
+      "name": "Peterson Step-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_pigeon",
+      "name": "Pigeon Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Glutes",
+      "primary": "Glutes",
+      "secondary": [],
       "type": "duration"
     },
     {
@@ -2099,6 +2416,26 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_puppy_stretch",
+      "name": "Puppy Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Back"
+      ],
+      "type": "duration"
+    },
+    {
+      "id": "cx_quad_stretch",
+      "name": "Standing Quad Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
       "id": "cx_reverse_leg_raise",
       "name": "Reverse Leg Raise",
       "equipment": "Bodyweight",
@@ -2150,6 +2487,17 @@
       "primary": "Shoulders",
       "secondary": [
         "Chest"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_shoulder_cars",
+      "name": "Shoulder Circles (CARs)",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Back"
       ],
       "type": "bodyweight_reps"
     },
@@ -2226,6 +2574,24 @@
       "secondary": [
         "Shoulders"
       ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_sleeper_stretch",
+      "name": "Sleeper Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_slow_calf_raise",
+      "name": "Slow Calf Raise (step)",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
       "type": "bodyweight_reps"
     },
     {
@@ -2410,6 +2776,35 @@
         "Biceps"
       ],
       "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_thread_needle",
+      "name": "Thread the Needle",
+      "equipment": "Bodyweight",
+      "muscle": "Back",
+      "primary": "Back",
+      "secondary": [
+        "Shoulders"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_tibialis_raise",
+      "name": "Tibialis Raise",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_toe_sit",
+      "name": "Toe Sit",
+      "equipment": "Bodyweight",
+      "muscle": "Calves",
+      "primary": "Calves",
+      "secondary": [],
+      "type": "duration"
     },
     {
       "id": "cx_toes_to_bar",
@@ -2619,6 +3014,17 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_wall_slide",
+      "name": "Wall Slide",
+      "equipment": "Bodyweight",
+      "muscle": "Shoulders",
+      "primary": "Shoulders",
+      "secondary": [
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
       "id": "cx_wall_toe_pulls",
       "name": "Wall Toe Pulls",
       "equipment": "Bodyweight",
@@ -2707,8 +3113,56 @@
       "type": "bodyweight_reps"
     },
     {
+      "id": "cx_worlds_greatest",
+      "name": "World's Greatest Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Quads",
+      "primary": "Quads",
+      "secondary": [
+        "Hamstrings",
+        "Back"
+      ],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wrist_circles",
+      "name": "Wrist Circles",
+      "equipment": "Bodyweight",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wrist_extensor_stretch",
+      "name": "Back-of-Hand Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
+      "id": "cx_wrist_flexor_stretch",
+      "name": "Fingers-Back Wrist Stretch",
+      "equipment": "Bodyweight",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "duration"
+    },
+    {
       "id": "cx_wrist_prep",
       "name": "Wrist Warm-Up",
+      "equipment": "Bodyweight",
+      "muscle": "Forearms",
+      "primary": "Forearms",
+      "secondary": [],
+      "type": "bodyweight_reps"
+    },
+    {
+      "id": "cx_wrist_pushup",
+      "name": "Wrist Push-Up",
       "equipment": "Bodyweight",
       "muscle": "Forearms",
       "primary": "Forearms",

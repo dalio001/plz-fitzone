@@ -726,6 +726,9 @@
     .cali-name { font-weight: 800; font-size: 15px; }
     .cali-count { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; }
     .cali-off { opacity: .55; }
+    .cali-mob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); }
+    .cali-mob { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 88px; text-align: left; color: var(--text); cursor: pointer; font: inherit; margin: 0; }
+    .cali-mob-ico { font-size: 22px; }
     .cali-off .cali-count { color: var(--text-sub); }
     .cali-places { display: flex; flex-wrap: wrap; gap: var(--space-8); }
     .cali-gear { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elevated); color: var(--text); text-align: left; font: inherit; cursor: pointer; }
@@ -2507,6 +2510,52 @@
       ['cx_adv_tuck_flag', 'Advanced Tuck Flag', 'Bodyweight', 'Back', ['Core'], 'duration'],
       ['cx_tuck_dragon_hold', 'Tuck Dragon Flag Hold', 'Bodyweight', 'Core', ['Back'], 'duration'],
       ['cx_ankle_stretch', 'Knee-to-Wall Ankle Stretch', 'Bodyweight', 'Calves', ['Quads'], 'duration'],
+      // P2-21 mobility library (by body area).
+      ["cx_chin_tuck", "Chin Tuck", "Bodyweight", "Back", ["Shoulders"], "bodyweight_reps"],
+      ["cx_neck_cars", "Neck Circles", "Bodyweight", "Back", ["Shoulders"], "bodyweight_reps"],
+      ["cx_neck_side_stretch", "Neck Side Stretch", "Bodyweight", "Back", ["Shoulders"], "duration"],
+      ["cx_look_armpit_stretch", "Look-to-Armpit Stretch", "Bodyweight", "Back", ["Shoulders"], "duration"],
+      ["cx_arm_circles", "Arm Circles", "Bodyweight", "Shoulders", [], "bodyweight_reps"],
+      ["cx_shoulder_cars", "Shoulder Circles (CARs)", "Bodyweight", "Shoulders", ["Back"], "bodyweight_reps"],
+      ["cx_wall_slide", "Wall Slide", "Bodyweight", "Shoulders", ["Back"], "bodyweight_reps"],
+      ["cx_doorway_stretch", "Doorway Chest Stretch", "Bodyweight", "Chest", ["Shoulders"], "duration"],
+      ["cx_sleeper_stretch", "Sleeper Stretch", "Bodyweight", "Shoulders", [], "duration"],
+      ["cx_puppy_stretch", "Puppy Stretch", "Bodyweight", "Shoulders", ["Back"], "duration"],
+      ["cx_wrist_circles", "Wrist Circles", "Bodyweight", "Forearms", [], "bodyweight_reps"],
+      ["cx_wrist_flexor_stretch", "Fingers-Back Wrist Stretch", "Bodyweight", "Forearms", [], "duration"],
+      ["cx_wrist_extensor_stretch", "Back-of-Hand Stretch", "Bodyweight", "Forearms", [], "duration"],
+      ["cx_wrist_pushup", "Wrist Push-Up", "Bodyweight", "Forearms", [], "bodyweight_reps"],
+      ["cx_cat_cow", "Cat-Cow", "Bodyweight", "Back", ["Core"], "bodyweight_reps"],
+      ["cx_thread_needle", "Thread the Needle", "Bodyweight", "Back", ["Shoulders"], "bodyweight_reps"],
+      ["cx_open_book", "Open Book", "Bodyweight", "Back", ["Chest"], "bodyweight_reps"],
+      ["cx_bench_tspine", "Bench T-Spine Stretch", "Bodyweight", "Back", ["Shoulders"], "duration"],
+      ["cx_childs_pose", "Child's Pose", "Bodyweight", "Back", [], "duration"],
+      ["cx_cobra", "Cobra Stretch", "Bodyweight", "Back", ["Core"], "duration"],
+      ["cx_lying_twist", "Lying Spinal Twist", "Bodyweight", "Back", ["Glutes"], "duration"],
+      ["cx_jefferson_curl", "Jefferson Curl", "Bodyweight", "Hamstrings", ["Back"], "bodyweight_reps"],
+      ["cx_bridge", "Bridge", "Bodyweight", "Back", ["Shoulders", "Glutes"], "duration"],
+      ["cx_hip_cars", "Hip Circles (CARs)", "Bodyweight", "Glutes", ["Core"], "bodyweight_reps"],
+      ["cx_90_90", "90/90 Hip Switch", "Bodyweight", "Glutes", [], "bodyweight_reps"],
+      ["cx_pigeon", "Pigeon Stretch", "Bodyweight", "Glutes", [], "duration"],
+      ["cx_frog_stretch", "Frog Stretch", "Bodyweight", "Glutes", [], "duration"],
+      ["cx_butterfly", "Butterfly Stretch", "Bodyweight", "Glutes", [], "duration"],
+      ["cx_deep_squat_hold", "Deep Squat Hold", "Bodyweight", "Quads", ["Glutes", "Calves"], "duration"],
+      ["cx_forward_fold", "Standing Forward Fold", "Bodyweight", "Hamstrings", ["Back"], "duration"],
+      ["cx_half_kneel_ham", "Half-Kneeling Hamstring Stretch", "Bodyweight", "Hamstrings", [], "duration"],
+      ["cx_lying_ham_stretch", "Lying Hamstring Stretch (towel)", "Bodyweight", "Hamstrings", [], "duration"],
+      ["cx_kneeling_hip_flexor", "Half-Kneeling Hip Flexor Stretch", "Bodyweight", "Quads", ["Glutes"], "duration"],
+      ["cx_couch_stretch", "Couch Stretch", "Bodyweight", "Quads", [], "duration"],
+      ["cx_worlds_greatest", "World's Greatest Stretch", "Bodyweight", "Quads", ["Hamstrings", "Back"], "bodyweight_reps"],
+      ["cx_lizard", "Lizard Stretch", "Bodyweight", "Glutes", ["Quads"], "duration"],
+      ["cx_quad_stretch", "Standing Quad Stretch", "Bodyweight", "Quads", [], "duration"],
+      ["cx_tibialis_raise", "Tibialis Raise", "Bodyweight", "Calves", [], "bodyweight_reps"],
+      ["cx_heel_sit", "Kneeling Heel Sit", "Bodyweight", "Quads", [], "duration"],
+      ["cx_kot_split_squat", "Knee-Over-Toe Split Squat", "Bodyweight", "Quads", ["Glutes"], "bodyweight_reps"],
+      ["cx_peterson_step", "Peterson Step-Up", "Bodyweight", "Quads", [], "bodyweight_reps"],
+      ["cx_ankle_circles", "Ankle Circles", "Bodyweight", "Calves", [], "bodyweight_reps"],
+      ["cx_calf_stretch", "Wall Calf Stretch", "Bodyweight", "Calves", [], "duration"],
+      ["cx_toe_sit", "Toe Sit", "Bodyweight", "Calves", [], "duration"],
+      ["cx_slow_calf_raise", "Slow Calf Raise (step)", "Bodyweight", "Calves", [], "bodyweight_reps"],
       ['cx_wall_pushup', 'Wall Push-Up', 'Bodyweight', 'Chest', ['Triceps'], 'bodyweight_reps'],
       ['cx_towel_door_row', 'Towel Door Row', 'Bodyweight', 'Back', ['Biceps'], 'bodyweight_reps'],
       ['cx_broom_row', 'Broomstick Row', 'Bodyweight', 'Back', ['Biceps'], 'bodyweight_reps'],
@@ -2696,6 +2745,51 @@
       "cx_adv_tuck_flag": {"setup": "Flag grip on the pole, top arm pulls, bottom arm pushes.", "move": "Lift the body sideways to level with the back flat and knees bent at a right angle, hold.", "avoid": "Hips dropping below the shoulders."},
       "cx_tuck_dragon_hold": {"setup": "Lying on a bench, hands holding the anchor behind the head.", "move": "Lift the hips up onto the upper back, knees tucked, and hold the body still.", "avoid": "Weight on the neck or the lower back arching."},
       "cx_ankle_stretch": {"setup": "Facing a wall, front foot a hand's length away, back leg behind.", "move": "Push the front knee forward to touch the wall with the heel kept down, hold.", "avoid": "Letting the heel lift or the knee cave in."},
+      "cx_chin_tuck": {"setup": "Stand with your back and the back of your head against a wall.", "move": "Slide the chin straight back to make a double chin, hold 2 seconds, relax.", "avoid": "Tipping the head down instead of sliding it straight back."},
+      "cx_neck_cars": {"setup": "Stand tall, shoulders down and relaxed.", "move": "Tuck the chin, then roll the head slowly toward one shoulder, up to look at the ceiling, over the other shoulder and back to the chin. Then the other way.", "avoid": "Fast rolls, or dropping the head back hard."},
+      "cx_neck_side_stretch": {"setup": "Sit tall on a chair or bench and hold its edge with your right hand.", "move": "Tilt the left ear toward the left shoulder and rest the left hand lightly on the head. Breathe slowly, then swap sides.", "avoid": "Pulling hard with the hand, or lifting the shoulder you stretch."},
+      "cx_look_armpit_stretch": {"setup": "Sit tall on a chair or bench and hold its edge with your right hand.", "move": "Turn the nose toward the left armpit and let the left hand rest on the back of the head to add light weight. Swap sides.", "avoid": "Rounding the whole back instead of moving the neck."},
+      "cx_arm_circles": {"setup": "Stand tall, arms straight out to the sides at shoulder height.", "move": "Draw circles, small then big, 10 forward then 10 backward.", "avoid": "Shrugging the shoulders up to the ears."},
+      "cx_shoulder_cars": {"setup": "Stand tall, squeeze the stomach, one arm by your side.", "move": "Lift the straight arm forward and up, turn the thumb out, then draw the biggest slow circle behind you and down. Only the arm moves.", "avoid": "Arching the low back or twisting to fake the range."},
+      "cx_wall_slide": {"setup": "Stand with back, head and forearms against a wall, elbows bent like a goal post.", "move": "Slide the arms up the wall as high as you can while everything stays in contact, then pull them back down.", "avoid": "The low back peeling off the wall."},
+      "cx_doorway_stretch": {"setup": "Stand at a door frame or wall corner, forearm on it, elbow at shoulder height.", "move": "Step forward and turn the chest away until the front of the shoulder and chest stretch.", "avoid": "Sharp pain at the front of the shoulder: ease off and lower the elbow."},
+      "cx_sleeper_stretch": {"setup": "Lie on your side, bottom arm in front at shoulder height, elbow bent 90 degrees, fingers up.", "move": "With the top hand, press the bottom forearm gently down toward the floor.", "avoid": "Rolling back off the shoulder, or forcing it."},
+      "cx_puppy_stretch": {"setup": "Kneel on all fours, then walk the hands forward.", "move": "Keep the hips above the knees and sink the chest to the floor with straight arms.", "avoid": "Sitting back on the heels (that is child pose)."},
+      "cx_wrist_circles": {"setup": "Stand or sit, fingers laced together in front of the chest.", "move": "Roll the wrists in slow full circles, then the other way.", "avoid": "Rushing through it."},
+      "cx_wrist_flexor_stretch": {"setup": "Kneel, hands flat on the floor, fingers pointing back toward the knees.", "move": "Keep the palms flat and rock the hips slowly back until the forearms stretch.", "avoid": "Palms lifting off the floor."},
+      "cx_wrist_extensor_stretch": {"setup": "Kneel and place the backs of the hands on the floor, fingers toward the knees.", "move": "Keep the arms straight and lean back gently.", "avoid": "Putting your full weight on at once."},
+      "cx_wrist_pushup": {"setup": "Kneel, hands flat under the shoulders, arms straight.", "move": "Lift the palms off the floor onto the fingers, then lower slowly. Arms stay straight.", "avoid": "Bending the elbows."},
+      "cx_cat_cow": {"setup": "On all fours, hands under the shoulders, knees under the hips.", "move": "Breathe in, drop the belly and lift the chest (cow). Breathe out, round the back up to the ceiling (cat).", "avoid": "Moving only the neck."},
+      "cx_thread_needle": {"setup": "On all fours on a mat.", "move": "Reach one arm up to the ceiling with the eyes following it, then thread it under the other arm until the shoulder rests on the floor.", "avoid": "Hips swinging to the side."},
+      "cx_open_book": {"setup": "Lie on your side, knees bent to hip height, arms straight in front, palms together.", "move": "Open the top arm in a wide arc to the other side, chest turning with it, eyes on the hand. Return.", "avoid": "Knees lifting apart."},
+      "cx_bench_tspine": {"setup": "Kneel facing a bench, elbows on it, palms together above the head.", "move": "Sit the hips back and sink the chest toward the floor until the upper back and armpits stretch.", "avoid": "Sagging the low back; keep the ribs tucked in."},
+      "cx_childs_pose": {"setup": "Kneel, big toes together, knees apart.", "move": "Sit back on the heels, reach the arms forward and rest the forehead on the floor. Breathe into the back.", "avoid": "Holding the breath."},
+      "cx_cobra": {"setup": "Lie face down, hands under the shoulders.", "move": "Press the chest up with the hips on the floor and the shoulders low.", "avoid": "A pinch in the low back: go lower, onto the forearms."},
+      "cx_lying_twist": {"setup": "Lie on your back, arms out wide in a T.", "move": "Bring one bent knee across the body to the floor and look the other way. Both shoulders stay down.", "avoid": "Lifting the opposite shoulder off the floor."},
+      "cx_jefferson_curl": {"setup": "Stand tall, legs straight, arms hanging. No weight to begin.", "move": "Tuck the chin and roll down one vertebra at a time toward the toes, then roll back up slowly.", "avoid": "Adding weight before it feels easy, or going fast."},
+      "cx_bridge": {"setup": "Lie on your back, feet flat near the hips, hands by the ears with fingers toward the shoulders.", "move": "Push the hips and chest up and straighten the arms, then push the shoulders over the hands.", "avoid": "Flat shoulders that put all the bend in the low back."},
+      "cx_hip_cars": {"setup": "Stand side-on to a wall, one hand on it, standing leg straight.", "move": "Lift the other knee forward, open it out to the side, take it back and down in the biggest slow circle. Body stays still.", "avoid": "Twisting the trunk to fake the range."},
+      "cx_90_90": {"setup": "Sit tall, both knees bent 90 degrees, one leg in front, one to the side.", "move": "Keep the feet planted and turn both knees over to the other side. Sit tall all the time.", "avoid": "Leaning back on the hands once you can do it without."},
+      "cx_pigeon": {"setup": "From all fours, bring one knee forward behind the hand with the shin across; the back leg stays straight behind.", "move": "Square the hips and walk the hands forward to fold over the front shin.", "avoid": "Knee pain: bring the front foot closer to the hip."},
+      "cx_frog_stretch": {"setup": "On all fours, slide the knees wide, feet out in line with the knees.", "move": "Rock the hips slowly back and down toward the floor.", "avoid": "Arching the low back."},
+      "cx_butterfly": {"setup": "Sit, soles of the feet together, hands holding the feet.", "move": "Sit tall, then lean forward from the hips with the elbows resting on the knees.", "avoid": "Rounding the back to get lower."},
+      "cx_deep_squat_hold": {"setup": "Feet shoulder width, toes a little out.", "move": "Sit all the way down, heels flat, chest up, elbows pushing the knees out.", "avoid": "Heels lifting: hold a pole or put a thin book under the heels."},
+      "cx_forward_fold": {"setup": "Stand with feet together, knees straight but soft.", "move": "Fold from the hips, let the head and arms hang and grab the elbows. Breathe out to sink.", "avoid": "Bouncing."},
+      "cx_half_kneel_ham": {"setup": "Kneel on one knee, front leg straight, heel on the floor, toes up.", "move": "Push the hips back and fold forward from the hips with a straight back.", "avoid": "Rounding the back to reach the toes."},
+      "cx_lying_ham_stretch": {"setup": "Lie on your back with a towel or band around one foot.", "move": "Keep the leg straight and pull it gently toward you; the other leg stays flat.", "avoid": "Bending the knee or lifting the hips."},
+      "cx_kneeling_hip_flexor": {"setup": "Kneel on one knee, the other foot flat in front.", "move": "Squeeze the glute of the back leg, tuck the hips under and shift forward a little.", "avoid": "Arching the low back instead of tucking the hips."},
+      "cx_couch_stretch": {"setup": "Kneel with your back to a wall, back shin up the wall, the other foot flat in front.", "move": "Lift the chest tall and squeeze the glute of the back leg.", "avoid": "Arching the low back."},
+      "cx_worlds_greatest": {"setup": "Step into a long lunge, both hands on the floor inside the front foot.", "move": "Drop the elbow toward the front foot, then turn and reach that arm to the ceiling. Return and repeat.", "avoid": "Letting the back knee bend; keep the back leg long."},
+      "cx_lizard": {"setup": "Long lunge, back knee down, both hands inside the front foot.", "move": "Lower onto the forearms if you can and let the hips sink.", "avoid": "Front knee drifting in."},
+      "cx_quad_stretch": {"setup": "Stand tall, one hand on a wall.", "move": "Bend one knee and hold the foot behind you, knees together, hips tucked.", "avoid": "Knee flaring out or leaning forward."},
+      "cx_tibialis_raise": {"setup": "Lean your back on a wall, feet a step out in front.", "move": "Lift the toes as high as you can, then lower slowly. Heels stay down.", "avoid": "Bending the knees or pushing off the wall."},
+      "cx_heel_sit": {"setup": "Kneel on a mat, tops of the feet flat.", "move": "Sit the hips back onto the heels and stay tall. Use the hands on the floor to take some weight at first.", "avoid": "Forcing it if the knees hurt: put a cushion between hips and heels."},
+      "cx_kot_split_squat": {"setup": "Long split stance, front heel flat, hands on the hips (hold a wall to begin).", "move": "Slide the front knee forward past the toes while the back knee lowers, front heel stays down. Push back up.", "avoid": "The front heel lifting."},
+      "cx_peterson_step": {"setup": "Stand on a low step on one leg, the heel of that foot raised.", "move": "Lower the other heel to tap the floor in front, then press back up through the ball of the foot, knee over the toes.", "avoid": "The knee falling inward."},
+      "cx_ankle_circles": {"setup": "Stand on one leg holding a wall, or sit.", "move": "Draw the biggest slow circles you can with the foot, both directions.", "avoid": "Moving the whole leg instead of the ankle."},
+      "cx_calf_stretch": {"setup": "Hands on a wall, one leg back, heel down, knee straight.", "move": "Lean the hips forward until the calf stretches. Then bend the back knee a little to stretch lower.", "avoid": "The back heel lifting."},
+      "cx_toe_sit": {"setup": "Kneel with the toes tucked under.", "move": "Sit back onto the heels so the soles and toes stretch. Hands on the floor to start.", "avoid": "Toes rolling out to the side."},
+      "cx_slow_calf_raise": {"setup": "Balls of the feet on a step, heels hanging off, light hand on a wall.", "move": "Rise all the way up, then lower for 3 seconds until the heels are below the step.", "avoid": "Bouncing at the bottom."},
       "cx_wall_pushup": {"setup": "Hands on the wall at chest height, feet a big step back, body straight.", "move": "Bend the elbows until the nose nears the wall, then push back.", "avoid": "Standing so close that it does nothing."},
       "cx_towel_door_row": {"setup": "A towel shut in a strong door that closes toward you, door locked; hold both ends and lean back.", "move": "Row your chest to your hands, lower slowly; walk the feet closer to make it harder.", "avoid": "Using a door that opens toward you."},
       "cx_broom_row": {"setup": "A strong wooden or steel pole across two chairs weighted down; lie under it.", "move": "Pull your chest to the pole and lower slowly, body straight.", "avoid": "Chairs not weighted, so they shift."},
@@ -2841,6 +2935,97 @@
       knees: ['🦵', 'Knees', 'cx_ankle_stretch']
     };
 
+    /* P2-21 mobility by body area (owner, 2026-11-11: "another sub-category
+       with the body parts just for mobility"). No ladder: every move of an
+       area is done the same day, easy and slow; one tap starts the routine.
+       Sources: docs/research/MOBILITY_LIBRARY.md. */
+    const CALI_MOBILITY = [{"id": "neck", "name": "Neck", "icon": "🦒", "blurb": "Desk neck, stiff after sleep, before handstands.", "helps": "handstand", "moves": [{"ex": "cx_chin_tuck", "name": "Chin Tuck", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["wall"], "level": 0}, {"ex": "cx_neck_cars", "name": "Neck Circles", "hold": false, "sets": 2, "lo": 3, "hi": 5, "gear": ["floor"], "level": 0}, {"ex": "cx_neck_side_stretch", "name": "Neck Side Stretch", "hold": true, "sets": 2, "lo": 20, "hi": 30, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_look_armpit_stretch", "name": "Look-to-Armpit Stretch", "hold": true, "sets": 2, "lo": 20, "hi": 30, "gear": ["floor"], "perSide": true, "level": 0}]}, {"id": "shoulders", "name": "Shoulders", "icon": "🙆", "blurb": "Overhead reach, healthy rotation, open chest.", "helps": "handstand, planche, back lever, muscle-up", "moves": [{"ex": "cx_arm_circles", "name": "Arm Circles", "hold": false, "sets": 2, "lo": 10, "hi": 20, "gear": ["floor"], "level": 0}, {"ex": "cx_shoulder_cars", "name": "Shoulder Circles (CARs)", "hold": false, "sets": 2, "lo": 3, "hi": 5, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_shoulder_dislocate", "name": "Stick Shoulder Pass", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["floor"], "level": 0}, {"ex": "cx_wall_slide", "name": "Wall Slide", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["wall"], "level": 0}, {"ex": "cx_doorway_stretch", "name": "Doorway Chest Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["wall"], "perSide": true, "level": 0}, {"ex": "cx_sleeper_stretch", "name": "Sleeper Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "perSide": true, "level": 1}, {"ex": "cx_puppy_stretch", "name": "Puppy Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "ex44", "name": "Band Pull-Apart", "hold": false, "sets": 2, "lo": 15, "hi": 20, "gear": ["band"], "level": 0}, {"ex": "cx_shoulder_ext", "name": "Shoulder Extension Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["bench"], "level": 1}]}, {"id": "wrists", "name": "Wrists & forearms", "icon": "✋", "blurb": "Ready for push-ups, handstands and planche.", "helps": "handstand, planche, L-sit", "moves": [{"ex": "cx_wrist_prep", "name": "Wrist Warm-Up", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["floor"], "level": 0}, {"ex": "cx_wrist_circles", "name": "Wrist Circles", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["floor"], "level": 0}, {"ex": "cx_wrist_flexor_stretch", "name": "Fingers-Back Wrist Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "level": 0}, {"ex": "cx_wrist_extensor_stretch", "name": "Back-of-Hand Stretch", "hold": true, "sets": 2, "lo": 20, "hi": 30, "gear": ["floor"], "level": 0}, {"ex": "cx_wrist_pushup", "name": "Wrist Push-Up", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["floor"], "level": 1}]}, {"id": "upper_back", "name": "Upper back", "icon": "🔄", "blurb": "Twist and arch the upper spine; stand tall.", "helps": "handstand, bridge, back lever", "moves": [{"ex": "cx_cat_cow", "name": "Cat-Cow", "hold": false, "sets": 2, "lo": 8, "hi": 12, "gear": ["floor"], "level": 0}, {"ex": "cx_thread_needle", "name": "Thread the Needle", "hold": false, "sets": 2, "lo": 6, "hi": 8, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_open_book", "name": "Open Book", "hold": false, "sets": 2, "lo": 6, "hi": 8, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_bench_tspine", "name": "Bench T-Spine Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["bench"], "level": 1}]}, {"id": "lower_back", "name": "Lower back & spine", "icon": "🐍", "blurb": "A spine that bends, twists and recovers.", "helps": "bridge, dragon flag, pike", "moves": [{"ex": "cx_childs_pose", "name": "Child's Pose", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "cx_cobra", "name": "Cobra Stretch", "hold": true, "sets": 2, "lo": 20, "hi": 30, "gear": ["floor"], "level": 0}, {"ex": "cx_lying_twist", "name": "Lying Spinal Twist", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_jefferson_curl", "name": "Jefferson Curl", "hold": false, "sets": 2, "lo": 5, "hi": 8, "gear": ["floor"], "level": 1}, {"ex": "cx_bridge", "name": "Bridge", "hold": true, "sets": 3, "lo": 10, "hi": 30, "gear": ["floor"], "level": 2}]}, {"id": "hips", "name": "Hips", "icon": "🦋", "blurb": "Deep squat, turned-out hips, open groin.", "helps": "pistol, L-sit, straddle", "moves": [{"ex": "cx_hip_cars", "name": "Hip Circles (CARs)", "hold": false, "sets": 2, "lo": 3, "hi": 5, "gear": ["wall"], "perSide": true, "level": 0}, {"ex": "cx_90_90", "name": "90/90 Hip Switch", "hold": false, "sets": 2, "lo": 6, "hi": 10, "gear": ["floor"], "level": 0}, {"ex": "cx_pigeon", "name": "Pigeon Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_frog_stretch", "name": "Frog Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "cx_butterfly", "name": "Butterfly Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "cx_deep_squat_hold", "name": "Deep Squat Hold", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}]}, {"id": "hamstrings", "name": "Hamstrings", "icon": "🦵", "blurb": "The pike and forward fold for L-sit and press.", "helps": "L-sit, V-sit, press handstand", "moves": [{"ex": "cx_pike_stretch", "name": "Pike Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "cx_forward_fold", "name": "Standing Forward Fold", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "cx_half_kneel_ham", "name": "Half-Kneeling Hamstring Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_lying_ham_stretch", "name": "Lying Hamstring Stretch (towel)", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_pancake", "name": "Straddle Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 1}, {"ex": "cx_active_pike", "name": "Active Pike Lift", "hold": false, "sets": 3, "lo": 8, "hi": 12, "gear": ["floor"], "level": 1}]}, {"id": "hip_flexors", "name": "Hip flexors & quads", "icon": "🏃", "blurb": "Sitting all day closes the front of the hips.", "helps": "bridge, front split, sprinting", "moves": [{"ex": "cx_kneeling_hip_flexor", "name": "Half-Kneeling Hip Flexor Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_couch_stretch", "name": "Couch Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["wall"], "perSide": true, "level": 1}, {"ex": "cx_worlds_greatest", "name": "World's Greatest Stretch", "hold": false, "sets": 2, "lo": 4, "hi": 6, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_lizard", "name": "Lizard Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_quad_stretch", "name": "Standing Quad Stretch", "hold": true, "sets": 2, "lo": 20, "hi": 30, "gear": ["wall"], "perSide": true, "level": 0}]}, {"id": "knees", "name": "Knees", "icon": "🦿", "blurb": "Strong, pain-free knees for squats and jumps.", "helps": "pistol, shrimp squat", "moves": [{"ex": "cx_tibialis_raise", "name": "Tibialis Raise", "hold": false, "sets": 2, "lo": 15, "hi": 20, "gear": ["wall"], "level": 0}, {"ex": "cx_heel_sit", "name": "Kneeling Heel Sit", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["floor"], "level": 0}, {"ex": "cx_kot_split_squat", "name": "Knee-Over-Toe Split Squat", "hold": false, "sets": 2, "lo": 6, "hi": 10, "gear": ["floor"], "perSide": true, "level": 1}, {"ex": "cx_peterson_step", "name": "Peterson Step-Up", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["box"], "perSide": true, "level": 1}]}, {"id": "ankles", "name": "Ankles & calves", "icon": "🦶", "blurb": "Deeper squats, better landings, healthy feet.", "helps": "pistol, deep squat", "moves": [{"ex": "cx_ankle_stretch", "name": "Knee-to-Wall Ankle Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 60, "gear": ["wall"], "perSide": true, "level": 0}, {"ex": "cx_ankle_circles", "name": "Ankle Circles", "hold": false, "sets": 2, "lo": 8, "hi": 10, "gear": ["floor"], "perSide": true, "level": 0}, {"ex": "cx_calf_stretch", "name": "Wall Calf Stretch", "hold": true, "sets": 2, "lo": 30, "hi": 45, "gear": ["wall"], "perSide": true, "level": 0}, {"ex": "cx_toe_sit", "name": "Toe Sit", "hold": true, "sets": 2, "lo": 20, "hi": 45, "gear": ["floor"], "level": 0}, {"ex": "cx_slow_calf_raise", "name": "Slow Calf Raise (step)", "hold": false, "sets": 2, "lo": 10, "hi": 15, "gear": ["box"], "level": 1}]}];
+
+    function caliMobilityArea(id) {
+      return CALI_MOBILITY.find(a => a.id === id) || null;
+    }
+
+    function caliFindMobility(exId) {
+      for (const a of CALI_MOBILITY) {
+        const m = a.moves.find(x => x.ex === exId);
+        if (m) return { area: a, move: m };
+      }
+      return null;
+    }
+
+    /* The moves of an area your equipment allows; 'full' = one easy move of every area. */
+    function caliMobilityMoves(id) {
+      const have = caliGear();
+      const ok = m => caliHas(have, m.gear);
+      if (id === 'full') return CALI_MOBILITY.map(a => a.moves.find(m => m.level === 0 && ok(m))).filter(Boolean);
+      const a = caliMobilityArea(id);
+      return a ? a.moves.filter(ok) : [];
+    }
+
+    function caliMobilityText(m) {
+      const u = m.hold ? ' s' : '';
+      return m.sets + ' × ' + m.lo + '–' + m.hi + u + (m.perSide ? ' each side' : '');
+    }
+
+    function openCaliMobility(id) {
+      const a = caliMobilityArea(id);
+      if (!a) return;
+      const have = caliGear();
+      const n = caliMobilityMoves(id).length;
+      let html = '<div class="cali-sub" style="margin-bottom:6px;">' + esc(a.blurb) + '</div>'
+        + '<div class="cali-sub" style="margin-bottom:10px;">Helps: ' + esc(a.helps) + '</div>'
+        + (n ? '<button class="btn btn-primary btn-block" style="min-height:48px; margin-bottom:10px;" data-id="' + esc(a.id) + '" onclick="caliMobilityStart(this.dataset.id)">▶ Start ' + esc(a.name) + ' · ' + n + (n === 1 ? ' move' : ' moves') + '</button>' : '')
+        + '<div class="cali-note">🧘 Slow and easy: breathe out into each stretch, never into pain. Every day is fine; best after training or as a warm-up.</div>';
+      html += a.moves.map(m => {
+        const ok = caliHas(have, m.gear);
+        const ex = (state.exercises || []).find(e => e.id === m.ex) || { id: m.ex, name: m.name };
+        const lvl = '<span class="cali-lvl lv' + m.level + '">' + CALI_LEVELS[m.level] + '</span>';
+        if (!ok) return '<div class="cali-step cali-off">' + exerciseThumbHtml(ex) + '<div class="cali-step-main"><div class="cali-name">' + esc(m.name) + '</div>'
+          + '<div class="cali-sub">' + lvl + ' Needs: ' + esc(caliMissingText(m, have)) + '</div></div></div>';
+        return '<button class="cali-step" data-ex="' + esc(m.ex) + '" onclick="openExerciseDetail(this.getAttribute(\'data-ex\'))">' + exerciseThumbHtml(ex)
+          + '<div class="cali-step-main"><div class="cali-name">' + esc(m.name) + '</div><div class="cali-sub">' + lvl + ' ' + esc(caliMobilityText(m)) + '</div></div><span class="cali-chev">›</span></button>';
+      }).join('');
+      openCaliSheet(a.icon + ' ' + a.name, html);
+    }
+
+    function caliMobilityAdd(id) {
+      caliMobilityMoves(id).forEach(m => {
+        const sets = [];
+        for (let k = 0; k < m.sets; k++) sets.push(m.hold ? { type: 'N', weight: '', durationSec: '', targetSec: m.lo, done: false } : { type: 'N', weight: 0, reps: '', done: false });
+        activeWorkout.exercises.push({ exId: m.ex, cali: true, restSec: 20, note: '', sets: sets, targetRepsLabel: m.hold ? '' : m.lo + '-' + m.hi });
+      });
+    }
+
+    function caliMobilityStart(id) {
+      const a = caliMobilityArea(id);
+      const go = () => {
+        if (!activeWorkout) doStartEmptyWorkout();
+        if (activeWorkout.title === 'Workout') activeWorkout.title = 'Mobility · ' + (a ? a.name : 'Full body');
+        caliMobilityAdd(id);
+        closeModal('caliSheetModal');
+        openWorkoutDrawer();
+      };
+      if (!activeWorkout && loadActiveSessionDraft()) {
+        pendingStartFn = go;
+        showResumeModal('start-new');
+        return;
+      }
+      go();
+    }
+
+    function caliMobilityHtml() {
+      const full = caliMobilityMoves('full').length;
+      return '<div class="cali-kind">Mobility</div>'
+        + '<div class="cali-sub" style="margin-bottom:8px;">Stretch and move by body part. Tap an area to see its moves.</div>'
+        + '<button class="card cali-ladder" onclick="caliMobilityStart(\'full\')"><div class="cali-row"><span class="cali-name">🧘 Full-body mobility</span><span class="cali-count">' + full + ' moves</span></div>'
+        + '<div class="cali-sub">One easy move for every area, about 15 minutes. ▶ Start</div></button>'
+        + '<div class="cali-mob-grid">' + CALI_MOBILITY.map(a => {
+          const n = caliMobilityMoves(a.id).length;
+          return '<button class="card cali-mob" data-id="' + esc(a.id) + '" onclick="openCaliMobility(this.dataset.id)"><span class="cali-mob-ico">' + a.icon + '</span>'
+            + '<span class="cali-name">' + esc(a.name) + '</span><span class="cali-sub">' + n + (n === a.moves.length ? '' : ' of ' + a.moves.length) + ' moves</span></button>';
+        }).join('') + '</div>';
+    }
+
     function caliAge() {
       const p = state.profile || {};
       let a = null;
@@ -2978,7 +3163,7 @@
       const wkSlot = '<div data-cali-workouts></div>';
       let html = caliGuideHtml(c) + (planned ? goalCard + (c.plan ? weekCard : '') + wkSlot + notes + progCard + testCard + gearCard + (c.plan ? '' : weekCard)
         : gearCard + testCard + goalCard + weekCard + wkSlot + notes + progCard);
-      ['base', 'skill', 'support'].forEach(kind => {
+      ['base', 'skill'].forEach(kind => {
         const ls = CALI_LADDERS.filter(l => l.kind === kind);
         if (!ls.length) return;
         html += '<div class="cali-kind">' + (kind === 'base' ? 'Strength' : kind === 'skill' ? 'Skills' : 'Support') + '</div>';
@@ -2992,6 +3177,7 @@
             + '<div class="cali-sub">' + (c.tested && l.kind !== 'support' ? caliHereText(l, have) : esc(lv) + (ok ? '' : ' · needs more equipment')) + '</div></button>';
         }).join('');
       });
+      html += caliMobilityHtml();
       box.innerHTML = html;
       const wk = caliWorkoutsCard();
       const at = box.querySelector('[data-cali-workouts]');
@@ -3850,6 +4036,12 @@
       const ex = activeWorkout && activeWorkout.exercises[exIdx];
       if (!ex || !caliWorkoutEx(activeWorkout, ex)) return '';
       const f = caliFindStep(ex.exId);
+      const mob = f ? null : caliFindMobility(ex.exId);
+      if (mob) {
+        return '<div class="target-line cali-line" id="target-line-' + exIdx + '" data-target-kind="cali" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px;">'
+          + '<span style="font-size:12px; color:var(--text-sub); min-width:0; overflow-wrap:anywhere;">' + esc('🧘 Mobility · ' + mob.area.name + ' · ' + caliMobilityText(mob.move) + ' · slow, breathe out, never into pain') + '</span>'
+          + '<button class="btn" style="padding:6px 12px; min-height:44px; font-size:13px; flex-shrink:0;" onclick="hideTargetsForWorkout()">Hide</button></div>';
+      }
       if (!f) {
         const dr = caliFindDrill(ex.exId);
         if (!dr) return '';
@@ -10891,7 +11083,61 @@
       'cx_shoulder_ext',
       'cx_pancake',
       'cx_shoulder_dislocate',
-      'cx_adv_tuck_planche'
+      'cx_adv_tuck_planche',
+      'cx_chin_tuck',
+      'cx_neck_cars',
+      'cx_neck_side_stretch',
+      'cx_look_armpit_stretch',
+      'cx_arm_circles',
+      'cx_shoulder_cars',
+      'cx_wall_slide',
+      'cx_doorway_stretch',
+      'cx_sleeper_stretch',
+      'cx_puppy_stretch',
+      'cx_wrist_circles',
+      'cx_wrist_flexor_stretch',
+      'cx_wrist_extensor_stretch',
+      'cx_wrist_pushup',
+      'cx_cat_cow',
+      'cx_thread_needle',
+      'cx_open_book',
+      'cx_bench_tspine',
+      'cx_childs_pose',
+      'cx_cobra',
+      'cx_lying_twist',
+      'cx_jefferson_curl',
+      'cx_bridge',
+      'cx_hip_cars',
+      'cx_90_90',
+      'cx_pigeon',
+      'cx_frog_stretch',
+      'cx_butterfly',
+      'cx_deep_squat_hold',
+      'cx_forward_fold',
+      'cx_half_kneel_ham',
+      'cx_lying_ham_stretch',
+      'cx_kneeling_hip_flexor',
+      'cx_couch_stretch',
+      'cx_worlds_greatest',
+      'cx_lizard',
+      'cx_quad_stretch',
+      'cx_tibialis_raise',
+      'cx_heel_sit',
+      'cx_kot_split_squat',
+      'cx_peterson_step',
+      'cx_ankle_circles',
+      'cx_calf_stretch',
+      'cx_toe_sit',
+      'cx_slow_calf_raise',
+      'cx_split_squat',
+      'cx_straddle_lsit',
+      'cx_wall_hspu_negative',
+      'cx_deficit_wall_hspu',
+      'cx_low_bar_transition',
+      'cx_frog_stand',
+      'cx_half_lay_planche',
+      'cx_adv_tuck_flag',
+      'cx_ankle_stretch'
     ];
 
     /* P2-13 personal part: three plain lines per built-in exercise, written by

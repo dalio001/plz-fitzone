@@ -2,6 +2,13 @@
 
 Newest first. Product direction: [MASTER_PLAN.md](MASTER_PLAN.md). Governance: [../AGENTS.md](../AGENTS.md).
 
+## 2026-11-11 — Mobility by body area + pictures for the P2-20 moves (P2-21)
+
+- Owner: mobility was missing; "another sub-category with the body parts just for mobility", and generate the photos.
+- Calisthenics page: the single "Support → Mobility" ladder card is replaced by a Mobility section: Full-body mobility (one easy move per area, ~15 min) and 10 body areas (neck, shoulders, wrists & forearms, upper back, lower back & spine, hips, hamstrings, hip flexors & quads, knees, ankles & calves), 53 moves (45 new + 7 from the old mobility ladder + Band Pull-Apart). Each area sheet: what it helps, Start (all moves your gear allows), every move with picture, level and sets; in the workout a "🧘 Mobility" target line. The old mobility ladder stays inside for warm-ups and the manna lock.
+- Pictures: Google Flow (Nano Banana 2.1, 16:9, x2, PLZ Train character reference, 0 credits), project e02a51f2 in the second browser. 58 prompts (docs/research/mobility-picture-prompts-p2-21.tsv + the 12 P2-20 ones), 116 takes, best take picked per move: 54 added. Withheld (wrong body shape): one-leg back lever, vertical flag, tuck dragon flag hold. Weak but kept: deep squat hold (not deep), lying twist, back-of-hand stretch.
+- Tests: tests/p2_21_mobility.test.mjs; catalogue 251 → 296. Phone before/after on the test origin.
+
 ## 2026-11-09 — Coach review of every calisthenics ladder (P2-20)
 
 - Owner: progressions "a little bit not accurate"; research every movement, act as a coach, more personal. Research: docs/research/CALISTHENICS_COACH_REVIEW.md (Heria + Overcoming Gravity charts + r/bodyweightfitness + Antranik).
